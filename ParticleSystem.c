@@ -5,6 +5,9 @@
 
 #include "constants.h"
 
+#define ITERATIONS_PER_STEP 10
+#define USE_VORTICITY_CONFINEMENT 1
+
 void clearForces() {
 
 }
@@ -78,4 +81,9 @@ void advanceTime(double dt) {
   double endTime = omp_get_time();
 
   time += dt;
+}
+
+int main() {
+  
+  return 0;
 }
