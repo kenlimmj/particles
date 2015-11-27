@@ -1,11 +1,15 @@
-
 CC=icc
-CFLAGS=-std=c99 -g -O3
-
 FC=ifort
+
+ANAFLAGS=-qopt-report=5 -qopt-report-phase=vec -parallel-source-info=2
+OPTFLAGS=-fast -xHost -ansi-alias -restrict -mkl -openmp
+
+CFLAGS=-std=c99 -g -pedantic -Wall -Werror
+CFLAGS+=$(OPTFLAGS) $(ANAFLAGS)
+
 FFLAGS=
 
-.PHONY: all
+.PHONY: all sphc sphf
 
 all: sphc.o sphf.o
 
@@ -20,4 +24,3 @@ sphf: sphf.o
 
 %.o: %.f
 	$(FC) -c $(FFLAGS) $<
-
