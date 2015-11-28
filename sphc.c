@@ -1,5 +1,7 @@
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
 #include "constants.h"
-#include "math.h"
 
 // Current time
 double time;
@@ -55,7 +57,6 @@ double * dpz;
 double * vox;
 double * voy;
 double * voz;
-
 
 // 6th degree polynomial kernel
 double poly6kernel(int i, int j) {
@@ -120,9 +121,9 @@ void step() {
         fy[i] += GRAVITY;
 
         // Vorticity
-        fx[i] += vox;
-        fy[i] += voy;
-        fz[i] += voz;
+        fx[i] += *vox;
+        fy[i] += *voy;
+        fz[i] += *voz;
     }
 
     // Compute candidate velocities and positions
@@ -288,7 +289,7 @@ void run() {
 }
 
 void init() {
-    
+
 }
 
 int main(int argc, char ** argv) {
