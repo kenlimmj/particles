@@ -58,6 +58,17 @@ double * vox;
 double * voy;
 double * voz;
 
+// Runtime computed constant
+double PRESSURE_RADIUS_FACTOR = 0.0;
+
+void computePressureRadiusFactor() {
+    const double c = 315.0 / (64.0 * PI);
+    double r = ARTIFICIAL_PRESSURE_RADIUS;
+    PRESSURE_RADIUS_FACTOR = 1.0 / (c * pow(
+        KERNEL_SIZE * KERNEL_SIZE - r * r, 3
+    ) / pow(KERNEL_SIZE, 9));
+}
+
 // 6th degree polynomial kernel
 double poly6kernel(int i, int j) {
     const double c = 315.0 / (64.0 * PI);
@@ -72,7 +83,7 @@ double poly6kernel(int i, int j) {
 }
 
 // Spiky gradient kernel
-void spikeykernel(int i, int j, double &gx, double &gy, double &gz) {
+void spikykernel(int i, int j, double gv[]) {
     const double c = 15.0 / PI;
     double dx = cpx[i] - cpx[j];
     double dy = cpy[i] - cpy[j];
@@ -83,15 +94,15 @@ void spikeykernel(int i, int j, double &gx, double &gy, double &gz) {
     }
 
     if (r > KERNEL_SIZE) {
-        gx = 0.0;
-        gy = 0.0;
-        gz = 0.0;
+        gv[0] = 0.0;
+        gv[1] = 0.0;
+        gv[2] = 0.0;
     }
     else {
         double f = c / pow(KERNEL_SIZE, 6) * pow(KERNEL_SIZE - r, 2) / r;
-        gx = f * dx;
-        gy = f * dy;
-        gz = f * dz;
+        gv[0] = f * dx;
+        gv[1] = f * dy;
+        gv[2] = f * dz;
     }
 }
 
@@ -121,9 +132,9 @@ void step() {
         fy[i] += GRAVITY;
 
         // Vorticity
-        fx[i] += *vox;
-        fy[i] += *voy;
-        fz[i] += *voz;
+        fx[i] += vox[i];
+        fy[i] += voy[i];
+        fz[i] += voz[i];
     }
 
     // Compute candidate velocities and positions
@@ -151,22 +162,22 @@ void step() {
             double sx = 0.0;
             double sy = 0.0;
             double sz = 0.0;
-            double gx, gy, gz;
+            double gv[3];
 
             for (int j = 0, l = nc[i]; j < l; ++j) {
                 int nb = nbs[i][j];
                 rho += PARTICLE_MASS * poly6kernel(i, nb);
 
-                spikykernel(i, nb, &gx, &gy, &gz);
-                sx += gx;
-                sy += gy;
-                sz += gz;
+                spikykernel(i, nb, gv);
+                sx += gv[0];
+                sy += gv[1];
+                sz += gv[2];
 
-                gx /= -PARTICLE_DENSITY;
-                gy /= -PARTICLE_DENSITY;
-                gz /= -PARTICLE_DENSITY;
+                gv[0] /= -PARTICLE_DENSITY;
+                gv[1] /= -PARTICLE_DENSITY;
+                gv[2] /= -PARTICLE_DENSITY;
 
-                denom += gx * gx + gy * gy + gz * gz;
+                denom += gv[0] * gv[0] + gv[1] * gv[1] + gv[2] * gv[2];
             }
             numer = rho / PARTICLE_DENSITY - 1.0;
             sx /= PARTICLE_DENSITY;
@@ -175,7 +186,7 @@ void step() {
 
             denom += sx * sx + sy * sy + sz * sz;
 
-            lm[i] = -numerator / (denominator + FORCE_EPSILON);
+            lm[i] = -numer / (denom + FORCE_EPSILON);
         }
 
         // Jiggle particles
@@ -184,7 +195,8 @@ void step() {
             double sx = 0.0;
             double sy = 0.0;
             double sz = 0.0;
-            double gx, gy, gz, c;
+            double gv[3];
+            double c;
             for (int j = 0, l = nc[i]; j < l; ++j) {
                 int nb = nbs[i][j];
                 double scorr = 0.0;
@@ -195,11 +207,11 @@ void step() {
                     ARTIFICIAL_PRESSURE_POWER
                 );
 
-                spikykernel(i, nb, &gx, &gy, &gz);
+                spikykernel(i, nb, gv);
                 c = lm[i] + lm[nb] + scorr;
-                sx += gx * c;
-                sy += gy * c;
-                sz += gz * c;
+                sx += gv[0] * c;
+                sy += gv[1] * c;
+                sz += gv[2] * c;
             }
 
             dpx[i] = sx / PARTICLE_DENSITY;
@@ -242,8 +254,62 @@ void step() {
 
     // TODO Vorticity confinement
     // Compute angular velocity
+    for (int i = 0; i < n; ++i) {
+        double sx = 0.0;
+        double sy = 0.0;
+        double sz = 0.0;
+        double gv[3];
+        double vx, vy, vz;
+        for (int j = 0, l = nc[i]; j < l; ++j) {
+            int nb = nbs[i][j];
+            vx = cvx[nb] - cvx[i];
+            vy = cvy[nb] - cvy[i];
+            vz = cvz[nb] - cvz[i];
+
+            spikykernel(i, nb, gv);
+            sx += vy * gv[2] - vz * gv[1];
+            sy += vz * gv[0] - vx * gv[2];
+            sz += vx * gv[1] - vy * gv[0];
+        }
+
+        // Reusing dp array
+        dpx[i] = sx;
+        dpy[i] = sy;
+        dpz[i] = sz;
+    }
 
     // Compute vorticity force
+    for (int i = 0; i < n; ++i) {
+        double sx = 0.0;
+        double sy = 0.0;
+        double sz = 0.0;
+        double gv[3];
+        double vx, vy, vz;
+        double l;
+        for (int j = 0, l = nc[i]; j < l; ++j) {
+            int nb = nbs[i][j];
+            spikykernel(i, nb, gv);
+            l = sqrt(dpx[nb] * dpx[nb] + dpy[nb] * dpy[nb] + dpz[nb] * dpz[nb]);
+            gv[0] *= l / PARTICLE_DENSITY;
+            gv[1] *= l / PARTICLE_DENSITY;
+            gv[2] *= l / PARTICLE_DENSITY;
+
+            sx += gv[0];
+            sy += gv[1];
+            sz += gv[2];
+        }
+        l = sqrt(sx * sx + sy * sy + sz * sz);
+        if (l < 1e-5) {
+            l = 1e-5;
+        }
+        sx /= l;
+        sy /= l;
+        sz /= l;
+
+        vox[i] = (sy * dpz[i] - sz * dpy[i]) * VORTICITY_COEFFICIENT;
+        voy[i] = (sz * dpx[i] - sx * dpz[i]) * VORTICITY_COEFFICIENT;
+        voz[i] = (sx * dpy[i] - sy * dpz[i]) * VORTICITY_COEFFICIENT;
+    }
 
     // Viscosity
     for (int i = 0; i < n; ++i) {

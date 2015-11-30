@@ -3,6 +3,7 @@
 #define GRAVITY -9.807
 #define PI 3.14159265
 
+#define BOX_SIZE 1.0
 #define PARTICLE_DENSITY 6378.0 * 100.0
 #define PARTICLE_MASS 1.0
 #define FORCE_EPSILON 600.0
