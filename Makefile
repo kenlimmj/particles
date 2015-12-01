@@ -1,26 +1,26 @@
-CC=icc
-FC=ifort
+CC=gcc
+FC=gfortran
 
 ANAFLAGS=-qopt-report=5 -qopt-report-phase=vec -parallel-source-info=2
 OPTFLAGS=-fast -xHost -ansi-alias -restrict -mkl -openmp
 
 CFLAGS=-std=c99 -g -pedantic -Wall -Werror
-CFLAGS+=$(OPTFLAGS) $(ANAFLAGS)
+CFLAGS+=#$(OPTFLAGS) $(ANAFLAGS)
 
-FFLAGS=
+FFLAGS= -O3 -ftree-vectorize -ffast-math -funroll-loops -fomit-frame-pointer -pipe -finit-real=zero
 
-.PHONY: all sphc sphf
+.PHONY: all sphc sphfort
 
-all: sphc.o sphf.o
+all: sphc.o sphfort.o
 
 sphc: sphc.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
 
-sphf: sphf.o
+sphfort: sphfort.o
 	$(FC) -o $@ $^ $(LDFLAGS) $(LIBS)
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $<
 
-%.o: %.f
+%.o: %.f90
 	$(FC) -c $(FFLAGS) $<
