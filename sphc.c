@@ -262,11 +262,13 @@ void step() {
         double vx, vy, vz;
         for (int j = 0, l = nc[i]; j < l; ++j) {
             int nb = nbs[i][j];
+          // SHOULD VX, VY, VZ BE FOR PARTICLE VX[I], VY[I] VZ[K]
             vx = cvx[nb] - cvx[i];
             vy = cvy[nb] - cvy[i];
             vz = cvz[nb] - cvz[i];
 
             spikykernel(i, nb, gv);
+          // SAME QUESTION HERE FOR VX VY VZ
             sx += vy * gv[2] - vz * gv[1];
             sy += vz * gv[0] - vx * gv[2];
             sz += vx * gv[1] - vy * gv[0];
@@ -284,11 +286,13 @@ void step() {
         double sy = 0.0;
         double sz = 0.0;
         double gv[3];
+        // DONT NEED VX, VY, VZ??
         double vx, vy, vz;
         double l;
         for (int j = 0, l = nc[i]; j < l; ++j) {
             int nb = nbs[i][j];
             spikykernel(i, nb, gv);
+            // USED L TWICE IN FOR LOOP AND IN BELOW
             l = sqrt(dpx[nb] * dpx[nb] + dpy[nb] * dpy[nb] + dpz[nb] * dpz[nb]);
             gv[0] *= l / PARTICLE_DENSITY;
             gv[1] *= l / PARTICLE_DENSITY;
@@ -308,6 +312,7 @@ void step() {
 
         vox[i] = (sy * dpz[i] - sz * dpy[i]) * VORTICITY_COEFFICIENT;
         voy[i] = (sz * dpx[i] - sx * dpz[i]) * VORTICITY_COEFFICIENT;
+        // I THINK BELOW SHOULD BE SX*DPY - SY*DPX
         voz[i] = (sx * dpy[i] - sy * dpz[i]) * VORTICITY_COEFFICIENT;
     }
 
