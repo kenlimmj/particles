@@ -255,6 +255,7 @@ void step() {
     }
 
     // TODO Vorticity confinement
+    // Is the vorticity confinement the next two i to n loops?
     // Compute angular velocity
     for (int i = 0; i < n; ++i) {
         double sx = 0.0;
@@ -264,7 +265,7 @@ void step() {
         double vx, vy, vz;
         for (int j = 0, l = nc[i]; j < l; ++j) {
             int nb = nbs[i][j];
-          // SHOULD VX, VY, VZ BE FOR PARTICLE VX[I], VY[I] VZ[K]
+          // I THINK VX, VY, VZ SHOULDNT BE VELOCITY BUT A DIFFERENT VARIABLE FOR VORTICITY
             vx = cvx[nb] - cvx[i];
             vy = cvy[nb] - cvy[i];
             vz = cvz[nb] - cvz[i];
