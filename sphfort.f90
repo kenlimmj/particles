@@ -38,12 +38,12 @@ module constants
 
   real(WP), parameter :: ARTIFICIAL_VISCOSITY = 1.0e-2_WP
   real(WP), parameter :: VORTICITY_COEFFICIENT = 1.0e-4_WP
-  logical,  parameter ::  USE_VORTICITY_CONFINEMENT = .true.
+  logical,  parameter :: USE_VORTICITY_CONFINEMENT = .true.
 
   real(WP) :: PRESSURE_RADIUS_FACTOR
-  real(WP), parameter :: c = 315.0_WP / (64.0_WP * PI)
 
-  real(WP),dimension(:), allocatable :: lm
+  real(WP),dimension(:), allocatable :: lm ! Lambda
+
 end module constants
 
 ! ===================================== !
@@ -66,9 +66,11 @@ end module
 ! ===================================== !
 module neighbors
   use precision
+  use constants
   implicit none
   integer,dimension(:),allocatable :: nc
   integer,dimension(:,:),allocatable :: nbs
+  integer, parameter :: num_of_bins = ceiling(2*BOX_SIZE/KERNEL_SIZE) ! Bins in each direction
 end module neighbors
 
 ! ===================================== !
@@ -93,12 +95,13 @@ module kernels
       use posvel
       implicit none
       integer, intent(in) :: i,j
-      real(WP) :: dx, dy, dz, r
+      real(WP) :: dx, dy, dz, r, c
 
       dx = cpx(i) - cpx(j)
       dy = cpy(i) - cpy(j)
       dz = cpz(i) - cpz(j)
       r = sqrt(dx*dx + dy*dy + dz*dz)
+      c = 315.0_WP / (64.0_WP * PI)
 
       if(r .gt. KERNEL_SIZE) then
         poly6kernel = 0.0_WP
@@ -118,12 +121,13 @@ module kernels
       use posvel
       implicit none
       integer, intent(in) :: i,j
-      real(WP) :: dx, dy, dz, r
+      real(WP) :: dx, dy, dz, r, c
 
       dx = cpx(i) - cpx(j)
       dy = cpy(i) - cpy(j)
       dz = cpz(i) - cpz(j)
       r = sqrt(dx*dx + dy*dy + dz*dz)
+      c = 7.5_WP / PI
 
       if(r .gt. KERNEL_SIZE) then
         viscositykernel = 0.0_WP
@@ -143,9 +147,10 @@ end module kernels
 subroutine computePressureRadiusFactor
   use constants
   implicit none
-  real(WP) :: r
+  real(WP) :: r, c
 
   r = ARTIFICIAL_PRESSURE_RADIUS
+  c = 315.0_WP / (64.0_WP * PI)
 
   PRESSURE_RADIUS_FACTOR = 1.0_WP / &
     (c * (KERNEL_SIZE*KERNEL_SIZE - r*r)**3 &
@@ -165,13 +170,14 @@ subroutine spikykernel(i,j, gv)
   implicit none
   integer, intent(in) :: i,j
   real(WP), dimension(3), intent(out) :: gv
-  real(WP) :: dx, dy, dz, r
+  real(WP) :: dx, dy, dz, r, c
   real(WP) :: f
 
   dx = cpx(i) - cpx(j)
   dy = cpy(i) - cpy(j)
   dz = cpz(i) - cpz(j)
   r = sqrt(dx*dx + dy*dy + dz*dz)
+  c = 15.0_WP / PI
   if(r .lt. 1.0e-4_WP) r = 1.0e-4_WP
 
   if( r .gt. KERNEL_SIZE) then
@@ -198,7 +204,7 @@ program sph_run
   time = 0.0_WP
   dt = 0.0_WP ! NEED SMART WAY TO CALCULATE DT FOR STABILITY?
 
-  call array_allocate
+  call init
 
   do while (time .lt. tfin)
     if(iter .gt. itermax) then
@@ -211,20 +217,49 @@ program sph_run
 
   end do
 
-  call array_deallocate
+  call deinit
 
 end program sph_run
+
+! ================================================ !
+! Read in command line arguments and initialize    !
+! ================================================ !
 
 ! ===================================== !
 ! Allocate all arrays in the modules    !
 ! ===================================== !
-subroutine array_allocate
+subroutine init
   use state
   use constants
   use posvel
   use neighbors
   use forces
   implicit none
+  character(30) :: tfin_string, dt_string, itermax_string, init_file
+  integer :: i, unit
+  real, dimension(:), allocatable :: data
+
+  ! Read in command line arguments for tfin, dt, max_iter, init_file
+  call get_command_argument(4,init_file)
+  if(len_trim(init_file) .eq. 0) then
+    print*, "Incorrect number of command line arguments"
+    print*, "Correct usage is sphfort (tfin) (dt) (max_iter) (init_file)"
+    print*, "Exiting..."
+    stop
+  end if
+  call get_command_argument(1,tfin_string)
+  read (tfin_string, *) tfin
+
+  call get_command_argument(2,dt_string)
+  read (dt_string, *) dt
+
+  call get_command_argument(3,itermax_string)
+  read (itermax_string, *) itermax
+
+  ! Find length of initial condition file (number of particles)
+  unit = 20
+  open(unit,file=trim(init_file),status="old",action="read")
+  read(unit,*) n    ! First line will be number of particles
 
   ! Allocate everything
   allocate(lm(n))
@@ -244,7 +279,7 @@ subroutine array_allocate
   allocate(cvy(n))
   allocate(cvz(n))
   allocate(nc(n))
-  allocate(nbs(n,n))
+  allocate(nbs(n,1))
   allocate(fx(n))
   allocate(fy(n))
   allocate(fz(n))
@@ -255,13 +290,28 @@ subroutine array_allocate
   allocate(voy(n))
   allocate(voz(n))
 
+  ! Populate location and velocity from initial condition file
+  allocate(data(6))
+  do i = 1, n
+    read(unit,*) data(:)
+    px(i) = data(1)
+    py(i) = data(2)
+    pz(i) = data(3)
+    vx(i) = data(4)
+    vy(i) = data(5)
+    vz(i) = data(6)
+  end do
+  close(unit)
+  deallocate(data)
+
+
   return
-end subroutine array_allocate
+end subroutine init
 
 ! ===================================== !
 ! Deallocate all arrays in the modules    !
 ! ===================================== !
-subroutine array_deallocate
+subroutine deinit
   use state
   use constants
   use posvel
@@ -299,14 +349,14 @@ subroutine array_deallocate
   deallocate(voz)
 
   return
-end subroutine
+end subroutine deinit
 
 
 ! ===================================== !
 ! One step of SPH                       !
 ! ===================================== !
 subroutine step
-  use constants, only : ITERATIONS_PER_STEP
+  use constants, only : ITERATIONS_PER_STEP, USE_VORTICITY_CONFINEMENT
   implicit none
   integer :: subiter
 
@@ -328,9 +378,10 @@ subroutine step
   end do
 
   ! Confine vorticity, update vel, and calculate force
-  call confine_vorticity
-  call vel_update_vort
-  call vorticity_force
+  if(USE_VORTICITY_CONFINEMENT) then
+    call compute_omega
+    call vorticity_force
+  end if
 
   ! Update particle positions due to vorticity
   call viscosity_update
@@ -376,10 +427,55 @@ subroutine posvel_candidate
 end subroutine posvel_candidate
 
 subroutine neighbor_find
+  use state
   use neighbors
   use posvel
+  implicit none
+  integer :: i, j, q
+  integer, dimension(num_of_bins, num_of_bins, num_of_bins) :: part_count
+  integer, dimension(:,:,:,:), allocatable :: binloc
+  integer :: binx, biny, binz, max_part_guess
+  integer :: cbinx, cbiny, cbinz
+  integer :: stx, sty, stz
 
-  ! STILL NEED ALGORITHM TO FIND NEIGHBORS QUICKLY
+  deallocate(nbs)
+  max_part_guess = 1000*n/num_of_bins**3
+  allocate(binloc(max_part_guess,num_of_bins,num_of_bins, num_of_bins))
+
+  part_count = 0.0
+  do i = 1, n
+    binx = cpx(i)/((2*BOX_SIZE)/num_of_bins) + num_of_bins/2 + 1
+    biny = cpy(i)/((2*BOX_SIZE)/num_of_bins) + num_of_bins/2 + 1
+    binz = cpz(i)/((2*BOX_SIZE)/num_of_bins) + num_of_bins/2 + 1
+    part_count(binx, biny, binz) = part_count(binx, biny, binz) + 1
+    binloc(part_count(binx,biny,binz),binx,biny,binz) = i
+  end do
+
+  max_part_guess = 27*maxval(part_count(:,:,:))
+  allocate(nbs(n,max_part_guess))
+  do i = 1, n
+    binx = cpx(i)/((2*BOX_SIZE)/num_of_bins) + num_of_bins/2 + 1
+    biny = cpy(i)/((2*BOX_SIZE)/num_of_bins) + num_of_bins/2 + 1
+    binz = cpz(i)/((2*BOX_SIZE)/num_of_bins) + num_of_bins/2 + 1
+    q = 0
+    do stx = -1, 1
+      do sty = -1, 1
+        do stz = -1, 1
+          do j = 1, max_part_guess
+            cbinx = binx + stx
+            cbiny = biny + sty
+            cbinz = binz + stz
+            if (binloc(j,cbinx,cbiny,cbinz) .eq. 0) exit
+            q = q + 1
+            nbs(i,q) = binloc(j,cbinx,cbiny,cbinz)
+          end do
+        end do
+      end do
+    end do
+    nc(i) = q
+  end do
+
+  deallocate(binloc)
 
   return
 end subroutine neighbor_find
@@ -528,7 +624,7 @@ subroutine confine_vorticity
   return
 end subroutine
 
-subroutine vel_update_vort
+subroutine compute_omega
   use state
   use posvel
   use forces
@@ -564,7 +660,7 @@ subroutine vel_update_vort
   end do
 
   return
-end subroutine vel_update_vort
+end subroutine compute_omega
 
 subroutine vorticity_force
   use state
