@@ -199,6 +199,7 @@ end subroutine spikykernel
 ! ===================================== !
 program sph_run
   use state
+  use posvel
   implicit none
 
   time = 0.0_WP
@@ -206,7 +207,10 @@ program sph_run
 
   call init
 
+  iter = 0
+
   do while (time .lt. tfin)
+    iter = iter + 1
     if(iter .gt. itermax) then
       print*, "Exceeded maximum iterations. Exiting..."
       stop
@@ -214,6 +218,12 @@ program sph_run
 
     call step
     time = time + dt
+
+    if(mod(itermax,10) .eq. 0) then
+      print*,"Iteration: ",iter," Time: ",time
+      print*,"Max U: ", maxval(vx(:))," Max V: ",maxval(vy(:))," Max W: ",maxval(vz(:))
+      print*,"  "
+    end if
 
   end do
 
@@ -224,10 +234,6 @@ end program sph_run
 ! ================================================ !
 ! Read in command line arguments and initialize    !
 ! ================================================ !
-
-! ===================================== !
-! Allocate all arrays in the modules    !
-! ===================================== !
 subroutine init
   use state
   use constants
