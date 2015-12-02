@@ -84,6 +84,8 @@ double poly6kernel(int i, int j) {
 
 // Spiky gradient kernel
 void spikykernel(int i, int j, double gv[]) {
+  
+    // IS THIS THE WRONG C Constant? Should be 7.5 / PI?
     const double c = 15.0 / PI;
     double dx = cpx[i] - cpx[j];
     double dy = cpy[i] - cpy[j];
