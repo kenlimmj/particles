@@ -85,7 +85,8 @@ double poly6kernel(int i, int j) {
 // Spiky gradient kernel
 void spikykernel(int i, int j, double gv[]) {
   
-    // IS THIS THE WRONG C Constant? Should be 7.5 / PI?
+    // IS THIS THE WRONG C Constant? Should be 3*15 / PI?
+    // This was for spiky kernel in Java code, but this is actually spikyGrad?
     const double c = 15.0 / PI;
     double dx = cpx[i] - cpx[j];
     double dy = cpy[i] - cpy[j];
@@ -110,6 +111,7 @@ void spikykernel(int i, int j, double gv[]) {
 
 // Viscosity kernel
 double viscositykernel(int i, int j) {
+    // IS THIS THE WRONG C Constant? Should be 15.0 / (2*PI)?
     const double c = 315.0 / (64.0 * PI);
     double dx = cvx[i] - cvx[j];
     double dy = cvy[i] - cvy[j];
