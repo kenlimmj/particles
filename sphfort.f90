@@ -24,7 +24,7 @@ module constants
   use precision
   implicit none
   integer,  parameter :: ITERATIONS_PER_STEP = 10
-  real(WP), parameter :: GRAVITY = 0.01_WP
+  real(WP), parameter :: GRAVITY = 0.0_WP
   real(WP), parameter :: PI = 3.14159265_WP
   real(WP), parameter :: BOX_SIZE = 1.0_WP
   real(WP), parameter :: PARTICLE_DENSITY = 6378.0_WP * 100.0_WP
@@ -38,7 +38,7 @@ module constants
 
   real(WP), parameter :: ARTIFICIAL_VISCOSITY = 1.0e-2_WP
   real(WP), parameter :: VORTICITY_COEFFICIENT = 1.0e-4_WP
-  logical,  parameter :: USE_VORTICITY_CONFINEMENT = .false.
+  logical,  parameter :: USE_VORTICITY_CONFINEMENT = .true.
 
   real(WP) :: PRESSURE_RADIUS_FACTOR
 
@@ -228,6 +228,10 @@ program sph_run
       print*,"  "
 !    end if
 
+!    if(mod(iter,10) .eq. 0) then
+      call particle_write
+!    end if
+
   end do
 
   call deinit
@@ -356,6 +360,24 @@ subroutine deinit
 end subroutine deinit
 
 
+subroutine particle_write
+  use posvel
+  use state
+  implicit none
+  integer :: i, fid
+  character(64) :: buffer, filename
+
+  write(buffer,"(ES12.3)") time
+  filename = "particles_"//trim(adjustl(buffer))
+  open(fid,file=filename,status="REPLACE",action="WRITE")
+  write(fid,*) n
+  do i = 1, n
+    write(fid,FMT="(6(ES22.15,1x))") px(i), py(i), pz(i), vx(i), vy(i), vz(i)
+  end do
+
+  return
+end subroutine
+
 ! ===================================== !
 ! One step of SPH                       !
 ! ===================================== !
@@ -377,11 +399,12 @@ subroutine step
   do subiter = 1, ITERATIONS_PER_STEP
     ! Compute lamnda
     call compute_lambda
-  print*,'after lambda', maxval(cvx), maxval(cvy), maxval(cvz)
+!  print*,'after lambda', maxval(cvx), maxval(cvy), maxval(cvz)
     ! Jiggle the particles
     call particle_jiggle
-  print*,'after jiggle', maxval(cvx), maxval(cvy), maxval(cvz)
+!  print*,'after jiggle', maxval(cvx), maxval(cvy), maxval(cvz)
   end do
+  call update_candidate_vel
 
   ! Confine vorticity, update vel, and calculate force
   if(USE_VORTICITY_CONFINEMENT) then
@@ -389,10 +412,10 @@ subroutine step
     call compute_omega
     call vorticity_force
   end if
-!  print*,'before visc', maxval(cvx), maxval(cvy), maxval(cvz)
+  print*,'before visc', maxval(cvx), maxval(cvy), maxval(cvz)
   ! Update particle positions due to vorticity
   call viscosity_update
-!  print*,'update with visc', maxval(cvx), maxval(cvy), maxval(cvz)
+  print*,'update with visc', maxval(cvx), maxval(cvy), maxval(cvz)
 
   ! Update particle position
   call pos_update
@@ -609,18 +632,13 @@ subroutine particle_jiggle
     dpy(i) = sy / PARTICLE_DENSITY
     dpz(i) = sz / PARTICLE_DENSITY
   end do
-  print*,"before update", maxval(cvx), cpx(maxloc(cvx)), cpy(maxloc(cvx)),cpz(maxloc(cvx))
+!  print*,"before update", maxval(cvx), cpx(maxloc(cvx)), cpy(maxloc(cvx)),cpz(maxloc(cvx))
     ! Update candidate position
     cpx(:) = cpx(:) + dpx(:)
     cpy(:) = cpy(:) + dpy(:)
     cpz(:) = cpz(:) + dpz(:)
 
-    ! Update candidate velocity
-    cvx(:) = (cpx(:) - px(:)) / dt
-    cvy(:) = (cpy(:) - py(:)) / dt
-    cvz(:) = (cpz(:) - pz(:)) / dt
-
-  print*,"before collision", maxval(cvx), cpx(maxloc(cvx)), cpy(maxloc(cvx)),cpz(maxloc(cvx))
+!  print*,"before collision", maxval(cvx), cpx(maxloc(cvx)), cpy(maxloc(cvx)),cpz(maxloc(cvx))
 
   ! Resolve collisions
   do i = 1, n
@@ -628,37 +646,75 @@ subroutine particle_jiggle
     ! Floor
     if(cpy(i) .lt. 0.0_WP) then
       cpy(i) = 0.0_WP
-      cvy(i) = -cvy(i)
     end if
 
     ! Left Wall
     if(cpx(i) .lt. -BOX_SIZE) then
       cpx(i) = -BOX_SIZE
-      cvx(i) = -cvx(i)
     end if
 
     ! Right Wall
     if(cpx(i) .gt. BOX_SIZE) then
       cpx(i) = BOX_SIZE
-      cvx(i) = -cvx(i)
     end if
 
     ! Back Wall
     if(cpz(i) .lt. -BOX_SIZE) then
       cpz(i) = -BOX_SIZE
-      cvz(i) = -cvz(i)
     end if
 
     ! Front Wall
     if(cpz(i) .gt. BOX_SIZE) then
       cpz(i) = BOX_SIZE
-      cvz(i) = -cvz(i)
     end if
 
   end do
 
   return
 end subroutine particle_jiggle
+
+subroutine update_candidate_vel
+  use posvel
+  use state
+  use constants
+  implicit none
+  integer :: i
+
+  cvx = (cpx - px)/ dt
+  cvy = (cpy - py)/ dt
+  cvz = (cpz - pz)/ dt
+
+  ! Resolve collisions
+  do i = 1, n
+
+    ! Floor
+    if(cpy(i) .lt. 0.0_WP) then
+      cvy(i) = -cvy(i)
+    end if
+
+    ! Left Wall
+    if(cpx(i) .lt. -BOX_SIZE) then
+      cvx(i) = -cvx(i)
+    end if
+
+    ! Right Wall
+    if(cpx(i) .gt. BOX_SIZE) then
+      cvx(i) = -cvx(i)
+    end if
+
+    ! Back Wall
+    if(cpz(i) .lt. -BOX_SIZE) then
+      cvz(i) = -cvz(i)
+    end if
+
+    ! Front Wall
+    if(cpz(i) .gt. BOX_SIZE) then
+      cvz(i) = -cvz(i)
+    end if
+  end do
+
+  return
+end subroutine update_candidate_vel
 
 subroutine compute_omega
   use state
@@ -754,6 +810,7 @@ subroutine viscosity_update
   integer :: i, j, l, nb
   real(WP) :: sx, sy, sz
   real(WP) :: dvx, dvy, dvz, k
+  real(WP) :: r
 
   vx = cvx
   vy = cvy
@@ -764,6 +821,8 @@ subroutine viscosity_update
     sy = 0.0_WP
     sz = 0.0_WP
 
+!    print*,i, vx(i), cpx(i), cpy(i), cpz(i)
+
     l = nc(i)
     do j = 1, l
       nb = nbs(i,j)
@@ -772,7 +831,9 @@ subroutine viscosity_update
       dvz = vz(nb) - vz(i)
 
       k = viscositykernel(i,nb)
-!      print*, i,nb, cvx(i), cvx(nb)
+      r = (cpx(i)-cpx(nb))**2+(cpy(i)-cpy(nb))**2+(cpz(i)-cpz(nb))**2
+      r = sqrt(r)
+      print*,r-KERNEL_SIZE,k, i, nb, k*dvx, dvx, vx(nb), vx(i)
       sx = sx + k * dvx
       sy = sy + k * dvy
       sz = sz + k * dvz
