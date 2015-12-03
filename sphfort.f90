@@ -23,10 +23,10 @@ end module
 module constants
   use precision
   implicit none
-  integer,  parameter :: ITERATIONS_PER_STEP = 10
-  real(WP), parameter :: GRAVITY = 0.0_WP
+  integer,  parameter :: ITERATIONS_PER_STEP = 20
+  real(WP), parameter :: GRAVITY = 1.0_WP
   real(WP), parameter :: PI = 3.14159265_WP
-  real(WP), parameter :: BOX_SIZE = 1.0_WP
+  real(WP), parameter :: BOX_SIZE = 0.5_WP
   real(WP), parameter :: PARTICLE_DENSITY = 6378.0_WP * 100.0_WP
   real(WP), parameter :: PARTICLE_MASS = 1.0_WP
   real(WP), parameter :: FORCE_EPSILON = 600.0_WP
@@ -87,9 +87,9 @@ end module forces
 module kernels
   implicit none
   contains
-    ! ===================================== !
-    ! 6th degree polynomial kernel          !
-    ! ===================================== !
+    ! ================================================= !
+    ! 6th degree polynomial kernel for density          !
+    ! ================================================= !
     real(WP) function poly6kernel(i,j)
       use constants
       use posvel
@@ -113,6 +113,32 @@ module kernels
       return
     end function poly6kernel
 
+    ! ============================================ !
+    ! 6th degree polynomial kernel for viscosity   !
+    ! ============================================ !
+    real(WP) function poly6visckernel(i,j)
+      use constants
+      use posvel
+      implicit none
+      integer, intent(in) :: i,j
+      real(WP) :: dx, dy, dz, r, c
+
+      dx = vx(i) - vx(j)
+      dy = vy(i) - vy(j)
+      dz = vz(i) - vz(j)
+      r = sqrt(dx*dx + dy*dy + dz*dz)
+      c = 315.0_WP / (64.0_WP * PI)
+
+      if(r .ge. KERNEL_SIZE) then
+        poly6visckernel = 0.0_WP
+      else
+        poly6visckernel = c * (KERNEL_SIZE*KERNEL_SIZE - r*r)**3 &
+                      / KERNEL_SIZE**9
+      end if
+
+      return
+    end function poly6visckernel
+
     ! ===================================== !
     !   Viscosity kernel                      !
     ! ===================================== !
@@ -129,6 +155,7 @@ module kernels
       r = sqrt(dx*dx + dy*dy + dz*dz)
       c = 7.5_WP / PI
 
+
       if(r .ge. KERNEL_SIZE) then
         viscositykernel = 0.0_WP
       else
@@ -136,6 +163,7 @@ module kernels
                             * (-r**3/(2.0_WP*KERNEL_SIZE**3) &
                               + r*r/(KERNEL_SIZE*KERNEL_SIZE) &
                               + KERNEL_SIZE/(2.0_WP*r) - 1.0_WP)
+
 
       end if
 
@@ -155,9 +183,8 @@ subroutine computePressureRadiusFactor
   r = ARTIFICIAL_PRESSURE_RADIUS
   c = 315.0_WP / (64.0_WP * PI)
 
-  PRESSURE_RADIUS_FACTOR = 1.0_WP / &
-    (c * (KERNEL_SIZE*KERNEL_SIZE - r*r)**3 &
-    / KERNEL_SIZE**9)
+  PRESSURE_RADIUS_FACTOR = KERNEL_SIZE**9 / &
+    (c * (KERNEL_SIZE*KERNEL_SIZE - r*r)**3)
 
   return
 end subroutine computePressureRadiusFactor
@@ -222,15 +249,15 @@ program sph_run
     call step
     time = time + dt
 
-!    if(mod(iter,10) .eq. 0) then
+    if(mod(iter,1) .eq. 0) then
       print*,"Iteration: ",iter," Time: ",time
       print*,"Max U: ", maxval(vx(:))," Max V: ",maxval(vy(:))," Max W: ",maxval(vz(:))
       print*,"  "
-!    end if
+    end if
 
-!    if(mod(iter,10) .eq. 0) then
+    if(mod(iter,100) .eq. 0) then
       call particle_write
-!    end if
+    end if
 
   end do
 
@@ -315,6 +342,9 @@ subroutine init
   deallocate(data)
 
   call computePressureRadiusFactor
+
+  ! Print out initial particle positions
+  call particle_write
 
   return
 end subroutine init
@@ -412,10 +442,10 @@ subroutine step
     call compute_omega
     call vorticity_force
   end if
-  print*,'before visc', maxval(cvx), maxval(cvy), maxval(cvz)
+!  print*,'before visc', maxval(cvx), maxval(cvy), maxval(cvz)
   ! Update particle positions due to vorticity
   call viscosity_update
-  print*,'update with visc', maxval(cvx), maxval(cvy), maxval(cvz)
+!  print*,'update with visc', maxval(cvx), maxval(cvy), maxval(cvz)
 
   ! Update particle position
   call pos_update
@@ -432,7 +462,7 @@ subroutine force_apply
 
   ! Apply forces
   fx(:) = vox(:)
-  fy(:) = GRAVITY
+  fy(:) = -GRAVITY
   fy(:) = fy(:) + voy(:)
   fz(:) = voz(:)
 
@@ -487,14 +517,17 @@ subroutine neighbor_find
   deallocate(nbs)
   y_height = maxval(cpy(:))
   nbinx = ceiling(BOX_SIZE*2.0_WP/KERNEL_SIZE) - 1
-  nbiny = ceiling(y_height/KERNEL_SIZE) - 1
-  nbinz = ceiling(BOX_SIZE*2.0_WP/KERNEL_SIZE) - 1
-  max_part_guess = 10000*n/(nbinx*nbiny*nbinz)
+!  nbiny = ceiling(y_height/KERNEL_SIZE) - 1
+!  nbinz = ceiling(BOX_SIZE*2.0_WP/KERNEL_SIZE) - 1
+nbiny = 1
+nbinz = 1
+!  max_part_guess = 10000*n/(nbinx*nbiny*nbinz)
+  max_part_guess = n
   allocate(part_count(nbinx,nbiny,nbinz))
   allocate(binpart(max_part_guess,nbinx,nbiny,nbinz)); binpart = 0
 
   part_count = 0
-  print*, 'num of bins', nbinx, nbiny, nbinz
+!  print*, 'num of bins', nbinx, nbiny, nbinz
   do i = 1, n
     binx = NINT((cpx(i)-(-BOX_SIZE))/(2.0_WP*BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
     biny = NINT((cpy(i)-0.0_WP)/(y_height+1.0e-15_WP)*(real(nbiny,WP)-1.0_WP)) + 1
@@ -830,10 +863,10 @@ subroutine viscosity_update
       dvy = vy(nb) - vy(i)
       dvz = vz(nb) - vz(i)
 
-      k = viscositykernel(i,nb)
+      k = poly6visckernel(i,nb)
       r = (cpx(i)-cpx(nb))**2+(cpy(i)-cpy(nb))**2+(cpz(i)-cpz(nb))**2
       r = sqrt(r)
-      print*,r-KERNEL_SIZE,k, i, nb, k*dvx, dvx, vx(nb), vx(i)
+!      print*,r-KERNEL_SIZE,k, i, nb, k*dvx, dvx, vx(nb), vx(i), px(nb),px(i)
       sx = sx + k * dvx
       sy = sy + k * dvy
       sz = sz + k * dvz

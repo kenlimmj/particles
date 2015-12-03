@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys
 import string
 import numpy as np
@@ -6,13 +8,13 @@ import glob, os
 import subprocess
 import matplotlib.pyplot as plt
 
-nx = 25   # Particles along x
-ny = 25   # Particles along y
-nz = 25  # Particles along z
+nx = 300   # Particles along x
+ny = 1  # Particles along y
+nz = 1  # Particles along z
 n = nx*ny*nz   # Total number of particles
 
-BS = 1.0   # Box Size
-buffer = 0.125
+BS = 0.5   # Box Size
+buffer = 1.0e-5
 
 # File name to write
 filename = "init.txt"
@@ -30,9 +32,11 @@ vz = np.ndarray((n))
 # Start all particles on left half
 # Evenly distribute in height and depth
 
-px = np.linspace(-BS+buffer,BS-buffer,nx)
-py = np.linspace(0+buffer,2*BS-buffer,ny)
-pz = np.linspace(-BS+buffer,BS-buffer,nz)
+px = np.linspace(-BS+buffer,0.0,nx)
+py[:] = 0.0
+#py = np.linspace(0+buffer,BS-buffer,ny)
+#pz = np.linspace(-BS+buffer,BS-buffer,nz)
+pz[:] = 0.0
 vx[:] = 0.0
 vy[:] = 0.0
 vz[:] = 0.0
