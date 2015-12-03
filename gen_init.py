@@ -8,9 +8,9 @@ import glob, os
 import subprocess
 import matplotlib.pyplot as plt
 
-nx = 300   # Particles along x
-ny = 1  # Particles along y
-nz = 1  # Particles along z
+nx = 16   # Particles along x
+ny = 36  # Particles along y
+nz = 36  # Particles along z
 n = nx*ny*nz   # Total number of particles
 
 BS = 0.5   # Box Size
@@ -32,11 +32,9 @@ vz = np.ndarray((n))
 # Start all particles on left half
 # Evenly distribute in height and depth
 
-px = np.linspace(-BS+buffer,0.0,nx)
-py[:] = 0.0
-#py = np.linspace(0+buffer,BS-buffer,ny)
-#pz = np.linspace(-BS+buffer,BS-buffer,nz)
-pz[:] = 0.0
+px = np.linspace(0.05,0.40,nx)
+py = np.linspace(0.05,0.90,ny)
+pz = np.linspace(0.05,0.90,nz)
 vx[:] = 0.0
 vy[:] = 0.0
 vz[:] = 0.0

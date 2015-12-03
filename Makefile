@@ -11,12 +11,15 @@ FFLAGS= -O3 -ftree-vectorize -ffast-math -funroll-loops -fomit-frame-pointer -pi
 #FFLAGS = -fcheck=all -g -fbacktrace -Wall -pedantic -Wextra -W -Wno-unused-function -fbounds-check -fopenmp -Wunderflow
 .PHONY: all sphc sphfort
 
-all: sphc.o sphfort.o
+all: sphc.o sphfort.o bsphfort.o
 
 sphc: sphc.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
 
 sphfort: sphfort.o
+	$(FC) -o $@ $^ $(LDFLAGS) $(LIBS)
+
+bsphfort: bsphfort.o
 	$(FC) -o $@ $^ $(LDFLAGS) $(LIBS)
 
 %.o: %.c
