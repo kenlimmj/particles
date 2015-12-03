@@ -14,7 +14,7 @@ module state
   implicit none
   real(WP) :: time, dt, tfin
   integer :: n ! Number of particles
-  integer :: iter, itermax
+  integer :: iter, itermax, frame
 end module
 
 ! ===================================== !
@@ -23,10 +23,10 @@ end module
 module constants
   use precision
   implicit none
-  integer,  parameter :: ITERATIONS_PER_STEP = 20
-  real(WP), parameter :: GRAVITY = 1.0_WP
+  integer,  parameter :: ITERATIONS_PER_STEP = 10
+  real(WP), parameter :: GRAVITY = -1.0_WP
   real(WP), parameter :: PI = 3.14159265_WP
-  real(WP), parameter :: BOX_SIZE = 0.5_WP
+  real(WP), parameter :: BOX_SIZE = 1.0_WP
   real(WP), parameter :: PARTICLE_DENSITY = 6378.0_WP * 100.0_WP
   real(WP), parameter :: PARTICLE_MASS = 1.0_WP
   real(WP), parameter :: FORCE_EPSILON = 600.0_WP
@@ -38,7 +38,7 @@ module constants
 
   real(WP), parameter :: ARTIFICIAL_VISCOSITY = 1.0e-2_WP
   real(WP), parameter :: VORTICITY_COEFFICIENT = 1.0e-4_WP
-  logical,  parameter :: USE_VORTICITY_CONFINEMENT = .true.
+  logical,  parameter :: USE_VORTICITY_CONFINEMENT = .false.
 
   real(WP) :: PRESSURE_RADIUS_FACTOR
 
@@ -81,7 +81,7 @@ module forces
   real(WP),dimension(:),allocatable :: fx, fy, fz  ! Total force
   real(WP),dimension(:),allocatable :: dpx, dpy, dpz  ! Pressure
   real(WP),dimension(:),allocatable :: vox, voy, voz  ! Vorticity
-  logical, parameter :: USE_SURFACE_TENSION = .true.
+  logical, parameter :: USE_SURFACE_TENSION = .false.
 end module forces
 
 module kernels
@@ -102,6 +102,7 @@ module kernels
       dz = cpz(i) - cpz(j)
       r = sqrt(dx*dx + dy*dy + dz*dz)
       c = 315.0_WP / (64.0_WP * PI)
+      if(r .lt. 1.0e-4_WP) r = 1.0e-4_WP
 
       if(r .ge. KERNEL_SIZE) then
         poly6kernel = 0.0_WP
@@ -128,6 +129,8 @@ module kernels
       dz = vz(i) - vz(j)
       r = sqrt(dx*dx + dy*dy + dz*dz)
       c = 315.0_WP / (64.0_WP * PI)
+      if(r .lt. 1.0e-4_WP) r = 1.0e-4_WP
+
 
       if(r .ge. KERNEL_SIZE) then
         poly6visckernel = 0.0_WP
@@ -154,7 +157,7 @@ module kernels
       dz = cpz(i) - cpz(j)
       r = sqrt(dx*dx + dy*dy + dz*dz)
       c = 7.5_WP / PI
-
+      if(r .lt. 1.0e-4_WP) r = 1.0e-4_WP
 
       if(r .ge. KERNEL_SIZE) then
         viscositykernel = 0.0_WP
@@ -207,7 +210,7 @@ subroutine spikykernel(i,j, gv)
   dy = cpy(i) - cpy(j)
   dz = cpz(i) - cpz(j)
   r = sqrt(dx*dx + dy*dy + dz*dz)
-  c = 15.0/PI
+  c = 45.0/PI
   if(r .lt. 1.0e-4_WP) r = 1.0e-4_WP
 
   if( r .ge. KERNEL_SIZE) then
@@ -215,7 +218,7 @@ subroutine spikykernel(i,j, gv)
     gv(2) = 0.0_WP
     gv(3) = 0.0_WP
   else
-    f = c * (KERNEL_SIZE-r)**3/KERNEL_SIZE**6
+    f = c * (KERNEL_SIZE-r)**2/KERNEL_SIZE**6 / r
     gv(1) = f * dx
     gv(2) = f * dy
     gv(3) = f * dz
@@ -255,7 +258,7 @@ program sph_run
       print*,"  "
     end if
 
-    if(mod(iter,100) .eq. 0) then
+    if(mod(iter,200) .eq. 0) then
       call particle_write
     end if
 
@@ -344,6 +347,7 @@ subroutine init
   call computePressureRadiusFactor
 
   ! Print out initial particle positions
+  frame = 0
   call particle_write
 
   return
@@ -395,15 +399,19 @@ subroutine particle_write
   use state
   implicit none
   integer :: i, fid
-  character(64) :: buffer, filename
+  character(64) :: buffer, start,filename
 
-  write(buffer,"(ES12.3)") time
-  filename = "particles_"//trim(adjustl(buffer))
+!  write(buffer,"(ES12.3)") time
+  start = "particles_"
+  write(buffer,"(a, i5.5)") trim(start), frame
+  filename = trim(adjustl(buffer))
   open(fid,file=filename,status="REPLACE",action="WRITE")
   write(fid,*) n
   do i = 1, n
     write(fid,FMT="(6(ES22.15,1x))") px(i), py(i), pz(i), vx(i), vy(i), vz(i)
   end do
+
+  frame = frame + 1
 
   return
 end subroutine
@@ -419,38 +427,40 @@ subroutine step
 
   ! Apply the forces
   call force_apply
-!  print*,'after force', maxval(cvx), cpx(maxloc(cvx)), cpy(maxloc(cvx)),cpz(maxloc(cvx))
+  print*,'after force', maxval(cvx), cpx(maxloc(cvx)), cpy(maxloc(cvx)),cpz(maxloc(cvx))
   ! Compute candidate velocities and positions
   call posvel_candidate
-!  print*,'after posvel', maxval(cvx), cpx(maxloc(cvx)), cpy(maxloc(cvx)),cpz(maxloc(cvx))
+  print*,'after posvel', maxval(cvx), cpx(maxloc(cvx)), cpy(maxloc(cvx)),cpz(maxloc(cvx))
   ! Find neighbors and compute lambda
   call neighbor_find
-!  print*,'after neighbor', maxval(cvx), cpx(maxloc(cvx)), cpy(maxloc(cvx)),cpz(maxloc(cvx))
+  print*,'after neighbor', maxval(cvx), cpx(maxloc(cvx)), cpy(maxloc(cvx)),cpz(maxloc(cvx))
+
   do subiter = 1, ITERATIONS_PER_STEP
     ! Compute lamnda
     call compute_lambda
-!  print*,'after lambda', maxval(cvx), maxval(cvy), maxval(cvz)
+  print*,'after lambda', maxval(cvx), maxval(cvy), maxval(cvz), minval(cvx), minval(cvy),minval(cvz)
     ! Jiggle the particles
     call particle_jiggle
-!  print*,'after jiggle', maxval(cvx), maxval(cvy), maxval(cvz)
-  end do
   call update_candidate_vel
+  print*,'after jiggle', maxval(cvx), maxval(cvy), maxval(cvz), minval(cvx), minval(cvy),minval(cvz)
+  end do
+
 
   ! Confine vorticity, update vel, and calculate force
   if(USE_VORTICITY_CONFINEMENT) then
-!  print*,'vorticity stuff', maxval(cvx), cpx(maxloc(cvx)), cpy(maxloc(cvx)),cpz(maxloc(cvx))
+  print*,'vorticity stuff', maxval(cvx), cpx(maxloc(cvx)), cpy(maxloc(cvx)),cpz(maxloc(cvx))
     call compute_omega
     call vorticity_force
   end if
-!  print*,'before visc', maxval(cvx), maxval(cvy), maxval(cvz)
+  print*,'before visc', maxval(cvx), maxval(cvy), maxval(cvz)
   ! Update particle positions due to vorticity
   call viscosity_update
-!  print*,'update with visc', maxval(cvx), maxval(cvy), maxval(cvz)
+  print*,'update with visc', maxval(cvx), maxval(cvy), maxval(cvz)
 
   ! Update particle position
   call pos_update
-!  print*,'update pos', maxval(cvx), cpx(maxloc(cvx)), cpy(maxloc(cvx)),cpz(maxloc(cvx))
-
+  print*,'update pos', maxval(cvx), cpx(maxloc(cvx)), cpy(maxloc(cvx)),cpz(maxloc(cvx))
+stop
 end subroutine step
 
 
@@ -458,11 +468,12 @@ end subroutine step
 subroutine force_apply
   use forces
   use constants
+  use state
   implicit none
 
   ! Apply forces
   fx(:) = vox(:)
-  fy(:) = -GRAVITY
+  fy(:) = GRAVITY
   fy(:) = fy(:) + voy(:)
   fz(:) = voz(:)
 
@@ -497,6 +508,8 @@ subroutine posvel_candidate
   cpy(:) = py(:) + cvy(:) * dt
   cpz(:) = pz(:) + cvz(:) * dt
 
+  call spatial_collision
+
   return
 end subroutine posvel_candidate
 
@@ -516,22 +529,21 @@ subroutine neighbor_find
 
   deallocate(nbs)
   y_height = maxval(cpy(:))
-  nbinx = ceiling(BOX_SIZE*2.0_WP/KERNEL_SIZE) - 1
-!  nbiny = ceiling(y_height/KERNEL_SIZE) - 1
-!  nbinz = ceiling(BOX_SIZE*2.0_WP/KERNEL_SIZE) - 1
-nbiny = 1
-nbinz = 1
-!  max_part_guess = 10000*n/(nbinx*nbiny*nbinz)
-  max_part_guess = n
+  nbinx = ceiling(BOX_SIZE/KERNEL_SIZE) - 1
+  nbiny = ceiling(y_height/KERNEL_SIZE) - 1
+  nbinz = ceiling(BOX_SIZE/KERNEL_SIZE) - 1
+
+
+  max_part_guess = 10000*n/(nbinx*nbiny*nbinz)
   allocate(part_count(nbinx,nbiny,nbinz))
   allocate(binpart(max_part_guess,nbinx,nbiny,nbinz)); binpart = 0
 
   part_count = 0
 !  print*, 'num of bins', nbinx, nbiny, nbinz
   do i = 1, n
-    binx = NINT((cpx(i)-(-BOX_SIZE))/(2.0_WP*BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
-    biny = NINT((cpy(i)-0.0_WP)/(y_height+1.0e-15_WP)*(real(nbiny,WP)-1.0_WP)) + 1
-    binz = NINT((cpz(i)-(-BOX_SIZE))/(2.0_WP*BOX_SIZE)*(real(nbinz,WP)-1.0_WP)) + 1
+    binx = NINT((cpx(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
+    biny = NINT((cpy(i))/(y_height+1.0e-15_WP)*(real(nbiny,WP)-1.0_WP)) + 1
+    binz = NINT((cpz(i))/(BOX_SIZE)*(real(nbinz,WP)-1.0_WP)) + 1
     part_count(binx, biny, binz) = part_count(binx, biny, binz) + 1
     binpart(part_count(binx,biny,binz),binx,biny,binz) = i
   end do
@@ -540,9 +552,9 @@ nbinz = 1
   allocate(nbs(n,max_part_guess)); nbs = 0
   nc = 0
   do i = 1, n
-    binx = NINT((cpx(i)-(-BOX_SIZE))/(2.0_WP*BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
-    biny = NINT((cpy(i)-0.0_WP)/(y_height+1.0e-15_WP)*(real(nbiny,WP)-1.0_WP)) + 1
-    binz = NINT((cpz(i)-(-BOX_SIZE))/(2.0_WP*BOX_SIZE)*(real(nbinz,WP)-1.0_WP)) + 1
+    binx = NINT((cpx(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
+    biny = NINT((cpy(i))/(y_height+1.0e-15_WP)*(real(nbiny,WP)-1.0_WP)) + 1
+    binz = NINT((cpz(i))/(BOX_SIZE)*(real(nbinz,WP)-1.0_WP)) + 1
     q = 0
     do stx = -1, 1
       cbinx = binx + stx
@@ -673,6 +685,18 @@ subroutine particle_jiggle
 
 !  print*,"before collision", maxval(cvx), cpx(maxloc(cvx)), cpy(maxloc(cvx)),cpz(maxloc(cvx))
 
+  call spatial_collision
+
+  return
+end subroutine particle_jiggle
+
+subroutine spatial_collision
+  use state
+  use posvel
+  use constants
+  implicit none
+  integer :: i
+
   ! Resolve collisions
   do i = 1, n
 
@@ -682,8 +706,8 @@ subroutine particle_jiggle
     end if
 
     ! Left Wall
-    if(cpx(i) .lt. -BOX_SIZE) then
-      cpx(i) = -BOX_SIZE
+    if(cpx(i) .lt. 0.0_WP) then
+      cpx(i) = 0.0_WP
     end if
 
     ! Right Wall
@@ -692,8 +716,8 @@ subroutine particle_jiggle
     end if
 
     ! Back Wall
-    if(cpz(i) .lt. -BOX_SIZE) then
-      cpz(i) = -BOX_SIZE
+    if(cpz(i) .lt. 0.0_WP) then
+      cpz(i) = 0.0_WP
     end if
 
     ! Front Wall
@@ -704,7 +728,7 @@ subroutine particle_jiggle
   end do
 
   return
-end subroutine particle_jiggle
+end subroutine spatial_collision
 
 subroutine update_candidate_vel
   use posvel
@@ -721,27 +745,27 @@ subroutine update_candidate_vel
   do i = 1, n
 
     ! Floor
-    if(cpy(i) .lt. 0.0_WP) then
+    if(cpy(i) .le. 0.0_WP) then
       cvy(i) = -cvy(i)
     end if
 
     ! Left Wall
-    if(cpx(i) .lt. -BOX_SIZE) then
+    if(cpx(i) .le. 0.0_WP) then
       cvx(i) = -cvx(i)
     end if
 
     ! Right Wall
-    if(cpx(i) .gt. BOX_SIZE) then
+    if(cpx(i) .ge. BOX_SIZE) then
       cvx(i) = -cvx(i)
     end if
 
     ! Back Wall
-    if(cpz(i) .lt. -BOX_SIZE) then
+    if(cpz(i) .le. 0.0_WP) then
       cvz(i) = -cvz(i)
     end if
 
     ! Front Wall
-    if(cpz(i) .gt. BOX_SIZE) then
+    if(cpz(i) .ge. BOX_SIZE) then
       cvz(i) = -cvz(i)
     end if
   end do
@@ -884,6 +908,7 @@ end subroutine viscosity_update
 
 subroutine pos_update
   use posvel
+  use state
   implicit none
 
   ! Velocities
@@ -892,9 +917,9 @@ subroutine pos_update
   vz = cvz
 
   ! Positions
-  px = cpx
-  py = cpy
-  pz = cpz
+  px = px + vx*dt
+  py = py + vy*dt
+  pz = pz + vz*dt
 
   return
 end subroutine pos_update

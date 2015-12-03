@@ -20,7 +20,7 @@ times = list()
 f = 0
 for files in os.listdir("."):
   if files[0:10] == "particles_":
-    times.append(files[10:19])
+    times.append(files[10:15])
     f = f + 1
 
 tmp = np.loadtxt("./particles_"+times[0],skiprows=1)
@@ -41,11 +41,13 @@ fig = plt.figure(figsize=(10,10))
 
 def plot_frame(i, stride=1):
   ax = fig.add_subplot(111, projection='3d')
-  ax.set_zlim(0, 0.1)
+  ax.set_xlim(0.0, 1.0)
+  ax.set_ylim(0.0, 1.0)
+  ax.set_zlim(0.0, 2.0)
   X = locations[:,0,i]
   Y = locations[:,1,i]
   Z = locations[:,2,i]
-  ax.scatter(X, Z, Y)
+  ax.scatter(X, Z, Y, s=20)
   return ax
 
 metadata = dict(title='SPH', artist='Matplotlib')
