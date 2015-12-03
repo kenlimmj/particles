@@ -117,7 +117,8 @@ double viscositykernel(int i, int j) {
     double dy = cvy[i] - cvy[j];
     double dz = cvz[i] - cvz[j];
     double r = sqrt(dx * dx + dy * dy + dz * dz);
-
+  
+    // THIS ISNT RIGHT. THIS IS FROM POLY6
     return (r > KERNEL_SIZE) ? 0 : c * pow(
         KERNEL_SIZE * KERNEL_SIZE - r * r, 3
     ) / pow(KERNEL_SIZE, 9);
@@ -332,7 +333,7 @@ void step() {
             dx = cvx[nb] - cvx[i];
             dy = cvy[nb] - cvy[i];
             dz = cvz[nb] - cvz[i];
-
+            // I THINK THE POLY6KERNEL IS USED IN THE JAVA VERSION?
             double c = viscositykernel(i, nb);
             sx += c * dx;
             sy += c * dy;
