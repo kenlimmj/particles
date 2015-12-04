@@ -28,11 +28,7 @@ module constants
   real(WP), parameter :: PI = 3.14159265_WP
   real(WP), parameter :: BOX_SIZE =1.0_WP
   real(WP), parameter :: PARTICLE_DENSITY = 1000.0_WP
-  real(WP), parameter :: h = 0.05_WP      ! KERNEL_SIZE
-  real(WP), parameter :: h2 = h*h         ! KERNEL_SIZE**2
-  real(WP), parameter :: h3 = h*h2         ! KERNEL_SIZE**2
-  real(WP), parameter :: h5 = h3*h2     ! KERNEL_SIZE**5
-  real(WP), parameter :: h9 = h5*h2*h2     ! KERNEL_SIZE**9
+  real(WP), parameter :: h = 0.05_WP    ! KERNEL_SIZE
   real(WP), parameter :: BULK_MODULUS = 1000.0_WP
   real(WP), parameter :: E = 0.75  ! Resistution Coefficient
 
@@ -93,17 +89,18 @@ module kernels
       use state
       implicit none
       integer, intent(in) :: i,j
-      real(WP) :: dx, dy, dz, r2, c
+      real(WP) :: dx, dy, dz, r2, c, h2
 
       dx = px(i) - px(j)
       dy = py(i) - py(j)
       dz = pz(i) - pz(j)
       r2 = dx*dx + dy*dy + dz*dz
+      h2 = h*h
 
       if(r2 .gt. h2) then
         pressurekernel = 0.0_WP
       else
-        c = 45.0_WP*mass/PI/h5/rho(j)/rho(i)*(1.0_WP-sqrt(r2/h2))
+        c = 45.0_WP*mass/PI/h**5/rho(j)/rho(i)*(1.0_WP-sqrt(r2/h2))
         pressurekernel = c * BULK_MODULUS*0.5_WP &
                         *(rho(i)+rho(j)-2.0_WP*PARTICLE_DENSITY) &
                         *(1.0_WP - sqrt(r2/h2))/sqrt(r2/h2)
@@ -121,17 +118,18 @@ module kernels
       use state
       implicit none
       integer, intent(in) :: i,j
-      real(WP) :: dx, dy, dz, r2, c
+      real(WP) :: dx, dy, dz, r2, c, h2
 
       dx = px(i) - px(j)
       dy = py(i) - py(j)
       dz = pz(i) - pz(j)
       r2 = dx*dx + dy*dy + dz*dz
+      h2 = h*h
 
       if(r2 .gt. h2) then
         visckernel = 0.0_WP
       else
-        c = 45.0_WP*mass/PI/h5/rho(j)/rho(i)*(1.0_WP-sqrt(r2/h2))
+        c = 45.0_WP*mass/PI/h**5/rho(j)/rho(i)*(1.0_WP-sqrt(r2/h2))
         visckernel = -c * VISCOSITY
       end if
 
@@ -147,18 +145,19 @@ module kernels
       use state
       implicit none
       integer, intent(in) :: i,j
-      real(WP) :: dx, dy, dz, r2, c
+      real(WP) :: dx, dy, dz, r2, c, h2
 
       dx = px(i) - px(j)
       dy = py(i) - py(j)
       dz = pz(i) - pz(j)
       r2 = dx*dx + dy*dy + dz*dz
+      h2 = h*h
 
       if(r2 .gt. h2) then
         densitykernel = 0.0_WP
       else
-        c = (315.0_WP/64.0_WP/PI)*mass/h9
-        densitykernel = c*(h2-r2)*(h2-r2)*(h2-r2)
+        c = (315.0_WP/64.0_WP/PI)*mass/h**9
+        densitykernel = c*(h2-r2)**3
       end if
 
       return
@@ -178,7 +177,7 @@ subroutine computePressureRadiusFactor
   r = ARTIFICIAL_PRESSURE_RADIUS
   c = 315.0_WP / (64.0_WP * PI)
 
-  PRESSURE_RADIUS_FACTOR = h9 / &
+  PRESSURE_RADIUS_FACTOR = h**9 / &
     (c * (h*h - r*r)**3)
 
   return
@@ -483,24 +482,17 @@ subroutine compute_density
   use posvel
   implicit none
   integer :: i, j, l, nb
-  real(WP) :: rhosum, c, r2
-  real(WP) :: dx, dy, dz, kpd
+  real(WP) :: rhosum
 
-  rho = (315.0_WP/64.0_WP/PI)*mass/h3
-  c = 315.0_WP/64.0_WP/PI*mass/h9
+  rho = 0.0_WP
   do i = 1, n
+    rho(i) = (315.0_WP/64.0_WP/PI)*mass/h**3
     rhosum = 0.0_WP
 
     l = nc(i)
     do j = 1, l
       nb = nbs(i,j)
-
-      dx = px(i) - px(nb)
-      dy = py(i) - py(nb)
-      dz = pz(i) - pz(nb)
-      r2 = dx*dx + dy*dy + dz*dz
-      kpd = h2 - r2
-      rhosum = rhosum + c * kpd * kpd * kpd
+      rhosum = rhosum + densitykernel(i,nb)
 
     end do
 
@@ -522,10 +514,6 @@ subroutine compute_pressure
   real(WP) :: sx, sy, sz
   real(WP) :: dx, dy, dz
   real(WP) :: k, scorr
-  real(WP) :: c, r2, m, q
-
-
-  c = 45.0_WP*mass/PI/h5*BULK_MODULUS*0.5_WP
 
   do i = 1, n
     sx = 0.0_WP
@@ -547,25 +535,17 @@ subroutine compute_pressure
       dx = px(i) - px(nb)
       dy = py(i) - py(nb)
       dz = pz(i) - pz(nb)
-      r2 = dx*dx + dy*dy + dz*dz
-      m = sqrt(r2/h2)
-      q = 1.0_WP - m
 
-
-      k = c / rho(nb) * q &
-          * (rho(i)+rho(nb)-2.0_WP*PARTICLE_DENSITY) &
-          * q / m
-
-
+      k = pressurekernel(i,nb)
       sx = sx + k*dx
       sy = sy + k*dy
       sz = sz + k*dz
 
     end do
 
-    fx(i) = sx/rho(i)
-    fy(i) = sy/rho(i)
-    fz(i) = sz/rho(i)
+    fx(i) = sx
+    fy(i) = sy
+    fz(i) = sz
 
   end do
 
