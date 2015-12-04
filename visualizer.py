@@ -23,31 +23,29 @@ for files in os.listdir("."):
     times.append(files[10:15])
     f = f + 1
 
-tmp = np.loadtxt("./particles_"+times[0],skiprows=1)
-n = len(tmp[:,0])
-locations = np.ndarray((n,3,f))
-velocities = np.ndarray((n,3,f))
-for t in range(0,f):
-  data = np.loadtxt("./particles_"+times[t], skiprows=1)
-  locations[:,0,t] = data[:,0]
-  locations[:,1,t] = data[:,1]
-  locations[:,2,t] = data[:,2]
-  velocities[:,0,t] = data[:,3]
-  velocities[:,1,t] = data[:,4]
-  velocities[:,2,t] = data[:,5]
-
+with open("./particles_"+times[0],'r') as p:
+  n = p.readline().strip()
+n = int(n)
+locations = np.ndarray((n,3))
+velocities = np.ndarray((n,3))
 
 fig = plt.figure(figsize=(10,10))
-
-def plot_frame(i, stride=1):
+def plot_frame(i):
   ax = fig.add_subplot(111, projection='3d')
   ax.set_xlim(0.0, 1.0)
   ax.set_ylim(0.0, 1.0)
   ax.set_zlim(0.0, 2.0)
-  X = locations[:,0,i]
-  Y = locations[:,1,i]
-  Z = locations[:,2,i]
-  ax.scatter(X, Z, Y, s=20)
+  data = np.loadtxt("./particles_"+times[i], skiprows=1)
+  locations[:,0] = data[:,0]
+  locations[:,1] = data[:,1]
+  locations[:,2] = data[:,2]
+  #velocities[:,0] = data[:,3]
+  #velocities[:,1] = data[:,4]
+  #velocities[:,2] = data[:,5]
+  X = data[:,0]
+  Y = data[:,1]
+  Z = data[:,2]
+  ax.scatter(X, Z, Y)
   return ax
 
 metadata = dict(title='SPH', artist='Matplotlib')
@@ -60,6 +58,7 @@ writer = Writer(fps=15, metadata=metadata,
 
 with writer.saving(fig, "movie.mp4", f):
   for i in range(f):
+    print "frame ",i," written. ",float(i)/float(f)*100.0,"% done. \n",
     ax = plot_frame(i)
     writer.grab_frame()
     plt.delaxes(ax)

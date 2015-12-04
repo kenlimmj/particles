@@ -9,14 +9,17 @@ import subprocess
 import matplotlib.pyplot as plt
 import math
 
-h = 0.05
+h = 1.0
 pdist = h/1.3
-Lx = 0.5   # Particles along x
-Ly = 0.5  # Particles along y
-Lz = 1  # Particles along z
-nx = int(math.ceil(float(Lx)/pdist))
-ny = int(math.ceil(float(Ly)/pdist))
-nz = int(math.ceil(float(Lz)/pdist))
+Lix = 5
+Liy = 5
+Liz = 5
+Lfx = 7.5
+Lfy = 7.5
+Lfz = 7.5
+nx = int(math.ceil(float(Lfx-Lix)/pdist))
+ny = int(math.ceil(float(Lfy-Liy)/pdist))
+nz = int(math.ceil(float(Lfz-Liz)/pdist))
 
 n = nx*ny*nz   # Total number of particles
 
@@ -39,9 +42,9 @@ vz = np.ndarray((n))
 # Start all particles on left half
 # Evenly distribute in height and depth
 
-px = np.linspace(0.0+pdist,Lx,nx)
-py = np.linspace(0.0+pdist,Ly,ny)
-pz = np.linspace(0.0+pdist,Lz,nz)
+px = np.linspace(Lix,Lfx,nx)
+py = np.linspace(Liy,Lfy,ny)
+pz = np.linspace(Liz,Lfz,nz)
 vx[:] = 0.0
 vy[:] = 0.0
 vz[:] = 0.0

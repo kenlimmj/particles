@@ -24,9 +24,9 @@ end module
 module constants
   use precision
   implicit none
-  real(WP), parameter :: GRAVITY = -9.81_WP
+  real(WP), parameter :: GRAVITY = -9.8_WP
   real(WP), parameter :: PI = 3.14159265_WP
-  real(WP), parameter :: BOX_SIZE = 1.0_WP
+  real(WP), parameter :: BOX_SIZE =1.0_WP
   real(WP), parameter :: PARTICLE_DENSITY = 1000.0_WP
   real(WP), parameter :: h = 0.05_WP    ! KERNEL_SIZE
   real(WP), parameter :: BULK_MODULUS = 1000.0_WP
@@ -97,12 +97,10 @@ module kernels
       r2 = dx*dx + dy*dy + dz*dz
       h2 = h*h
 
-      if(sqrt(r2).lt.1.0e-4_WP) r2 = 1.0e-4_WP**2
-
       if(r2 .gt. h2) then
         pressurekernel = 0.0_WP
       else
-        c = 45.0_WP*mass/PI/h**5/rho(j)*(1.0_WP-sqrt(r2/h2))
+        c = 45.0_WP*mass/PI/h**5/rho(j)/rho(i)*(1.0_WP-sqrt(r2/h2))
         pressurekernel = c * BULK_MODULUS*0.5_WP &
                         *(rho(i)+rho(j)-2.0_WP*PARTICLE_DENSITY) &
                         *(1.0_WP - sqrt(r2/h2))/sqrt(r2/h2)
@@ -131,7 +129,7 @@ module kernels
       if(r2 .gt. h2) then
         visckernel = 0.0_WP
       else
-        c = 45.0_WP*mass/PI/h**5/rho(j)*(1.0_WP-sqrt(r2/h2))
+        c = 45.0_WP*mass/PI/h**5/rho(j)/rho(i)*(1.0_WP-sqrt(r2/h2))
         visckernel = -c * VISCOSITY
       end if
 
@@ -158,7 +156,7 @@ module kernels
       if(r2 .gt. h2) then
         densitykernel = 0.0_WP
       else
-        c = 315.0_WP/(64.0_WP*PI)*mass/h**9
+        c = (315.0_WP/64.0_WP/PI)*mass/h**9
         densitykernel = c*(h2-r2)**3
       end if
 
@@ -194,7 +192,7 @@ program sph_run
   implicit none
 
   time = 0.0_WP
-  dt = 0.0_WP ! NEED SMART WAY TO CALCULATE DT FOR STABILITY?
+  dt = 0.0_WP
 
   call init
 
@@ -210,13 +208,13 @@ program sph_run
     call step
     time = time + dt
 
-    if(mod(iter,20) .eq. 0) then
+    if(mod(iter,100) .eq. 0) then
       print*,"Iteration: ",iter," Time: ",time
       print*,"Max U: ", maxval(vx(:))," Max V: ",maxval(vy(:))," Max W: ",maxval(vz(:))
       print*,"  "
     end if
 
-    if(mod(iter,20) .eq. 0) then
+    if(mod(iter,10) .eq. 0) then
       call particle_write
     end if
 
@@ -259,7 +257,7 @@ subroutine init
 
   ! Find length of initial condition file (number of particles)
   unit = 20
-  open(unit,file=trim(init_file),status="old",action="read")
+  open(unit,file=trim(init_file),action="read")
   read(unit,*) n    ! First line will be number of particles
 
   ! Allocate everything
@@ -391,19 +389,12 @@ subroutine step
   use state
   implicit none
 
-!  print*, "before neighbor", maxval(vx),maxval(vy),maxval(vz), minval(rho), mass
   call neighbor_find
-!  print*, "before dens", maxval(vx),maxval(vy),maxval(vz), minval(rho), mass
   call compute_density
-!  print*, "before pres", maxval(vx),maxval(vy),maxval(vz), minval(rho), mass
   call compute_pressure
-!  print*, "before visc", maxval(vx),maxval(vy),maxval(vz), minval(rho), mass
   call compute_visc
-!  print*, "before force", maxval(vx),maxval(vy),maxval(vz), minval(rho), mass
   call ext_forces
-!  print*, "before pos", maxval(vx),maxval(vy),maxval(vz), minval(rho), mass
   call posvel_update
-
 
 end subroutine step
 
@@ -466,7 +457,7 @@ subroutine neighbor_find
             disty = py(i) - py(p)
             distz = pz(i) - pz(p)
             tdist = sqrt(distx*distx + disty*disty + distz*distz)
-            if(tdist .le. h .and. p.ne.i) then
+            if(tdist .lt. h .and. p.ne.i) then
               q = q + 1
               nbs(i,q) = binpart(j,cbinx,cbiny,cbinz)
             end if
@@ -493,22 +484,20 @@ subroutine compute_density
   integer :: i, j, l, nb
   real(WP) :: rhosum
 
-rho = 315.0_WP/64.0_WP/PI*mass/h**3
-!  rho = 4.0_WP*mass/PI/h**3
-!  rho = 3.0_WP * mass/(4.0_WP * PI * h**3)
-
+  rho = 0.0_WP
   do i = 1, n
+    rho(i) = (315.0_WP/64.0_WP/PI)*mass/h**3
     rhosum = 0.0_WP
 
     l = nc(i)
     do j = 1, l
       nb = nbs(i,j)
       rhosum = rhosum + densitykernel(i,nb)
+
     end do
 
+  rho(i) = rho(i) + rhosum
   end do
-
-  rho = rho + rhosum
 
   return
 end subroutine compute_density
@@ -548,7 +537,6 @@ subroutine compute_pressure
       dz = pz(i) - pz(nb)
 
       k = pressurekernel(i,nb)
-!      print*, i, nb, k, dx, k*dx, dy, k*dy, dz, k*dz
       sx = sx + k*dx
       sy = sy + k*dy
       sz = sz + k*dz
@@ -592,6 +580,7 @@ subroutine compute_visc
       dz = vz(i) - vz(nb)
 
       k = visckernel(i,nb)
+
       sx = sx + k*dx
       sy = sy + k*dy
       sz = sz + k*dz
@@ -614,9 +603,9 @@ subroutine ext_forces
   implicit none
 
   ! Convert to accelerations
-  fx(:) = fx(:)/rho(:)
-  fy(:) = fy(:)/rho(:)
-  fz(:) = fz(:)/rho(:)
+!  fx(:) = fx(:)/rho(:)
+!  fy(:) = fy(:)/rho(:)
+!  fz(:) = fz(:)/rho(:)
 
   ! Only gravity for now
   fy = fy + GRAVITY
@@ -669,10 +658,6 @@ subroutine posvel_update
   end if
 
   call enforce_BCs
-
-  fx = 0.0_WP
-  fy = 0.0_WP
-  fz = 0.0_WP
 
   return
 end subroutine posvel_update
