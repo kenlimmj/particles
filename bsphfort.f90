@@ -15,6 +15,7 @@ module state
   real(WP) :: time, dt, tfin
   integer :: n ! Number of particles
   integer :: iter, itermax, frame
+  real(WP) :: mass
 end module
 
 ! ===================================== !
@@ -35,11 +36,9 @@ module constants
   real(WP), parameter :: ARTIFICIAL_PRESSURE_RADIUS = 0.3_WP * h
   integer , parameter :: ARTIFICIAL_PRESSURE_POWER = 4
 
-  real(WP), parameter :: VISCOSITY = 1.0e-2_WP
+  real(WP), parameter :: VISCOSITY = 1.0e-1_WP
 
   real(WP) :: PRESSURE_RADIUS_FACTOR
-
-  real(WP),dimension(:), allocatable :: lm ! Lambda
 
 end module constants
 
@@ -50,7 +49,6 @@ end module constants
 module posvel
   use precision
   implicit none
-  logical, parameter :: USE_INITIAL_VELOCITY_DAMPING = .false.
   real(WP),dimension(:),allocatable ::  px,  py,  pz  ! Current position
   real(WP),dimension(:),allocatable ::  vx,  vy,  vz  ! Velocity
   real(WP),dimension(:),allocatable ::  vlx,  vly,  vlz  ! Velocity half time step behind
@@ -88,6 +86,7 @@ module kernels
     real(WP) function pressurekernel(i,j)
       use constants
       use posvel
+      use state
       implicit none
       integer, intent(in) :: i,j
       real(WP) :: dx, dy, dz, r2, c, h2
@@ -97,7 +96,7 @@ module kernels
       dz = pz(i) - pz(j)
       r2 = dx*dx + dy*dy + dz*dz
       h2 = h*h
-      c = 45.0_WP*BULK_MODULUS*0.5/PI
+      c = 45.0_WP*BULK_MODULUS*0.5/PI*mass
 
       if(r2 .ge. h2) then
         pressurekernel = 0.0_WP
@@ -118,6 +117,7 @@ module kernels
     real(WP) function visckernel(i,j)
       use constants
       use posvel
+      use state
       implicit none
       integer, intent(in) :: i,j
       real(WP) :: dx, dy, dz, r2, c, h2
@@ -127,7 +127,7 @@ module kernels
       dz = pz(i) - pz(j)
       r2 = dx*dx + dy*dy + dz*dz
       h2 = h*h
-      c = -45.0_WP*VISCOSITY/PI
+      c = -45.0_WP*VISCOSITY/PI*mass
 
       if(r2 .ge. h2) then
         visckernel = 0.0_WP
@@ -144,6 +144,7 @@ module kernels
     real(WP) function densitykernel(i,j)
       use constants
       use posvel
+      use state
       implicit none
       integer, intent(in) :: i,j
       real(WP) :: dx, dy, dz, r2, c, h2
@@ -153,7 +154,7 @@ module kernels
       dz = pz(i) - pz(j)
       r2 = dx*dx + dy*dy + dz*dz
       h2 = h*h
-      c = 315.0_WP/64.0_WP/PI
+      c = 315.0_WP/64.0_WP/PI*mass
 
       if(r2 .ge. h2) then
         densitykernel = 0.0_WP
@@ -262,7 +263,6 @@ subroutine init
   read(unit,*) n    ! First line will be number of particles
 
   ! Allocate everything
-  allocate(lm(n)); lm = 0.0_WP
   allocate(px(n)); px = 0.0_WP
   allocate(py(n)); py = 0.0_WP
   allocate(pz(n)); pz = 0.0_WP
@@ -295,12 +295,38 @@ subroutine init
 
   call computePressureRadiusFactor
 
+  call mass_change
+
   ! Print out initial particle positions
   frame = 0
   call particle_write
 
   return
 end subroutine init
+
+subroutine mass_change
+  use posvel
+  use state
+  use constants
+  implicit none
+  integer :: i
+  real(WP) :: rho0, rho2s, rhos
+
+  mass = 1
+  rho0 = PARTICLE_DENSITY
+  rho2s = 0.0_WP
+  rhos = 0.0_WP
+
+  call compute_density
+
+  do i = 1, n
+    rho2s = rho2s + rho(i)*rho(i)
+    rhos = rhos + rho(i)
+  end do
+  mass = mass*rho0*rhos/rho2s
+
+  return
+end subroutine mass_change
 
 ! ===================================== !
 ! Deallocate all arrays in the modules    !
@@ -390,7 +416,8 @@ subroutine neighbor_find
   y_height = maxval(py(:))
   nbinx = ceiling(BOX_SIZE/h) - 1
   nbiny = ceiling(y_height/h) - 1
-  nbinz = ceiling(BOX_SIZE/h) - 1
+!  nbinz = ceiling(BOX_SIZE/h) - 1
+nbinz = 1
 
 
   max_part_guess = 10000*n/(nbinx*nbiny*nbinz)
@@ -458,7 +485,7 @@ subroutine compute_density
   integer :: i, j, l, nb
   real(WP) :: rhosum
 
-  rho = 315.0_WP/64.0_WP/PI/h**9
+  rho = 315.0_WP/64.0_WP/PI/h**3*mass
 
   do i = 1, n
     rhosum = 0.0_WP
