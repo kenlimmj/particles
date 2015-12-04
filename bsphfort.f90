@@ -96,16 +96,16 @@ module kernels
       dz = pz(i) - pz(j)
       r2 = dx*dx + dy*dy + dz*dz
       h2 = h*h
-      c = 45.0_WP*BULK_MODULUS*0.5/PI*mass
 
-      if(r2 .ge. h2) then
+      if(sqrt(r2).lt.1.0e-4_WP) r2 = 1.0e-4_WP**2
+
+      if(r2 .gt. h2) then
         pressurekernel = 0.0_WP
       else
-        pressurekernel = c / h**5 &
-                        *(1.0_WP - sqrt(r2/h2))**2 &
-                        /sqrt(r2/h2) &
+        c = 45.0_WP*mass/PI/h**5/rho(j)*(1.0_WP-sqrt(r2/h2))
+        pressurekernel = c * BULK_MODULUS*0.5_WP &
                         *(rho(i)+rho(j)-2.0_WP*PARTICLE_DENSITY) &
-                        /(rho(i)*rho(j))
+                        *(1.0_WP - sqrt(r2/h2))/sqrt(r2/h2)
       end if
 
       return
@@ -127,12 +127,12 @@ module kernels
       dz = pz(i) - pz(j)
       r2 = dx*dx + dy*dy + dz*dz
       h2 = h*h
-      c = -45.0_WP*VISCOSITY/PI*mass
 
-      if(r2 .ge. h2) then
+      if(r2 .gt. h2) then
         visckernel = 0.0_WP
       else
-        visckernel = c / h**5*(1.0_WP - sqrt(r2/h2))/(rho(j))
+        c = 45.0_WP*mass/PI/h**5/rho(j)*(1.0_WP-sqrt(r2/h2))
+        visckernel = -c * VISCOSITY
       end if
 
       return
@@ -154,12 +154,12 @@ module kernels
       dz = pz(i) - pz(j)
       r2 = dx*dx + dy*dy + dz*dz
       h2 = h*h
-      c = 315.0_WP/64.0_WP/PI*mass
 
-      if(r2 .ge. h2) then
+      if(r2 .gt. h2) then
         densitykernel = 0.0_WP
       else
-        densitykernel = c/h**9 *(h2-r2)**3
+        c = 315.0_WP/(64.0_WP*PI)*mass/h**9
+        densitykernel = c*(h2-r2)**3
       end if
 
       return
@@ -216,7 +216,7 @@ program sph_run
       print*,"  "
     end if
 
-    if(mod(iter,10) .eq. 0) then
+    if(mod(iter,20) .eq. 0) then
       call particle_write
     end if
 
@@ -313,11 +313,11 @@ subroutine mass_change
   real(WP) :: rho0, rho2s, rhos
 
   mass = 1
+  call neighbor_find
+  call compute_density
   rho0 = PARTICLE_DENSITY
   rho2s = 0.0_WP
   rhos = 0.0_WP
-
-  call compute_density
 
   do i = 1, n
     rho2s = rho2s + rho(i)*rho(i)
@@ -371,6 +371,7 @@ subroutine particle_write
   start = "particles_"
   write(buffer,"(a, i5.5)") trim(start), frame
   filename = trim(adjustl(buffer))
+  fid = 0
   open(fid,file=filename,status="REPLACE",action="WRITE")
   write(fid,*) n
   do i = 1, n
@@ -386,14 +387,23 @@ end subroutine
 ! One step of SPH                       !
 ! ===================================== !
 subroutine step
+  use posvel
+  use state
   implicit none
 
+!  print*, "before neighbor", maxval(vx),maxval(vy),maxval(vz), minval(rho), mass
   call neighbor_find
+!  print*, "before dens", maxval(vx),maxval(vy),maxval(vz), minval(rho), mass
   call compute_density
+!  print*, "before pres", maxval(vx),maxval(vy),maxval(vz), minval(rho), mass
   call compute_pressure
+!  print*, "before visc", maxval(vx),maxval(vy),maxval(vz), minval(rho), mass
   call compute_visc
+!  print*, "before force", maxval(vx),maxval(vy),maxval(vz), minval(rho), mass
   call ext_forces
+!  print*, "before pos", maxval(vx),maxval(vy),maxval(vz), minval(rho), mass
   call posvel_update
+
 
 end subroutine step
 
@@ -413,12 +423,10 @@ subroutine neighbor_find
   real(WP) :: y_height, distx, disty, distz, tdist
 
   deallocate(nbs)
-  y_height = maxval(py(:))
-  nbinx = ceiling(BOX_SIZE/h) - 1
-  nbiny = ceiling(y_height/h) - 1
-!  nbinz = ceiling(BOX_SIZE/h) - 1
-nbinz = 1
 
+  nbinx = floor(BOX_SIZE/h) - 1
+  nbiny = floor(BOX_SIZE/h) - 1
+  nbinz = floor(BOX_SIZE/h) - 1
 
   max_part_guess = 10000*n/(nbinx*nbiny*nbinz)
   allocate(part_count(nbinx,nbiny,nbinz))
@@ -428,7 +436,7 @@ nbinz = 1
 
   do i = 1, n
     binx = NINT((px(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
-    biny = NINT((py(i))/(y_height+1.0e-15_WP)*(real(nbiny,WP)-1.0_WP)) + 1
+    biny = NINT((py(i))/(BOX_SIZE)*(real(nbiny,WP)-1.0_WP)) + 1
     binz = NINT((pz(i))/(BOX_SIZE)*(real(nbinz,WP)-1.0_WP)) + 1
     part_count(binx, biny, binz) = part_count(binx, biny, binz) + 1
     binpart(part_count(binx,biny,binz),binx,biny,binz) = i
@@ -439,7 +447,7 @@ nbinz = 1
   nc = 0
   do i = 1, n
     binx = NINT((px(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
-    biny = NINT((py(i))/(y_height+1.0e-15_WP)*(real(nbiny,WP)-1.0_WP)) + 1
+    biny = NINT((py(i))/(BOX_SIZE)*(real(nbiny,WP)-1.0_WP)) + 1
     binz = NINT((pz(i))/(BOX_SIZE)*(real(nbinz,WP)-1.0_WP)) + 1
     q = 0
     do stx = -1, 1
@@ -485,7 +493,9 @@ subroutine compute_density
   integer :: i, j, l, nb
   real(WP) :: rhosum
 
-  rho = 315.0_WP/64.0_WP/PI/h**3*mass
+rho = 315.0_WP/64.0_WP/PI*mass/h**3
+!  rho = 4.0_WP*mass/PI/h**3
+!  rho = 3.0_WP * mass/(4.0_WP * PI * h**3)
 
   do i = 1, n
     rhosum = 0.0_WP
@@ -494,11 +504,11 @@ subroutine compute_density
     do j = 1, l
       nb = nbs(i,j)
       rhosum = rhosum + densitykernel(i,nb)
-
     end do
-  rho(i) = rho(i) + rhosum
 
   end do
+
+  rho = rho + rhosum
 
   return
 end subroutine compute_density
@@ -538,6 +548,7 @@ subroutine compute_pressure
       dz = pz(i) - pz(nb)
 
       k = pressurekernel(i,nb)
+!      print*, i, nb, k, dx, k*dx, dy, k*dy, dz, k*dz
       sx = sx + k*dx
       sy = sy + k*dy
       sz = sz + k*dz
@@ -599,7 +610,13 @@ end subroutine compute_visc
 subroutine ext_forces
   use forces
   use constants
+  use posvel
   implicit none
+
+  ! Convert to accelerations
+  fx(:) = fx(:)/rho(:)
+  fy(:) = fy(:)/rho(:)
+  fz(:) = fz(:)/rho(:)
 
   ! Only gravity for now
   fy = fy + GRAVITY
@@ -652,6 +669,10 @@ subroutine posvel_update
   end if
 
   call enforce_BCs
+
+  fx = 0.0_WP
+  fy = 0.0_WP
+  fz = 0.0_WP
 
   return
 end subroutine posvel_update
