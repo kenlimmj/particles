@@ -45,7 +45,7 @@ def plot_frame(i):
   X = data[:,0]
   Y = data[:,1]
   Z = data[:,2]
-  ax.scatter(X, Z, Y)
+  ax.scatter(X, Z, Y, s=10*10)
   return ax
 
 metadata = dict(title='SPH', artist='Matplotlib')

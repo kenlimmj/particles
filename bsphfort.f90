@@ -2,6 +2,7 @@
 ! Specifies what double precision is    !
 ! ===================================== !
 module precision
+
   implicit none
   integer, parameter :: WP = kind(1.0d0)
 end module
@@ -69,6 +70,14 @@ module neighbors
   implicit none
   integer,dimension(:),allocatable :: nc
   integer,dimension(:,:),allocatable :: nbs
+  integer,dimension(:,:,:),allocatable :: part_count
+  integer,dimension(:,:,:,:),allocatable :: binpart
+
+  ! Expected max particles in single bin
+  integer, parameter :: nbinx = floor(BOX_SIZE/h) - 1
+  integer, parameter :: nbiny = floor(BOX_SIZE/h) - 1
+  integer, parameter :: nbinz = floor(BOX_SIZE/h) - 1
+  integer :: max_part_guess
 end module neighbors
 
 ! ===================================== !
@@ -215,7 +224,7 @@ program sph_run
       print*,"  "
     end if
 
-    if(mod(iter,10) .eq. 0) then
+    if(mod(iter,100) .eq. 0) then
       call particle_write
     end if
 
@@ -273,10 +282,17 @@ subroutine init
   allocate(vlz(n)); vlz = 0.0_WP
   allocate(rho(n)); rho = 0.0_WP
   allocate(nc(n)); nc = 0
-  allocate(nbs(n,1)); nbs = 0
   allocate(fx(n)); fx = 0.0_WP
   allocate(fy(n)); fy = 0.0_WP
   allocate(fz(n)); fz = 0.0_WP
+
+
+  ! Guess for allocation that at most particles
+  ! will be concentrated 100 times above even
+  max_part_guess = 100*n/(nbinx*nbiny*nbinz)
+  allocate(part_count(nbinx,nbiny,nbinz))
+  allocate(binpart(max_part_guess,nbinx,nbiny,nbinz)); binpart = 0
+  allocate(nbs(n,max_part_guess)); nbs = 0
 
   ! Populate location and velocity from initial condition file
   allocate(data(6))
@@ -354,6 +370,9 @@ subroutine deinit
   deallocate(fy)
   deallocate(fz)
   deallocate(rho)
+  deallocate(part_count)
+  deallocate(binpart)
+  deallocate(nbs)
 
   return
 end subroutine deinit
@@ -389,13 +408,32 @@ subroutine step
   use posvel
   use state
   implicit none
+  real(WP) :: t1, t2, t3, t4, t5, t6, t7
 
+  call cpu_time(t1)
   call neighbor_find
+  call cpu_time(t2)
   call compute_density
+  call cpu_time(t3)
   call compute_pressure
+  call cpu_time(t4)
   call compute_visc
+  call cpu_time(t5)
   call ext_forces
+  call cpu_time(t6)
   call posvel_update
+  call cpu_time(t7)
+
+!  print*, "neighbor time = ", t2-t1
+!  print*, "density time = ", t3-t2
+!  print*, "pressure time = ", t4-t3
+!  print*, "visc time = ", t5-t4
+!  print*, "ext forces time = ", t6-t5
+!  print*, "posvel time = ", t7-t6
+!  print*, "total time = ", t7-t1
+!  print*, " "
+!  print*, " "
+
 
 end subroutine step
 
@@ -406,25 +444,13 @@ subroutine neighbor_find
   use posvel
   implicit none
   integer :: i, j, q, p
-  integer, dimension(:,:,:),allocatable :: part_count
-  integer, dimension(:,:,:,:), allocatable :: binpart
-  integer :: nbinx, nbiny, nbinz, max_part_guess
   integer :: binx, biny, binz
   integer :: cbinx, cbiny, cbinz
   integer :: stx, sty, stz
   real(WP) :: y_height, distx, disty, distz, tdist
 
-  deallocate(nbs)
-
-  nbinx = floor(BOX_SIZE/h) - 1
-  nbiny = floor(BOX_SIZE/h) - 1
-  nbinz = floor(BOX_SIZE/h) - 1
-
-  max_part_guess = 10000*n/(nbinx*nbiny*nbinz)
-  allocate(part_count(nbinx,nbiny,nbinz))
-  allocate(binpart(max_part_guess,nbinx,nbiny,nbinz)); binpart = 0
-
   part_count = 0
+  binpart = 0
 
   do i = 1, n
     binx = NINT((px(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
@@ -434,8 +460,7 @@ subroutine neighbor_find
     binpart(part_count(binx,biny,binz),binx,biny,binz) = i
   end do
 
-  max_part_guess = 27*maxval(part_count(:,:,:))
-  allocate(nbs(n,max_part_guess)); nbs = 0
+  nbs = 0
   nc = 0
   do i = 1, n
     binx = NINT((px(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
@@ -468,9 +493,6 @@ subroutine neighbor_find
     end do
     nc(i) = q
   end do
-
-  deallocate(binpart)
-  deallocate(part_count)
 
   return
 end subroutine neighbor_find
@@ -582,34 +604,41 @@ subroutine compute_visc
   implicit none
   integer :: i, j, l, nb
   real(WP) :: sx, sy, sz
+  real(WP) :: dvx, dvy, dvz
   real(WP) :: dx, dy, dz
-  real(WP) :: k, scorr
+  real(WP) :: k, c, r2
+
+  c = -45.0_WP*mass/PI/h5*VISCOSITY
 
   do i = 1, n
     sx = 0.0_WP
     sy = 0.0_WP
     sz = 0.0_WP
 
-    ! Compute pressure
+    ! Compute viscous
     l = nc(i)
     do j = 1, l
       nb = nbs(i,j)
 
-      dx = vx(i) - vx(nb)
-      dy = vy(i) - vy(nb)
-      dz = vz(i) - vz(nb)
+      dvx = vx(i) - vx(nb)
+      dvy = vy(i) - vy(nb)
+      dvz = vz(i) - vz(nb)
+      dx = px(i) - px(nb)
+      dy = py(i) - py(nb)
+      dz = pz(i) - pz(nb)
+      r2 = dx*dx + dy*dy + dz*dz
 
-      k = visckernel(i,nb)
+      k = c / rho(nb) * (1.0_WP-sqrt(r2/h2))
 
-      sx = sx + k*dx
-      sy = sy + k*dy
-      sz = sz + k*dz
+      sx = sx + k*dvx
+      sy = sy + k*dvy
+      sz = sz + k*dvz
 
     end do
 
-    fx(i) = fx(i) + sx
-    fy(i) = fy(i) + sy
-    fz(i) = fz(i) + sz
+    fx(i) = fx(i) + sx/rho(i)
+    fy(i) = fy(i) + sy/rho(i)
+    fz(i) = fz(i) + sz/rho(i)
 
   end do
 
@@ -621,11 +650,6 @@ subroutine ext_forces
   use constants
   use posvel
   implicit none
-
-  ! Convert to accelerations
-!  fx(:) = fx(:)/rho(:)
-!  fy(:) = fy(:)/rho(:)
-!  fz(:) = fz(:)/rho(:)
 
   ! Only gravity for now
   fy = fy + GRAVITY
@@ -730,7 +754,7 @@ subroutine damp_reflect(i,wall,pos,vel, vel_lag)
   real(WP), intent(inout) :: pos, vel, vel_lag
   real(WP) :: tbounce
 
-  if(vel .eq. 0.0_WP) return
+  if(abs(vel) .le. 1.0e-7_WP) return
 
   ! Scale back distance to get when collision occurred
   tbounce = (pos-wall)/vel
