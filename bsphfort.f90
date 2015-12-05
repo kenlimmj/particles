@@ -15,7 +15,8 @@ module state
   implicit none
   real(WP) :: time, dt, tfin
   integer :: n ! Number of particles
-  integer :: iter, itermax, frame
+  integer :: iter, frame
+  real(WP) :: frame_freq
   real(WP) :: mass
 end module
 
@@ -29,21 +30,14 @@ module constants
   real(WP), parameter :: PI = 3.14159265_WP
   real(WP), parameter :: BOX_SIZE =1.0_WP
   real(WP), parameter :: PARTICLE_DENSITY = 1000.0_WP
-  real(WP), parameter :: h = 0.05_WP      ! KERNEL_SIZE
-  real(WP), parameter :: h2 = h*h         ! KERNEL_SIZE**2
-  real(WP), parameter :: h3 = h*h2         ! KERNEL_SIZE**2
-  real(WP), parameter :: h5 = h3*h2     ! KERNEL_SIZE**5
-  real(WP), parameter :: h9 = h5*h2*h2     ! KERNEL_SIZE**9
+  real(WP) :: h, h2, h3, h5, h9       ! KERNEL_SIZE
   real(WP), parameter :: BULK_MODULUS = 1000.0_WP
   real(WP), parameter :: E = 0.75  ! Resistution Coefficient
+  real(WP), parameter :: VISCOSITY = 1.0e-2_WP
 
-  real(WP), parameter :: ARTIFICIAL_PRESSURE_STRENGTH = 1.0e-5_WP
-  real(WP), parameter :: ARTIFICIAL_PRESSURE_RADIUS = 0.3_WP * h
   integer , parameter :: ARTIFICIAL_PRESSURE_POWER = 4
-
-  real(WP), parameter :: VISCOSITY = 1.0e-1_WP
-
-  real(WP) :: PRESSURE_RADIUS_FACTOR
+  real(WP), parameter :: ARTIFICIAL_PRESSURE_STRENGTH = 1.0e-5_WP
+  real(WP)  :: ARTIFICIAL_PRESSURE_RADIUS, PRESSURE_RADIUS_FACTOR
 
 end module constants
 
@@ -74,9 +68,7 @@ module neighbors
   integer,dimension(:,:,:,:),allocatable :: binpart
 
   ! Expected max particles in single bin
-  integer, parameter :: nbinx = floor(BOX_SIZE/h) - 1
-  integer, parameter :: nbiny = floor(BOX_SIZE/h) - 1
-  integer, parameter :: nbinz = floor(BOX_SIZE/h) - 1
+  integer :: nbinx, nbiny, nbinz
   integer :: max_part_guess
 end module neighbors
 
@@ -90,91 +82,16 @@ module forces
   logical, parameter :: USE_SURFACE_TENSION = .false.
 end module forces
 
-module kernels
+! ===================================== !
+! Timers for diagnostics                !
+! ===================================== !
+module timers
+  use precision
   implicit none
-  contains
-    ! ================================================= !
-    ! Pressure Kernel                                   !
-    ! ================================================= !
-    real(WP) function pressurekernel(i,j)
-      use constants
-      use posvel
-      use state
-      implicit none
-      integer, intent(in) :: i,j
-      real(WP) :: dx, dy, dz, r2, c
 
-      dx = px(i) - px(j)
-      dy = py(i) - py(j)
-      dz = pz(i) - pz(j)
-      r2 = dx*dx + dy*dy + dz*dz
+  real(WP) :: neigh_t, dens_t, pres_t, visc_t, ef_t, ps_t, tot_t
 
-      if(r2 .gt. h2) then
-        pressurekernel = 0.0_WP
-      else
-        c = 45.0_WP*mass/PI/h5/rho(j)/rho(i)*(1.0_WP-sqrt(r2/h2))
-        pressurekernel = c * BULK_MODULUS*0.5_WP &
-                        *(rho(i)+rho(j)-2.0_WP*PARTICLE_DENSITY) &
-                        *(1.0_WP - sqrt(r2/h2))/sqrt(r2/h2)
-      end if
-
-      return
-    end function pressurekernel
-
-    ! ============================================ !
-    ! 6th degree polynomial kernel for viscosity   !
-    ! ============================================ !
-    real(WP) function visckernel(i,j)
-      use constants
-      use posvel
-      use state
-      implicit none
-      integer, intent(in) :: i,j
-      real(WP) :: dx, dy, dz, r2, c
-
-      dx = px(i) - px(j)
-      dy = py(i) - py(j)
-      dz = pz(i) - pz(j)
-      r2 = dx*dx + dy*dy + dz*dz
-
-      if(r2 .gt. h2) then
-        visckernel = 0.0_WP
-      else
-        c = 45.0_WP*mass/PI/h5/rho(j)/rho(i)*(1.0_WP-sqrt(r2/h2))
-        visckernel = -c * VISCOSITY
-      end if
-
-      return
-    end function visckernel
-
-    ! ===================================== !
-    !  Density kernel
-    ! ===================================== !
-    real(WP) function densitykernel(i,j)
-      use constants
-      use posvel
-      use state
-      implicit none
-      integer, intent(in) :: i,j
-      real(WP) :: dx, dy, dz, r2, c
-
-      dx = px(i) - px(j)
-      dy = py(i) - py(j)
-      dz = pz(i) - pz(j)
-      r2 = dx*dx + dy*dy + dz*dz
-
-      if(r2 .gt. h2) then
-        densitykernel = 0.0_WP
-      else
-        c = (315.0_WP/64.0_WP/PI)*mass/h9
-        densitykernel = c*(h2-r2)*(h2-r2)*(h2-r2)
-      end if
-
-      return
-    end function densitykernel
-
-end module kernels
-
+end module timers
 
 ! ===================================== !
 ! Compute the pressure radius factor    !
@@ -184,11 +101,13 @@ subroutine computePressureRadiusFactor
   implicit none
   real(WP) :: r, c
 
+  ARTIFICIAL_PRESSURE_RADIUS = 0.3_WP*h
+
   r = ARTIFICIAL_PRESSURE_RADIUS
   c = 315.0_WP / (64.0_WP * PI)
 
   PRESSURE_RADIUS_FACTOR = h9 / &
-    (c * (h*h - r*r)**3)
+    (c * (h2-r*r)*(h2-r*r)*(h2-r*r))
 
   return
 end subroutine computePressureRadiusFactor
@@ -199,38 +118,60 @@ end subroutine computePressureRadiusFactor
 program sph_run
   use state
   use posvel
+  use timers
   implicit none
+  real(WP) :: init_start, init_stop
+  real(WP) :: write_start, write_stop, write_sum
+  real(WP) :: deinit_start, deinit_stop
+  real(WP) :: total_time
+  real(WP) :: twrite
 
+  call cpu_time(init_start)
   time = 0.0_WP
   dt = 0.0_WP
 
   call init
+  twrite = frame_freq
+  call cpu_time(init_stop)
 
   iter = 0
-
   do while (time .lt. tfin)
     iter = iter + 1
-    if(iter .gt. itermax) then
-      print*, "Exceeded maximum iterations. Exiting..."
-      stop
-    end if
 
+    ! Simulation the fluid flow
     call step
     time = time + dt
 
-    if(mod(iter,100) .eq. 0) then
+    if(time .ge. twrite) then
+      call cpu_time(write_start)
+      twrite = twrite + frame_freq
       print*,"Iteration: ",iter," Time: ",time
       print*,"Max U: ", maxval(vx(:))," Max V: ",maxval(vy(:))," Max W: ",maxval(vz(:))
       print*,"  "
-    end if
-
-    if(mod(iter,100) .eq. 0) then
       call particle_write
+      call cpu_time(write_stop)
+      write_sum = write_sum + (write_stop-write_start)
     end if
 
   end do
 
+  call cpu_time(deinit_start)
   call deinit
+  call cpu_time(deinit_stop)
+
+  write(*,"(A)")                 "Timing Information:                Total Time              Time Per Step"
+  write(*,"(A)")                 "---------------------             ------------            ---------------"
+  write(*,"(A,ES25.11)")         "Initialization:        ",init_stop-init_start
+  write(*,"(A,ES25.11,ES25.11)") "Neighbor Calculation:  ",neigh_t,neigh_t/iter
+  write(*,"(A,ES25.11,ES25.11)") "Density Calculation:   ",dens_t,dens_t/iter
+  write(*,"(A,ES25.11,ES25.11)") "Pressure Calculation:  ",pres_t,pres_t/iter
+  write(*,"(A,ES25.11,ES25.11)") "Viscosity Calculation: ",visc_t,visc_t/iter
+  write(*,"(A,ES25.11,ES25.11)") "Ext. Force Calculation:",ef_t,ef_t/iter
+  write(*,"(A,ES25.11,ES25.11)") "Posvel Calculation:    ",ps_t,ps_t/iter
+  write(*,"(A,ES25.11)")         "Deinitialization Time: ",deinit_stop-deinit_start
+  total_time = init_stop-init_start+neigh_t+dens_t &
+               +pres_t+visc_t+ef_t+ps_t+deinit_stop-deinit_start
+  write(*,"(A,ES25.11,ES25.11)") "Total Time:            ",total_time,total_time/iter
 
 end program sph_run
 
@@ -244,31 +185,28 @@ subroutine init
   use neighbors
   use forces
   implicit none
-  character(30) :: tfin_string, dt_string, itermax_string, init_file
+  character(30) :: init_file
   integer :: i, unit
   real, dimension(:), allocatable :: data
 
-  ! Read in command line arguments for tfin, dt, max_iter, init_file
-  call get_command_argument(4,init_file)
+  ! Read in command line argument init_file
+  call get_command_argument(1,init_file)
   if(len_trim(init_file) .eq. 0) then
     print*, "Incorrect number of command line arguments"
-    print*, "Correct usage is sphfort (tfin) (dt) (max_iter) (init_file)"
+    print*, "Correct usage is ./bsphfort (init_file)"
     print*, "Exiting..."
     stop
   end if
-  call get_command_argument(1,tfin_string)
-  read (tfin_string, *) tfin
-
-  call get_command_argument(2,dt_string)
-  read (dt_string, *) dt
-
-  call get_command_argument(3,itermax_string)
-  read (itermax_string, *) itermax
 
   ! Find length of initial condition file (number of particles)
   unit = 20
   open(unit,file=trim(init_file),action="read")
-  read(unit,*) n    ! First line will be number of particles
+  read(unit,*) n            ! First line will be number of particles
+  read(unit,*) h            ! First line will be number of particles
+  h2=h*h; h3=h2*h; h5=h3*h2; h9=h5*h3*h
+  read(unit,*) tfin         ! Second line is finish time of simulation
+  read(unit,*) dt           ! Third line is time step
+  read(unit,*) frame_freq   ! Fourth line is viz frame frequency
 
   ! Allocate everything
   allocate(px(n)); px = 0.0_WP
@@ -286,10 +224,12 @@ subroutine init
   allocate(fy(n)); fy = 0.0_WP
   allocate(fz(n)); fz = 0.0_WP
 
-
   ! Guess for allocation that at most particles
   ! will be concentrated 100 times above even
-  max_part_guess = 100*n/(nbinx*nbiny*nbinz)
+  nbinx = floor(BOX_SIZE/h) - 1
+  nbiny = floor(BOX_SIZE/h) - 1
+  nbinz = floor(BOX_SIZE/h) - 1
+  max_part_guess = 1000*n/(nbinx*nbiny*nbinz)
   allocate(part_count(nbinx,nbiny,nbinz))
   allocate(binpart(max_part_guess,nbinx,nbiny,nbinz)); binpart = 0
   allocate(nbs(n,max_part_guess)); nbs = 0
@@ -364,15 +304,14 @@ subroutine deinit
   deallocate(vlx)
   deallocate(vly)
   deallocate(vlz)
-  deallocate(nc)
-  deallocate(nbs)
   deallocate(fx)
   deallocate(fy)
   deallocate(fz)
   deallocate(rho)
+  deallocate(nc)
+  deallocate(nbs)
   deallocate(part_count)
   deallocate(binpart)
-  deallocate(nbs)
 
   return
 end subroutine deinit
@@ -407,6 +346,7 @@ end subroutine
 subroutine step
   use posvel
   use state
+  use timers
   implicit none
   real(WP) :: t1, t2, t3, t4, t5, t6, t7
 
@@ -424,16 +364,12 @@ subroutine step
   call posvel_update
   call cpu_time(t7)
 
-!  print*, "neighbor time = ", t2-t1
-!  print*, "density time = ", t3-t2
-!  print*, "pressure time = ", t4-t3
-!  print*, "visc time = ", t5-t4
-!  print*, "ext forces time = ", t6-t5
-!  print*, "posvel time = ", t7-t6
-!  print*, "total time = ", t7-t1
-!  print*, " "
-!  print*, " "
-
+  neigh_t = neigh_t  + t2-t1
+  dens_t  = dens_t   + t3-t2
+  pres_t  = pres_t   + t4-t3
+  visc_t  = visc_t   + t5-t4
+  ef_t    = ef_t     + t6-t5
+  ps_t    = ps_t     + t7-t6
 
 end subroutine step
 
@@ -447,7 +383,7 @@ subroutine neighbor_find
   integer :: binx, biny, binz
   integer :: cbinx, cbiny, cbinz
   integer :: stx, sty, stz
-  real(WP) :: y_height, distx, disty, distz, tdist
+  real(WP) :: distx, disty, distz, tdist
 
   part_count = 0
   binpart = 0
@@ -501,7 +437,6 @@ subroutine compute_density
   use state
   use constants
   use neighbors
-  use kernels
   use posvel
   implicit none
   integer :: i, j, l, nb
@@ -537,34 +472,29 @@ subroutine compute_pressure
   use neighbors
   use posvel
   use forces
-  use kernels
   use state
   implicit none
   integer :: i, j, l, nb
   real(WP) :: sx, sy, sz
   real(WP) :: dx, dy, dz
-  real(WP) :: k, scorr
-  real(WP) :: c, r2, m, q
+  real(WP) :: k, scorr, surfk
+  real(WP) :: c, Csurf, r2, m, q
 
 
   c = 45.0_WP*mass/PI/h5*BULK_MODULUS*0.5_WP
+  Csurf = 315.0_WP/64.0_WP/PI/h9
 
   do i = 1, n
     sx = 0.0_WP
     sy = 0.0_WP
     sz = 0.0_WP
+    scorr = 0.0_WP
+
 
     ! Compute pressure
     l = nc(i)
     do j = 1, l
       nb = nbs(i,j)
-!      scorr = 0.0_WP
-!!      ! Surface Tension
-!!      if(USE_SURFACE_TENSION) then
-!!      scorr = -ARTIFICIAL_PRESSURE_STRENGTH &
-!!              * (poly6kernel(i,nb) * PRESSURE_RADIUS_FACTOR) &
-!!              ** ARTIFICIAL_PRESSURE_POWER
-!!      end if
 
       dx = px(i) - px(nb)
       dy = py(i) - py(nb)
@@ -578,10 +508,18 @@ subroutine compute_pressure
           * (rho(i)+rho(nb)-2.0_WP*PARTICLE_DENSITY) &
           * q / m
 
+      if(USE_SURFACE_TENSION) then
+        ! Surface Tension
+        surfk = Csurf * (h2-r2) * (h2-r2) * (h2-r2)
+        scorr = -ARTIFICIAL_PRESSURE_STRENGTH &
+                * (surfk * PRESSURE_RADIUS_FACTOR) &
+                ** ARTIFICIAL_PRESSURE_POWER
+      end if
 
-      sx = sx + k*dx
-      sy = sy + k*dy
-      sz = sz + k*dz
+
+      sx = sx + (k+scorr)*dx
+      sy = sy + (k+scorr)*dy
+      sz = sz + (k+scorr)*dz
 
     end do
 
@@ -599,7 +537,6 @@ subroutine compute_visc
   use neighbors
   use posvel
   use forces
-  use kernels
   use state
   implicit none
   integer :: i, j, l, nb
