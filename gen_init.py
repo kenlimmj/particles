@@ -9,25 +9,31 @@ import subprocess
 import matplotlib.pyplot as plt
 import math
 
-h = 1.0
+######## INPUT PARAMETERS ###############
+# File name to write
+filename = "init.txt"    # File name to write
+tfin = 3.00              # End time of simulation
+dt = 0.0001              # Time step
+ff = 0.05                # Time between viz frames
+h = 0.05                 # Kernel (particle) size
+Lix = 0.40               # Starting of fluid in x
+Liy = 0.25               # Starting of fluid in y
+Liz = 0.40               # Starting of fluid in z
+Lfx = 0.60               # End of fluid in x
+Lfy = 0.75               # End of fluid in y
+Lfz = 0.60               # End of fluid in z
+Ivx = 0.5                # Initial x velocity
+Ivy = 0.0                # Initial y Velocity
+Ivz = 0.0                # Initial z velocity
+
+
+
+######## NOTHING NEEDS TO BE CHANGED AFTER THIS POINT #######
 pdist = h/1.3
-Lix = 5
-Liy = 5
-Liz = 5
-Lfx = 7.5
-Lfy = 7.5
-Lfz = 7.5
 nx = int(math.ceil(float(Lfx-Lix)/pdist))
 ny = int(math.ceil(float(Lfy-Liy)/pdist))
 nz = int(math.ceil(float(Lfz-Liz)/pdist))
-
 n = nx*ny*nz   # Total number of particles
-
-BS = 0.5   # Box Size
-buffer = 1.0e-5
-
-# File name to write
-filename = "init.txt"
 
 # Initialize
 px = np.ndarray((n))
@@ -45,13 +51,19 @@ vz = np.ndarray((n))
 px = np.linspace(Lix,Lfx,nx)
 py = np.linspace(Liy,Lfy,ny)
 pz = np.linspace(Liz,Lfz,nz)
-vx[:] = 0.0
-vy[:] = 0.0
-vz[:] = 0.0
+vx[:] = Ivx
+vy[:] = Ivy
+vz[:] = Ivz
 
 # Write out to file
 fid = open(filename, 'w')
 fid.write(str(n))
+fid.write("\n")
+fid.write(str(tfin))
+fid.write("\n")
+fid.write(str(dt))
+fid.write("\n")
+fid.write(str(ff))
 fid.write("\n")
 for i in range(0,nx):
   for j in range(0,ny):

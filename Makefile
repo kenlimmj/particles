@@ -7,8 +7,8 @@ OPTFLAGS=-fast -xHost -ansi-alias -restrict -mkl -openmp
 CFLAGS=-std=c99 -g -pedantic -Wall -Werror
 CFLAGS+=#$(OPTFLAGS) $(ANAFLAGS)
 
-FFLAGS= -O3 -ftree-vectorize -ffast-math -funroll-loops -fomit-frame-pointer -pipe -finit-real=zero
-#FFLAGS = -fcheck=all -g -fbacktrace -Wall -pedantic -Wextra -W -Wno-unused-function -fbounds-check -fopenmp -Wunderflow
+#FFLAGS= -O3 -ftree-vectorize -ffast-math -funroll-loops -fomit-frame-pointer -pipe -finit-real=zero -fopenmp
+FFLAGS = -fcheck=all -g -fbacktrace -Wall -pedantic -Wextra -W -Wno-unused-function -fbounds-check -fopenmp -Wunderflow
 .PHONY: all sphc sphfort
 
 all: sphc.o sphfort.o bsphfort.o
