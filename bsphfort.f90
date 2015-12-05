@@ -38,6 +38,8 @@ module constants
   integer , parameter :: ARTIFICIAL_PRESSURE_POWER = 4
   real(WP), parameter :: ARTIFICIAL_PRESSURE_STRENGTH = 1.0e-5_WP
   real(WP)  :: ARTIFICIAL_PRESSURE_RADIUS, PRESSURE_RADIUS_FACTOR
+  logical, parameter :: USE_SURFACE_TENSION = .false.
+
 
 end module constants
 
@@ -79,7 +81,6 @@ module forces
   use precision
   implicit none
   real(WP),dimension(:),allocatable :: fx, fy, fz  ! Total force
-  logical, parameter :: USE_SURFACE_TENSION = .false.
 end module forces
 
 ! ===================================== !
@@ -344,7 +345,7 @@ end subroutine
 ! One step of SPH                       !
 ! ===================================== !
 subroutine step
-  use posvel
+  use constants
   use state
   use timers
   implicit none
@@ -359,6 +360,7 @@ subroutine step
   call cpu_time(t4)
   call compute_visc
   call cpu_time(t5)
+  if(USE_SURFACE_TENSION) call compute_SF
   call ext_forces
   call cpu_time(t6)
   call posvel_update
@@ -383,7 +385,7 @@ subroutine neighbor_find
   integer :: binx, biny, binz
   integer :: cbinx, cbiny, cbinz
   integer :: stx, sty, stz
-  real(WP) :: distx, disty, distz, tdist
+  real(WP) :: distx, disty, distz, tdist2
 
   part_count = 0
   binpart = 0
@@ -412,14 +414,13 @@ subroutine neighbor_find
         do stz = -1, 1
           cbinz = binz + stz
           if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
-          do j = 1, max_part_guess
-            if (binpart(j,cbinx,cbiny,cbinz) .eq. 0) exit
+          do j = 1, part_count(cbinx, cbiny, cbinz)
             p = binpart(j,cbinx,cbiny,cbinz)
             distx = px(i) - px(p)
             disty = py(i) - py(p)
             distz = pz(i) - pz(p)
-            tdist = sqrt(distx*distx + disty*disty + distz*distz)
-            if(tdist .lt. h .and. p.ne.i) then
+            tdist2 = distx*distx + disty*disty + distz*distz
+            if(tdist2 .lt. h2 .and. p.ne.i) then
               q = q + 1
               nbs(i,q) = binpart(j,cbinx,cbiny,cbinz)
             end if
@@ -508,15 +509,6 @@ subroutine compute_pressure
           * (rho(i)+rho(nb)-2.0_WP*PARTICLE_DENSITY) &
           * q / m
 
-      if(USE_SURFACE_TENSION) then
-        ! Surface Tension
-        surfk = Csurf * (h2-r2) * (h2-r2) * (h2-r2)
-        scorr = -ARTIFICIAL_PRESSURE_STRENGTH &
-                * (surfk * PRESSURE_RADIUS_FACTOR) &
-                ** ARTIFICIAL_PRESSURE_POWER
-      end if
-
-
       sx = sx + (k+scorr)*dx
       sy = sy + (k+scorr)*dy
       sz = sz + (k+scorr)*dz
@@ -581,6 +573,16 @@ subroutine compute_visc
 
   return
 end subroutine compute_visc
+
+subroutine compute_SF
+  use posvel
+  use forces
+!http://www.idi.ntnu.no/~elster/master-studs/fossum/fossum-fall2010-proj.pdf
+
+
+
+  return
+end subroutine compute_SF
 
 subroutine ext_forces
   use forces
