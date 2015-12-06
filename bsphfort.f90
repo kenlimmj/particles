@@ -30,7 +30,7 @@ module constants
   real(WP), parameter :: PI = 3.14159265_WP
   real(WP), parameter :: BOX_SIZE =1.0_WP
   real(WP), parameter :: PARTICLE_DENSITY = 1000.0_WP
-  real(WP) :: h, h2, h3, h5, h9       ! KERNEL_SIZE
+  real(WP) :: h, h2, h3, h4, h5, h9       ! KERNEL_SIZE
   real(WP), parameter :: BULK_MODULUS = 1000.0_WP
   real(WP), parameter :: E = 0.75  ! Resistution Coefficient
   real(WP), parameter :: VISCOSITY = 1.0e-2_WP
@@ -39,6 +39,7 @@ module constants
   real(WP), parameter :: ARTIFICIAL_PRESSURE_STRENGTH = 1.0e-5_WP
   real(WP)  :: ARTIFICIAL_PRESSURE_RADIUS, PRESSURE_RADIUS_FACTOR
   logical, parameter :: USE_SURFACE_TENSION = .false.
+  real(WP), parameter :: STC = 0.0078
 
 
 end module constants
@@ -160,6 +161,9 @@ program sph_run
   call deinit
   call cpu_time(deinit_stop)
 
+
+  total_time = init_stop-init_start+neigh_t+dens_t &
+                +pres_t+visc_t+ef_t+ps_t+deinit_stop-deinit_start
   write(*,"(A)")                 "Timing Information:                Total Time              Time Per Step"
   write(*,"(A)")                 "---------------------             ------------            ---------------"
   write(*,"(A,ES25.11)")         "Initialization:        ",init_stop-init_start
@@ -170,8 +174,6 @@ program sph_run
   write(*,"(A,ES25.11,ES25.11)") "Ext. Force Calculation:",ef_t,ef_t/iter
   write(*,"(A,ES25.11,ES25.11)") "Posvel Calculation:    ",ps_t,ps_t/iter
   write(*,"(A,ES25.11)")         "Deinitialization Time: ",deinit_stop-deinit_start
-  total_time = init_stop-init_start+neigh_t+dens_t &
-               +pres_t+visc_t+ef_t+ps_t+deinit_stop-deinit_start
   write(*,"(A,ES25.11,ES25.11)") "Total Time:            ",total_time,total_time/iter
 
 end program sph_run
@@ -204,7 +206,7 @@ subroutine init
   open(unit,file=trim(init_file),action="read")
   read(unit,*) n            ! First line will be number of particles
   read(unit,*) h            ! First line will be number of particles
-  h2=h*h; h3=h2*h; h5=h3*h2; h9=h5*h3*h
+  h2=h*h; h4=h2*h2; h3=h2*h; h5=h3*h2; h9=h5*h3*h
   read(unit,*) tfin         ! Second line is finish time of simulation
   read(unit,*) dt           ! Third line is time step
   read(unit,*) frame_freq   ! Fourth line is viz frame frequency
@@ -230,7 +232,7 @@ subroutine init
   nbinx = floor(BOX_SIZE/h) - 1
   nbiny = floor(BOX_SIZE/h) - 1
   nbinz = floor(BOX_SIZE/h) - 1
-  max_part_guess = 1000*n/(nbinx*nbiny*nbinz)
+  max_part_guess = n
   allocate(part_count(nbinx,nbiny,nbinz))
   allocate(binpart(max_part_guess,nbinx,nbiny,nbinz)); binpart = 0
   allocate(nbs(n,max_part_guess)); nbs = 0
@@ -380,6 +382,7 @@ subroutine neighbor_find
   use state
   use neighbors
   use posvel
+  use omp_lib
   implicit none
   integer :: i, j, q, p
   integer :: binx, biny, binz
@@ -400,6 +403,7 @@ subroutine neighbor_find
 
   nbs = 0
   nc = 0
+
   do i = 1, n
     binx = NINT((px(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
     biny = NINT((py(i))/(BOX_SIZE)*(real(nbiny,WP)-1.0_WP)) + 1
@@ -430,6 +434,7 @@ subroutine neighbor_find
     end do
     nc(i) = q
   end do
+
 
   return
 end subroutine neighbor_find
@@ -483,14 +488,11 @@ subroutine compute_pressure
 
 
   c = 45.0_WP*mass/PI/h5*BULK_MODULUS*0.5_WP
-  Csurf = 315.0_WP/64.0_WP/PI/h9
 
   do i = 1, n
     sx = 0.0_WP
     sy = 0.0_WP
     sz = 0.0_WP
-    scorr = 0.0_WP
-
 
     ! Compute pressure
     l = nc(i)
@@ -509,9 +511,9 @@ subroutine compute_pressure
           * (rho(i)+rho(nb)-2.0_WP*PARTICLE_DENSITY) &
           * q / m
 
-      sx = sx + (k+scorr)*dx
-      sy = sy + (k+scorr)*dy
-      sz = sz + (k+scorr)*dz
+      sx = sx + k*dx
+      sy = sy + k*dy
+      sz = sz + k*dz
 
     end do
 
@@ -577,8 +579,55 @@ end subroutine compute_visc
 subroutine compute_SF
   use posvel
   use forces
+  use constants
+  use state
+  use neighbors
+  implicit none
 !http://www.idi.ntnu.no/~elster/master-studs/fossum/fossum-fall2010-proj.pdf
+  real(WP) :: GW, LW
+  real(WP) :: c, sLW, sxGW, syGW, szGW, GWmag
+  real(WP) :: m, dx, dy, dz, r2
+  integer :: i, l, j, nb
 
+  c = -945.0_WP/32.0_WP/PI/h9
+
+  ! THIS CURRENTLY DOESNT WORK
+  do i = 1, n
+    sxGW = 0.0_WP
+    syGW = 0.0_WP
+    szGW = 0.0_WP
+    sLW = 0.0_WP
+
+    ! Compute Surface Tension Force
+    l = nc(i)
+    do j = 1, l
+      nb = nbs(i,j)
+
+      dx = px(i) - px(nb)
+      dy = py(i) - py(nb)
+      dz = pz(i) - pz(nb)
+      r2 = dx*dx + dy*dy + dz*dz
+      m = sqrt(r2/h2)
+      GW = c*sqrt(r2)*(h2-r2)*(h2-r2)
+      LW = c*(h4-6.0_WP*h2*r2+5.0_WP*r2*r2)
+
+
+      sLW = sLW + LW
+
+      sxGW = sxGW + GW*dx
+      syGW = syGW + GW*dy
+      szGW = szGW + GW*dz
+
+    end do
+
+    gwmag = sxGW*sxGW + syGW*syGW + szGW+szGW
+    gwmag = sqrt(gwmag)
+
+    fx(i) = fx(i) - STC*mass/rho(i)*LW*sxGW/gwmag
+    fy(i) = fy(i) - STC*mass/rho(i)*LW*syGW/gwmag
+    fz(i) = fz(i) - STC*mass/rho(i)*LW*szGW/gwmag
+
+  end do
 
 
   return
