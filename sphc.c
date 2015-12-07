@@ -161,6 +161,54 @@ void step() {
     }
 
     // Find neighbors
+    // Place into grid
+    memset(gridc, 0, n * sizeof(int));
+    for (int i = 0; i < n; ++i) {
+        int gx = (px[i] / KERNEL_SIZE);
+        int gy = (py[i] / KERNEL_SIZE);
+        int gz = (pz[i] / KERNEL_SIZE);
+        if (gx < 0) gx = 0; else if (gx >= gridsize) gx = gridsize - 1;
+        if (gy < 0) gy = 0; else if (gy >= gridsize) gy = gridsize - 1;
+        if (gz < 0) gz = 0; else if (gz >= gridsize) gz = gridsize - 1;
+
+        int offset = gx * gridsize * gridsize + gy * gridsize + gz;
+        grid[offset][gridc[offset]] = i;
+        gridc[offset]++;
+    }
+
+    // Find neighbors using the grid
+    memset(nc, 0, n * sizeof(int));
+    for (int i = 0; i < n; ++i) {
+        int gx = (px[i] / KERNEL_SIZE);
+        int gy = (py[i] / KERNEL_SIZE);
+        int gz = (pz[i] / KERNEL_SIZE);
+
+        // Look at surrounding grid spaces
+        for (int gox = gx - 1; gox <= gx + 1; ++gox) {
+        for (int goy = gy - 1; goy <= gy + 1; ++goy) {
+        for (int goz = gz - 1; goz <= gz + 1; ++goz) {
+            if (gox < 0 || gox >= gridsize) continue;
+            if (goy < 0 || goy >= gridsize) continue;
+            if (goz < 0 || goz >= gridsize) continue;
+            int offset = gox * gridsize * gridsize + goy * gridsize + goz;
+            // Iterate through grid space
+            for (int j = 0, l = gridc[offset]; j < l; ++j) {
+                // Check distance
+                int nb = grid[offset][j];
+                double dx = cpx[i] - cpx[nb];
+                double dy = cpy[i] - cpy[nb];
+                double dz = cpz[i] - cpz[nb];
+                double mag = sqrt(dx * dx + dy * dy + dz * dz);
+                if (nb != i && mag <= KERNEL_SIZE) {
+                    // Add as neighbor
+                    nbs[i][nc[i]] = nb;
+                    nc[i]++;
+                }
+            }
+        }
+        }
+        }
+    }
 
     for (int iteration = 0; iteration < ITERATIONS_PER_STEP; iteration++) {
         // Compute lambda
@@ -360,7 +408,7 @@ void step() {
 
 void write_step(int step) {
     char fname[200];
-    sprintf(fname, "particles_%d", step);
+    sprintf(fname, "output/particles_%05d", step);
     FILE * fout = fopen(fname, "w");
     fprintf(fout, "%d\n", n);
     for (int i = 0; i < n; ++i) {
