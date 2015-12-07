@@ -1,9 +1,11 @@
+#include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include "constants.h"
 
 // Current time
+int steps;
 double time;
 double dt;
 
@@ -32,6 +34,9 @@ double * fy;
 double * fz;
 
 // Neighbors
+int gridsize;
+int * gridc;
+int ** grid;
 int * nc;
 int ** nbs;
 
@@ -84,10 +89,9 @@ double poly6kernel(int i, int j) {
 
 // Spiky gradient kernel
 void spikykernel(int i, int j, double gv[]) {
-  
-    // IS THIS THE WRONG C Constant? Should be 3*15 / PI?
+    // IS THIS THE WRONG C Constant? Should be 3*15 / PI? (+corrected)
     // This was for spiky kernel in Java code, but this is actually spikyGrad?
-    const double c = 15.0 / PI;
+    const double c = 3.0 * 15.0 / PI;
     double dx = cpx[i] - cpx[j];
     double dy = cpy[i] - cpy[j];
     double dz = cpz[i] - cpz[j];
@@ -112,6 +116,7 @@ void spikykernel(int i, int j, double gv[]) {
 // Viscosity kernel
 double viscositykernel(int i, int j) {
     // IS THIS THE WRONG C Constant? Should be 15.0 / (2*PI)?
+    // (- java code was sort of messed up, will play around with this later)
     const double c = 315.0 / (64.0 * PI);
     double dx = cvx[i] - cvx[j];
     double dy = cvy[i] - cvy[j];
@@ -155,7 +160,7 @@ void step() {
         cpz[i] = pz[i] + cvz[i] * dt;
     }
 
-    // TODO Find neighbors
+    // Find neighbors
 
     for (int iteration = 0; iteration < ITERATIONS_PER_STEP; iteration++) {
         // Compute lambda
@@ -238,16 +243,16 @@ void step() {
                 cvy[i] = -cvy[i];
             }
 
-            if (cpx[i] < -BOX_SIZE) { // Wall
-                cpx[i] = -BOX_SIZE;
+            if (cpx[i] < 0) { // Wall
+                cpx[i] = 0;
                 cvx[i] = -cvx[i];
             }
             if (cpx[i] > BOX_SIZE) { // Wall
                 cpx[i] = BOX_SIZE;
                 cvx[i] = -cvx[i];
             }
-            if (cpz[i] < -BOX_SIZE) { // Wall
-                cpz[i] = -BOX_SIZE;
+            if (cpz[i] < 0) { // Wall
+                cpz[i] = 0;
                 cvz[i] = -cvz[i];
             }
             if (cpz[i] > BOX_SIZE) { // Wall
@@ -257,27 +262,26 @@ void step() {
         }
     }
 
-    // TODO Vorticity confinement
-    // Is the vorticity confinement the next two i to n loops?
     // Compute angular velocity
     for (int i = 0; i < n; ++i) {
         double sx = 0.0;
         double sy = 0.0;
         double sz = 0.0;
         double gv[3];
-        double vx, vy, vz;
+        double velx, vely, velz;
         for (int j = 0, l = nc[i]; j < l; ++j) {
             int nb = nbs[i][j];
           // I THINK VX, VY, VZ SHOULDNT BE VELOCITY BUT A DIFFERENT VARIABLE FOR VORTICITY
-            vx = cvx[nb] - cvx[i];
-            vy = cvy[nb] - cvy[i];
-            vz = cvz[nb] - cvz[i];
+          // (+corrected)
+            velx = cvx[nb] - cvx[i];
+            vely = cvy[nb] - cvy[i];
+            velz = cvz[nb] - cvz[i];
 
             spikykernel(i, nb, gv);
           // SAME QUESTION HERE FOR VX VY VZ
-            sx += vy * gv[2] - vz * gv[1];
-            sy += vz * gv[0] - vx * gv[2];
-            sz += vx * gv[1] - vy * gv[0];
+            sx += vely * gv[2] - velz * gv[1];
+            sy += velz * gv[0] - velx * gv[2];
+            sz += velx * gv[1] - vely * gv[0];
         }
 
         // Reusing dp array
@@ -292,34 +296,32 @@ void step() {
         double sy = 0.0;
         double sz = 0.0;
         double gv[3];
-        // DONT NEED VX, VY, VZ??
-        double vx, vy, vz;
-        double l;
+        double mag;
         for (int j = 0, l = nc[i]; j < l; ++j) {
             int nb = nbs[i][j];
             spikykernel(i, nb, gv);
-            // USED L TWICE IN FOR LOOP AND IN BELOW
-            l = sqrt(dpx[nb] * dpx[nb] + dpy[nb] * dpy[nb] + dpz[nb] * dpz[nb]);
-            gv[0] *= l / PARTICLE_DENSITY;
-            gv[1] *= l / PARTICLE_DENSITY;
-            gv[2] *= l / PARTICLE_DENSITY;
+            // USED L TWICE IN FOR LOOP AND IN BELOW (+corrected)
+            mag = sqrt(dpx[nb] * dpx[nb] + dpy[nb] * dpy[nb] + dpz[nb] * dpz[nb]);
+            gv[0] *= mag / PARTICLE_DENSITY;
+            gv[1] *= mag / PARTICLE_DENSITY;
+            gv[2] *= mag / PARTICLE_DENSITY;
 
             sx += gv[0];
             sy += gv[1];
             sz += gv[2];
         }
-        l = sqrt(sx * sx + sy * sy + sz * sz);
-        if (l < 1e-5) {
-            l = 1e-5;
+        mag = sqrt(sx * sx + sy * sy + sz * sz);
+        if (mag < 1e-5) {
+            mag = 1e-5;
         }
-        sx /= l;
-        sy /= l;
-        sz /= l;
+        sx /= mag;
+        sy /= mag;
+        sz /= mag;
 
         vox[i] = (sy * dpz[i] - sz * dpy[i]) * VORTICITY_COEFFICIENT;
         voy[i] = (sz * dpx[i] - sx * dpz[i]) * VORTICITY_COEFFICIENT;
-        // I THINK BELOW SHOULD BE SX*DPY - SY*DPX
-        voz[i] = (sx * dpy[i] - sy * dpz[i]) * VORTICITY_COEFFICIENT;
+        // I THINK BELOW SHOULD BE SX*DPY - SY*DPX (+corrected)
+        voz[i] = (sx * dpy[i] - sy * dpx[i]) * VORTICITY_COEFFICIENT;
     }
 
     // Viscosity
@@ -356,19 +358,106 @@ void step() {
     }
 }
 
+void write_step(int step) {
+    char fname[200];
+    sprintf(fname, "particles_%d", step);
+    FILE * fout = fopen(fname, "w");
+    fprintf(fout, "%d\n", n);
+    for (int i = 0; i < n; ++i) {
+        fprintf(fout, "%lf %lf %lf %lf %lf %lf\n",
+            px[i], py[i], pz[i], vx[i], vy[i], vz[i]);
+    }
+    fclose(fout);
+}
+
 void run() {
     time = 0.0;
     dt = 0.0;
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < steps; ++i) {
         step();
         time += dt;
+        write_step(i);
     }
 }
 
-void init() {
+void init(const char * initfile) {
+    FILE * fin = fopen(initfile, "r");
+    // Read number of particles
+    fscanf(fin, "%d", &n);
 
+    // Allocate arrays
+    ox = (double *) malloc(n * sizeof(double));
+    oy = (double *) malloc(n * sizeof(double));
+    oz = (double *) malloc(n * sizeof(double));
+
+    px = (double *) malloc(n * sizeof(double));
+    py = (double *) malloc(n * sizeof(double));
+    pz = (double *) malloc(n * sizeof(double));
+    
+    vx = (double *) malloc(n * sizeof(double));
+    vy = (double *) malloc(n * sizeof(double));
+    vz = (double *) malloc(n * sizeof(double));
+
+    fx = (double *) malloc(n * sizeof(double));
+    fy = (double *) malloc(n * sizeof(double));
+    fz = (double *) malloc(n * sizeof(double));
+
+    gridsize = (int) (BOX_SIZE / KERNEL_SIZE + 0.5);
+    gridc = (int *) malloc(gridsize * gridsize * gridsize * n * sizeof(int));
+    grid = (int **) malloc(gridsize * gridsize * gridsize * sizeof(int *));
+    for (int i = 0; i < gridsize * gridsize * gridsize; ++i) {
+        grid[i] = (int *) malloc(n * sizeof(int));
+    }
+    nc = (int *) malloc(n * sizeof(int));
+    nbs = (int **) malloc(n * sizeof(int *));
+    for (int i = 0; i < n; ++i) {
+        nbs[i] = (int *) malloc(n * sizeof(int));
+    }
+
+    cpx = (double *) malloc(n * sizeof(double));
+    cpy = (double *) malloc(n * sizeof(double));
+    cpz = (double *) malloc(n * sizeof(double));
+
+    cvx = (double *) malloc(n * sizeof(double));
+    cvy = (double *) malloc(n * sizeof(double));
+    cvz = (double *) malloc(n * sizeof(double));
+
+    lm = (double *) malloc(n * sizeof(double));
+
+    dpx = (double *) malloc(n * sizeof(double));
+    dpy = (double *) malloc(n * sizeof(double));
+    dpz = (double *) malloc(n * sizeof(double));
+
+    vox = (double *) malloc(n * sizeof(double));
+    voy = (double *) malloc(n * sizeof(double));
+    voz = (double *) malloc(n * sizeof(double));
+    memset(vox, 0, n * sizeof(double));
+    memset(voy, 0, n * sizeof(double));
+    memset(voz, 0, n * sizeof(double));
+
+    // Read initial positions
+    for (int i = 0; i < n; ++i) {
+        fscanf(fin, "%lf %lf %lf %lf %lf %lf",
+            px + i, py + i, pz + i, vx + i, vy + i, vz + i);
+        ox[i] = px[i];
+        oy[i] = py[i];
+        oz[i] = pz[i];
+    }
+
+    fclose(fin);
 }
 
 int main(int argc, char ** argv) {
+    if (argc < 4) {
+        printf("./sphc <init file> <steps> <dt>\n");
+        return 1;
+    }
+
+    init(argv[1]);
+    steps = atoi(argv[2]);
+    dt = atof(argv[3]);
+    run();
+
 	return 0;
 }
+
