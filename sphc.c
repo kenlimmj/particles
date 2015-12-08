@@ -63,6 +63,31 @@ double * vox;
 double * voy;
 double * voz;
 
+// Write output
+void write_step(int step) {
+    char fname[200];
+    sprintf(fname, "output/particles_%05d", step);
+    FILE * fout = fopen(fname, "w");
+    fprintf(fout, "%d\n", n);
+    for (int i = 0; i < n; ++i) {
+        fprintf(fout, "%lf %lf %lf %lf %lf %lf\n",
+            px[i], py[i], pz[i], vx[i], vy[i], vz[i]);
+    }
+    fclose(fout);
+}
+
+void write_candidates(int step) {
+    char fname[200];
+    sprintf(fname, "output/candidates_%05d", step);
+    FILE * fout = fopen(fname, "w");
+    fprintf(fout, "%d\n", n);
+    for (int i = 0; i < n; ++i) {
+        fprintf(fout, "%lf %lf %lf %lf %lf %lf\n",
+            cpx[i], cpy[i], cpz[i], cvx[i], cvy[i], cvz[i]);
+    }
+    fclose(fout);
+}
+
 // Runtime computed constant
 double PRESSURE_RADIUS_FACTOR = 0.0;
 
@@ -210,7 +235,9 @@ void step() {
         }
     }
 
-    for (int iteration = 0; iteration < ITERATIONS_PER_STEP; iteration++) {
+    write_candidates(0);
+
+    for (int iteration = 0; iteration < ITERATIONS_PER_STEP && iteration < 1; iteration++) {
         // Compute lambda
         for (int i = 0; i < n; ++i) {
             double rho = 0.0;
@@ -310,6 +337,8 @@ void step() {
         }
     }
 
+    write_candidates(1);
+
     // Compute angular velocity
     for (int i = 0; i < n; ++i) {
         double sx = 0.0;
@@ -406,22 +435,10 @@ void step() {
     }
 }
 
-void write_step(int step) {
-    char fname[200];
-    sprintf(fname, "output/particles_%05d", step);
-    FILE * fout = fopen(fname, "w");
-    fprintf(fout, "%d\n", n);
-    for (int i = 0; i < n; ++i) {
-        fprintf(fout, "%lf %lf %lf %lf %lf %lf\n",
-            px[i], py[i], pz[i], vx[i], vy[i], vz[i]);
-    }
-    fclose(fout);
-}
-
 void run() {
     time = 0.0;
-    dt = 0.0;
-    for (int i = 0; i < steps; ++i) {
+    write_step(0);
+    for (int i = 1; i <= steps; ++i) {
         step();
         time += dt;
         write_step(i);
