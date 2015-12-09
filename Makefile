@@ -33,3 +33,6 @@ bsphfort: bsphfort.o
 clean:
 	@-rm *.o
 	@-rm output/particles*
+	@-rm output/candidates*
+	@-rm output/frame*
+	@-rm output/movie*

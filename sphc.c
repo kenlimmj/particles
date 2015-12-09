@@ -235,9 +235,7 @@ void step() {
         }
     }
 
-    write_candidates(0);
-
-    for (int iteration = 0; iteration < ITERATIONS_PER_STEP && iteration < 1; iteration++) {
+    for (int iteration = 0; iteration < ITERATIONS_PER_STEP; iteration++) {
         // Compute lambda
         for (int i = 0; i < n; ++i) {
             double rho = 0.0;
@@ -318,16 +316,16 @@ void step() {
                 cvy[i] = -cvy[i];
             }
 
-            if (cpx[i] < 0) { // Wall
-                cpx[i] = 0;
+            if (cpx[i] < 0.0) { // Wall
+                cpx[i] = 0.0;
                 cvx[i] = -cvx[i];
             }
             if (cpx[i] > BOX_SIZE) { // Wall
                 cpx[i] = BOX_SIZE;
                 cvx[i] = -cvx[i];
             }
-            if (cpz[i] < 0) { // Wall
-                cpz[i] = 0;
+            if (cpz[i] < 0.0) { // Wall
+                cpz[i] = 0.0;
                 cvz[i] = -cvz[i];
             }
             if (cpz[i] > BOX_SIZE) { // Wall
@@ -336,8 +334,6 @@ void step() {
             }
         }
     }
-
-    write_candidates(1);
 
     // Compute angular velocity
     for (int i = 0; i < n; ++i) {
@@ -508,6 +504,9 @@ void init(const char * initfile) {
         oy[i] = py[i];
         oz[i] = pz[i];
     }
+
+    // Compute pressure radius factor
+    computePressureRadiusFactor();
 
     fclose(fin);
 }

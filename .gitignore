@@ -3,7 +3,10 @@
 ## output
 output/particles*
 output/candidates*
+output/frame*
 sphc
+*.o*
+*.mp4
 
 ### LaTeX ###
 *.acn

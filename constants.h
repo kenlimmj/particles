@@ -1,6 +1,6 @@
 #define ITERATIONS_PER_STEP 10
 
-#define GRAVITY -9.807
+#define GRAVITY (-9.807)
 #define PI 3.14159265
 
 #define BOX_SIZE 1.0

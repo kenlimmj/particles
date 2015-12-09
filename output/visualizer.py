@@ -14,51 +14,36 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.animation as manimation
 import sys
-    
-# For each data file in ./Data, output heights using data2height (an NGA binary)
-times = list()
-f = 0
-for files in os.listdir("."):
-  if files[0:10] == "particles_":
-    times.append(files[10:15])
-    f = f + 1
 
-with open("./particles_"+times[0],'r') as p:
-  n = p.readline().strip()
-n = int(n)
-locations = np.ndarray((n,3))
-velocities = np.ndarray((n,3))
+def main(fname):
+    if fname[0:10] != "particles_":
+        return
+    frame = fname[10:15]
+    outname = "frame_" + frame + ".png"
 
-fig = plt.figure(figsize=(10,10))
-def plot_frame(i):
-  ax = fig.add_subplot(111, projection='3d')
-  ax.set_xlim(0.0, 1.0)
-  ax.set_ylim(0.0, 1.0)
-  ax.set_zlim(0.0, 2.0)
-  data = np.loadtxt("./particles_"+times[i], skiprows=1)
-  locations[:,0] = data[:,0]
-  locations[:,1] = data[:,1]
-  locations[:,2] = data[:,2]
-  #velocities[:,0] = data[:,3]
-  #velocities[:,1] = data[:,4]
-  #velocities[:,2] = data[:,5]
-  X = data[:,0]
-  Y = data[:,1]
-  Z = data[:,2]
-  ax.scatter(X, Z, Y, s=10*10)
-  return ax
+    fin = open(fname, "r")
+    n = int(fin.readline().strip())
+    px = np.ndarray(n)
+    py = np.ndarray(n)
+    pz = np.ndarray(n)
+    count = 0
+    for l in fin.readlines():
+        parts = l.strip().split(" ")
+        px[count] = float(parts[0])
+        py[count] = float(parts[1])
+        pz[count] = float(parts[2])
+        count = count + 1
+    fin.close()
 
-metadata = dict(title='SPH', artist='Matplotlib')
+    fig = plt.figure(figsize=(10, 10))
+    ax = fig.add_subplot(111, projection='3d')
+    ax.set_xlim(0.0, 1.0)
+    ax.set_ylim(0.0, 1.0)
+    ax.set_zlim(0.0, 2.0)
+    ax.scatter(px, pz, py, s=10*10, c=[(0, 0, 1, 0.5)] * n)
+    fig.savefig(outname)
 
-Writer = manimation.writers['ffmpeg']
-writer = Writer(fps=15, metadata=metadata,
-                extra_args=["-r", "30",
-                            "-c:v", "libx264",
-                            "-pix_fmt", "yuv420p"])
 
-with writer.saving(fig, "movie.mp4", f):
-  for i in range(f):
-    print "frame ",i," written. ",float(i)/float(f)*100.0,"% done. \n",
-    ax = plot_frame(i)
-    writer.grab_frame()
-    plt.delaxes(ax)
+if len(sys.argv) > 1:
+    main(sys.argv[1])
+
