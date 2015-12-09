@@ -6,8 +6,6 @@
 
 // Current time
 int steps;
-double time;
-double dt;
 
 // Particle properties
 // Number of particles
@@ -155,7 +153,7 @@ double viscositykernel(int i, int j) {
 }
 
 // Advance particles by a single step
-void step() {
+void step(double dt) {
     // Clear forces
     memset(fx, 0, n * sizeof(double));
     memset(fy, 0, n * sizeof(double));
@@ -431,12 +429,15 @@ void step() {
     }
 }
 
-void run() {
-    time = 0.0;
+void run(int steps, double dt) {
+    double time = 0.0;
     write_step(0);
+    double sdt = dt / (double) STEPS_PER_FRAME;
     for (int i = 1; i <= steps; ++i) {
-        step();
-        time += dt;
+        for (int j = 0; j < STEPS_PER_FRAME; ++j) {
+            step(sdt);
+            time += sdt;
+        }
         write_step(i);
     }
 }
@@ -518,9 +519,9 @@ int main(int argc, char ** argv) {
     }
 
     init(argv[1]);
-    steps = atoi(argv[2]);
-    dt = atof(argv[3]);
-    run();
+    double steps = atoi(argv[2]);
+    double dt = atof(argv[3]);
+    run(steps, dt);
 
 	return 0;
 }
