@@ -8,4 +8,3 @@
 module load cs5220
 cd $PBS_O_WORKDIR
 ./sphc dam-break.txt 1000 0.01
-

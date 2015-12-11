@@ -98,9 +98,8 @@ double PRESSURE_RADIUS_FACTOR = 0.0;
 void computePressureRadiusFactor() {
     const double c = 315.0 / (64.0 * PI);
     double r = ARTIFICIAL_PRESSURE_RADIUS;
-    PRESSURE_RADIUS_FACTOR = 1.0 / (c * pow(
-        KERNEL_SIZE * KERNEL_SIZE - r * r, 3
-    ) / pow(KERNEL_SIZE, 9));
+
+    PRESSURE_RADIUS_FACTOR = 1.0 / (c * pow(KERNEL_SIZE * KERNEL_SIZE - r * r, 3) / pow(KERNEL_SIZE, 9));
 }
 
 // 6th degree polynomial kernel
@@ -111,9 +110,7 @@ double poly6kernel(int i, int j) {
     double dz = cpz[i] - cpz[j];
     double r = sqrt(dx * dx + dy * dy + dz * dz);
 
-    return (r > KERNEL_SIZE) ? 0 : c * pow(
-        KERNEL_SIZE * KERNEL_SIZE - r * r, 3
-    ) / pow(KERNEL_SIZE, 9);
+    return (r > KERNEL_SIZE) ? 0 : c * pow(KERNEL_SIZE * KERNEL_SIZE - r * r, 3) / pow(KERNEL_SIZE, 9);
 }
 
 // Spiky gradient kernel
@@ -178,7 +175,9 @@ void step(double dt) {
         cvy[i] = vy[i] + fy[i] * dt;
         cvz[i] = vz[i] + fz[i] * dt;
 
-        // TODO Velocity dampening (if used) goes here
+        if (USE_INITIAL_VELOCITY_DAMPING) {
+          // TODO
+        }
 
         cpx[i] = px[i] + cvx[i] * dt;
         cpy[i] = py[i] + cvy[i] * dt;
@@ -192,6 +191,7 @@ void step(double dt) {
         int gx = (px[i] / KERNEL_SIZE);
         int gy = (py[i] / KERNEL_SIZE);
         int gz = (pz[i] / KERNEL_SIZE);
+
         if (gx < 0) gx = 0; else if (gx >= gridsize) gx = gridsize - 1;
         if (gy < 0) gy = 0; else if (gy >= gridsize) gy = gridsize - 1;
         if (gz < 0) gz = 0; else if (gz >= gridsize) gz = gridsize - 1;
@@ -215,7 +215,9 @@ void step(double dt) {
             if (gox < 0 || gox >= gridsize) continue;
             if (goy < 0 || goy >= gridsize) continue;
             if (goz < 0 || goz >= gridsize) continue;
+
             int offset = gox * gridsize * gridsize + goy * gridsize + goz;
+
             // Iterate through grid space
             for (int j = 0, l = gridc[offset]; j < l; ++j) {
                 // Check distance
@@ -224,6 +226,7 @@ void step(double dt) {
                 double dy = cpy[i] - cpy[nb];
                 double dz = cpz[i] - cpz[nb];
                 double mag = sqrt(dx * dx + dy * dy + dz * dz);
+
                 if (nb != i && mag <= KERNEL_SIZE) {
                     // Add as neighbor
                     nbs[i][nc[i]] = nb;
@@ -262,7 +265,9 @@ void step(double dt) {
 
                 denom += gv[0] * gv[0] + gv[1] * gv[1] + gv[2] * gv[2];
             }
+
             numer = rho / PARTICLE_DENSITY - 1.0;
+
             sx /= PARTICLE_DENSITY;
             sy /= PARTICLE_DENSITY;
             sz /= PARTICLE_DENSITY;
@@ -283,12 +288,10 @@ void step(double dt) {
             for (int j = 0, l = nc[i]; j < l; ++j) {
                 int nb = nbs[i][j];
                 double scorr = 0.0;
-                // Surface tension
-                // TODO Enable / disable surface tension
-                scorr = -ARTIFICIAL_PRESSURE_STRENGTH * pow(
-                    poly6kernel(i, nb) * PRESSURE_RADIUS_FACTOR,
-                    ARTIFICIAL_PRESSURE_POWER
-                );
+
+                if (USE_SURFACE_TENSION) {
+                  scorr = -ARTIFICIAL_PRESSURE_STRENGTH * pow(poly6kernel(i, nb) * PRESSURE_RADIUS_FACTOR, ARTIFICIAL_PRESSURE_POWER);
+                }
 
                 spiky_grad(i, nb, gv);
                 c = lm[i] + lm[nb] + scorr;
@@ -311,6 +314,7 @@ void step(double dt) {
             cvz[i] = (cpz[i] - pz[i]) / dt;
 
             // Resolve collisions
+            // TODO: Replace this with a more robust collision damping function
             if (cpy[i] < 0.0) { // Floor
                 cpy[i] = 0.0;
                 cvy[i] = -cvy[i];
@@ -320,14 +324,17 @@ void step(double dt) {
                 cpx[i] = 0.0;
                 cvx[i] = -cvx[i];
             }
+
             if (cpx[i] > BOX_SIZE) { // Wall
                 cpx[i] = BOX_SIZE;
                 cvx[i] = -cvx[i];
             }
+
             if (cpz[i] < 0.0) { // Wall
                 cpz[i] = 0.0;
                 cvz[i] = -cvz[i];
             }
+
             if (cpz[i] > BOX_SIZE) { // Wall
                 cpz[i] = BOX_SIZE;
                 cvz[i] = -cvz[i];
@@ -344,14 +351,13 @@ void step(double dt) {
         double velx, vely, velz;
         for (int j = 0, l = nc[i]; j < l; ++j) {
             int nb = nbs[i][j];
-          // I THINK VX, VY, VZ SHOULDNT BE VELOCITY BUT A DIFFERENT VARIABLE FOR VORTICITY
-          // (+corrected)
+            
             velx = cvx[nb] - cvx[i];
             vely = cvy[nb] - cvy[i];
             velz = cvz[nb] - cvz[i];
 
             spiky_grad(i, nb, gv);
-          // SAME QUESTION HERE FOR VX VY VZ
+
             sx += vely * gv[2] - velz * gv[1];
             sy += velz * gv[0] - velx * gv[2];
             sz += velx * gv[1] - vely * gv[0];
@@ -370,11 +376,13 @@ void step(double dt) {
         double sz = 0.0;
         double gv[3];
         double mag;
+
         for (int j = 0, l = nc[i]; j < l; ++j) {
             int nb = nbs[i][j];
+
             spiky_grad(i, nb, gv);
-            // USED L TWICE IN FOR LOOP AND IN BELOW (+corrected)
             mag = sqrt(dpx[nb] * dpx[nb] + dpy[nb] * dpy[nb] + dpz[nb] * dpz[nb]);
+
             gv[0] *= mag / PARTICLE_DENSITY;
             gv[1] *= mag / PARTICLE_DENSITY;
             gv[2] *= mag / PARTICLE_DENSITY;
@@ -383,17 +391,17 @@ void step(double dt) {
             sy += gv[1];
             sz += gv[2];
         }
+
         mag = sqrt(sx * sx + sy * sy + sz * sz);
-        if (mag < 1e-5) {
-            mag = 1e-5;
-        }
+
+        if (mag < 1e-5) mag = 1e-5;
+
         sx /= mag;
         sy /= mag;
         sz /= mag;
 
         vox[i] = (sy * dpz[i] - sz * dpy[i]) * VORTICITY_COEFFICIENT;
         voy[i] = (sz * dpx[i] - sx * dpz[i]) * VORTICITY_COEFFICIENT;
-        // I THINK BELOW SHOULD BE SX*DPY - SY*DPX (+corrected)
         voz[i] = (sx * dpy[i] - sy * dpx[i]) * VORTICITY_COEFFICIENT;
     }
 
@@ -403,17 +411,19 @@ void step(double dt) {
         double sy = 0.0;
         double sz = 0.0;
         double dx, dy, dz;
+
         for (int j = 0, l = nc[i]; j < l; ++j) {
             int nb = nbs[i][j];
             dx = cvx[nb] - cvx[i];
             dy = cvy[nb] - cvy[i];
             dz = cvz[nb] - cvz[i];
-            // I THINK THE POLY6KERNEL IS USED IN THE JAVA VERSION?
-            double c = viscositykernel(i, nb);
+
+            double c = poly6kernel(i, nb);
             sx += c * dx;
             sy += c * dy;
             sz += c * dz;
         }
+
         cvx[i] += ARTIFICIAL_VISCOSITY * sx;
         cvy[i] += ARTIFICIAL_VISCOSITY * sy;
         cvz[i] += ARTIFICIAL_VISCOSITY * sz;
@@ -435,11 +445,13 @@ void run(int steps, double dt) {
     double time = 0.0;
     write_step(0);
     double sdt = dt / (double) STEPS_PER_FRAME;
+
     for (int i = 1; i <= steps; ++i) {
         for (int j = 0; j < STEPS_PER_FRAME; ++j) {
             step(sdt);
             time += sdt;
         }
+
         write_step(i);
     }
 }
@@ -469,11 +481,14 @@ void init(const char * initfile) {
     gridsize = (int) (BOX_SIZE / KERNEL_SIZE + 0.5);
     gridc = (int *) malloc(gridsize * gridsize * gridsize * n * sizeof(int));
     grid = (int **) malloc(gridsize * gridsize * gridsize * sizeof(int *));
+
     for (int i = 0; i < gridsize * gridsize * gridsize; ++i) {
         grid[i] = (int *) malloc(n * sizeof(int));
     }
+
     nc = (int *) malloc(n * sizeof(int));
     nbs = (int **) malloc(n * sizeof(int *));
+
     for (int i = 0; i < n; ++i) {
         nbs[i] = (int *) malloc(n * sizeof(int));
     }
@@ -495,14 +510,14 @@ void init(const char * initfile) {
     vox = (double *) malloc(n * sizeof(double));
     voy = (double *) malloc(n * sizeof(double));
     voz = (double *) malloc(n * sizeof(double));
+
     memset(vox, 0, n * sizeof(double));
     memset(voy, 0, n * sizeof(double));
     memset(voz, 0, n * sizeof(double));
 
     // Read initial positions
     for (int i = 0; i < n; ++i) {
-        fscanf(fin, "%lf %lf %lf %lf %lf %lf",
-            px + i, py + i, pz + i, vx + i, vy + i, vz + i);
+        fscanf(fin, "%lf %lf %lf %lf %lf %lf", px + i, py + i, pz + i, vx + i, vy + i, vz + i);
         ox[i] = px[i];
         oy[i] = py[i];
         oz[i] = pz[i];
@@ -525,5 +540,5 @@ int main(int argc, char ** argv) {
     double dt = atof(argv[3]);
     run(steps, dt);
 
-	return 0;
+  	return 0;
 }
