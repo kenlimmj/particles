@@ -1,8 +1,14 @@
-#include <stdio.h>
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 #include "constants.h"
+
+struct stat st = {0};
 
 // Current time
 int steps;
@@ -61,17 +67,19 @@ double * vox;
 double * voy;
 double * voz;
 
+// Runtime computed constant
+double PRESSURE_RADIUS_FACTOR = 0.0;
+
 // Write output
 void write_step(int step) {
     char fname[200];
 
-    sprintf(fname, "output/particles_%05d", step);
+    sprintf(fname, "output/data/particles_%05d", step);
     FILE * fout = fopen(fname, "w");
     fprintf(fout, "%d\n", n);
 
     for (int i = 0; i < n; ++i) {
-        fprintf(fout, "%lf %lf %lf %lf %lf %lf\n",
-            px[i], py[i], pz[i], vx[i], vy[i], vz[i]);
+        fprintf(fout, "%lf %lf %lf %lf %lf %lf\n", px[i], py[i], pz[i], vx[i], vy[i], vz[i]);
     }
 
     fclose(fout);
@@ -80,20 +88,16 @@ void write_step(int step) {
 void write_candidates(int step) {
     char fname[200];
 
-    sprintf(fname, "output/candidates_%05d", step);
+    sprintf(fname, "output/data/candidates_%05d", step);
     FILE * fout = fopen(fname, "w");
     fprintf(fout, "%d\n", n);
 
     for (int i = 0; i < n; ++i) {
-        fprintf(fout, "%lf %lf %lf %lf %lf %lf\n",
-            cpx[i], cpy[i], cpz[i], cvx[i], cvy[i], cvz[i]);
+        fprintf(fout, "%lf %lf %lf %lf %lf %lf\n", cpx[i], cpy[i], cpz[i], cvx[i], cvy[i], cvz[i]);
     }
 
     fclose(fout);
 }
-
-// Runtime computed constant
-double PRESSURE_RADIUS_FACTOR = 0.0;
 
 void computePressureRadiusFactor() {
     const double c = 315.0 / (64.0 * PI);
@@ -121,9 +125,7 @@ void spiky_grad(int i, int j, double gv[]) {
     double dz = cpz[i] - cpz[j];
     double r = sqrt(dx * dx + dy * dy + dz * dz);
 
-    if (r < 1e-4) {
-        r = 1e-4;
-    }
+    if (r < 1e-4) r = 1e-4;
 
     if (r > KERNEL_SIZE) {
         gv[0] = 0.0;
@@ -140,15 +142,13 @@ void spiky_grad(int i, int j, double gv[]) {
 
 // Viscosity kernel
 double viscositykernel(int i, int j) {
-    // IS THIS THE WRONG C Constant? Should be 15.0 / (2*PI)?
-    // (- java code was sort of messed up, will play around with this later)
-    const double c = 315.0 / (64.0 * PI);
+    const double c = 15.0 / (2 * PI);
     double dx = cvx[i] - cvx[j];
     double dy = cvy[i] - cvy[j];
     double dz = cvz[i] - cvz[j];
     double r = sqrt(dx * dx + dy * dy + dz * dz);
 
-    return (r > KERNEL_SIZE) ? 0 : c * pow(KERNEL_SIZE, 3) * (-(r * r * r) / (2 * KERNEL_SIZE * KERNEL_SIZE * KERNEL_SIZ) + (r * r) / (KERNEL_SIZE * KERNEL_SIZE) + KERNEL_SIZE / (2 * r) - 1;
+    return (r > KERNEL_SIZE) ? 0 : c * pow(KERNEL_SIZE, 3) * (-(r * r * r) / (2 * KERNEL_SIZE * KERNEL_SIZE * KERNEL_SIZE) + (r * r) / (KERNEL_SIZE * KERNEL_SIZE) + KERNEL_SIZE / (2 * r) - 1);
 }
 
 // Advance particles by a single step
@@ -175,7 +175,7 @@ void step(double dt) {
         cvy[i] = vy[i] + fy[i] * dt;
         cvz[i] = vz[i] + fz[i] * dt;
 
-        if (USE_INITIAL_VELOCITY_DAMPING) {
+        if (USE_INITIAL_VELOCITY_DAMPING && i > 1) {
           // TODO
         }
 
@@ -351,7 +351,7 @@ void step(double dt) {
         double velx, vely, velz;
         for (int j = 0, l = nc[i]; j < l; ++j) {
             int nb = nbs[i][j];
-            
+
             velx = cvx[nb] - cvx[i];
             vely = cvy[nb] - cvy[i];
             velz = cvz[nb] - cvz[i];
@@ -533,6 +533,11 @@ int main(int argc, char ** argv) {
     if (argc < 4) {
         printf("./sphc <init file> <steps> <dt>\n");
         return 1;
+    }
+
+    // Create the data directory if it does not exist
+    if (stat("output/data", &st) == -1) {
+        mkdir("output/data", 0700);
     }
 
     init(argv[1]);
