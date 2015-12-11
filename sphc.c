@@ -64,25 +64,31 @@ double * voz;
 // Write output
 void write_step(int step) {
     char fname[200];
+
     sprintf(fname, "output/particles_%05d", step);
     FILE * fout = fopen(fname, "w");
     fprintf(fout, "%d\n", n);
+
     for (int i = 0; i < n; ++i) {
         fprintf(fout, "%lf %lf %lf %lf %lf %lf\n",
             px[i], py[i], pz[i], vx[i], vy[i], vz[i]);
     }
+
     fclose(fout);
 }
 
 void write_candidates(int step) {
     char fname[200];
+
     sprintf(fname, "output/candidates_%05d", step);
     FILE * fout = fopen(fname, "w");
     fprintf(fout, "%d\n", n);
+
     for (int i = 0; i < n; ++i) {
         fprintf(fout, "%lf %lf %lf %lf %lf %lf\n",
             cpx[i], cpy[i], cpz[i], cvx[i], cvy[i], cvz[i]);
     }
+
     fclose(fout);
 }
 
@@ -111,14 +117,13 @@ double poly6kernel(int i, int j) {
 }
 
 // Spiky gradient kernel
-void spikykernel(int i, int j, double gv[]) {
-    // IS THIS THE WRONG C Constant? Should be 3*15 / PI? (+corrected)
-    // This was for spiky kernel in Java code, but this is actually spikyGrad?
+void spiky_grad(int i, int j, double gv[]) {
     const double c = 3.0 * 15.0 / PI;
     double dx = cpx[i] - cpx[j];
     double dy = cpy[i] - cpy[j];
     double dz = cpz[i] - cpz[j];
     double r = sqrt(dx * dx + dy * dy + dz * dz);
+
     if (r < 1e-4) {
         r = 1e-4;
     }
@@ -145,11 +150,8 @@ double viscositykernel(int i, int j) {
     double dy = cvy[i] - cvy[j];
     double dz = cvz[i] - cvz[j];
     double r = sqrt(dx * dx + dy * dy + dz * dz);
-  
-    // THIS ISNT RIGHT. THIS IS FROM POLY6
-    return (r > KERNEL_SIZE) ? 0 : c * pow(
-        KERNEL_SIZE * KERNEL_SIZE - r * r, 3
-    ) / pow(KERNEL_SIZE, 9);
+
+    return (r > KERNEL_SIZE) ? 0 : c * pow(KERNEL_SIZE, 3) * (-(r * r * r) / (2 * KERNEL_SIZE * KERNEL_SIZE * KERNEL_SIZ) + (r * r) / (KERNEL_SIZE * KERNEL_SIZE) + KERNEL_SIZE / (2 * r) - 1;
 }
 
 // Advance particles by a single step
@@ -249,7 +251,7 @@ void step(double dt) {
                 int nb = nbs[i][j];
                 rho += PARTICLE_MASS * poly6kernel(i, nb);
 
-                spikykernel(i, nb, gv);
+                spiky_grad(i, nb, gv);
                 sx += gv[0];
                 sy += gv[1];
                 sz += gv[2];
@@ -288,7 +290,7 @@ void step(double dt) {
                     ARTIFICIAL_PRESSURE_POWER
                 );
 
-                spikykernel(i, nb, gv);
+                spiky_grad(i, nb, gv);
                 c = lm[i] + lm[nb] + scorr;
                 sx += gv[0] * c;
                 sy += gv[1] * c;
@@ -348,7 +350,7 @@ void step(double dt) {
             vely = cvy[nb] - cvy[i];
             velz = cvz[nb] - cvz[i];
 
-            spikykernel(i, nb, gv);
+            spiky_grad(i, nb, gv);
           // SAME QUESTION HERE FOR VX VY VZ
             sx += vely * gv[2] - velz * gv[1];
             sy += velz * gv[0] - velx * gv[2];
@@ -370,7 +372,7 @@ void step(double dt) {
         double mag;
         for (int j = 0, l = nc[i]; j < l; ++j) {
             int nb = nbs[i][j];
-            spikykernel(i, nb, gv);
+            spiky_grad(i, nb, gv);
             // USED L TWICE IN FOR LOOP AND IN BELOW (+corrected)
             mag = sqrt(dpx[nb] * dpx[nb] + dpy[nb] * dpy[nb] + dpz[nb] * dpz[nb]);
             gv[0] *= mag / PARTICLE_DENSITY;
@@ -455,7 +457,7 @@ void init(const char * initfile) {
     px = (double *) malloc(n * sizeof(double));
     py = (double *) malloc(n * sizeof(double));
     pz = (double *) malloc(n * sizeof(double));
-    
+
     vx = (double *) malloc(n * sizeof(double));
     vy = (double *) malloc(n * sizeof(double));
     vz = (double *) malloc(n * sizeof(double));
@@ -525,4 +527,3 @@ int main(int argc, char ** argv) {
 
 	return 0;
 }
-
