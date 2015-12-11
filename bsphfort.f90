@@ -91,7 +91,7 @@ module timers
   use precision
   implicit none
 
-  real(WP) :: neigh_t, dens_t, pres_t, visc_t, ef_t, ps_t, tot_t
+  real(WP) :: neigh_t, dens_t, force_t, ef_t, ps_t, tot_t
 
 end module timers
 
@@ -163,14 +163,13 @@ program sph_run
 
 
   total_time = init_stop-init_start+neigh_t+dens_t &
-                +pres_t+visc_t+ef_t+ps_t+deinit_stop-deinit_start
+                +force_t+ef_t+ps_t+deinit_stop-deinit_start
   write(*,"(A)")                 "Timing Information:                Total Time              Time Per Step"
   write(*,"(A)")                 "---------------------             ------------            ---------------"
   write(*,"(A,ES25.11)")         "Initialization:        ",init_stop-init_start
   write(*,"(A,ES25.11,ES25.11)") "Neighbor Calculation:  ",neigh_t,neigh_t/iter
   write(*,"(A,ES25.11,ES25.11)") "Density Calculation:   ",dens_t,dens_t/iter
-  write(*,"(A,ES25.11,ES25.11)") "Pressure Calculation:  ",pres_t,pres_t/iter
-  write(*,"(A,ES25.11,ES25.11)") "Viscosity Calculation: ",visc_t,visc_t/iter
+  write(*,"(A,ES25.11,ES25.11)") "Force Calculation:     ",force_t,force_t/iter
   write(*,"(A,ES25.11,ES25.11)") "Ext. Force Calculation:",ef_t,ef_t/iter
   write(*,"(A,ES25.11,ES25.11)") "Posvel Calculation:    ",ps_t,ps_t/iter
   write(*,"(A,ES25.11)")         "Deinitialization Time: ",deinit_stop-deinit_start
@@ -227,11 +226,13 @@ subroutine init
   allocate(fy(n)); fy = 0.0_WP
   allocate(fz(n)); fz = 0.0_WP
 
-  ! Guess for allocation that at most particles
-  ! will be concentrated 100 times above even
-  nbinx = floor(BOX_SIZE/h) - 1
-  nbiny = floor(BOX_SIZE/h) - 1
-  nbinz = floor(BOX_SIZE/h) - 1
+
+  ! Neighbor finding size creations, each bin is ~2h
+    nbinx = floor(BOX_SIZE/h) - 1
+    nbiny = floor(BOX_SIZE/h) - 1
+    nbinz = floor(BOX_SIZE/h) - 1
+
+ ! Need to find good way to estimate this so array not needlessly large
   max_part_guess = n
   allocate(part_count(nbinx,nbiny,nbinz))
   allocate(binpart(max_part_guess,nbinx,nbiny,nbinz)); binpart = 0
@@ -358,11 +359,8 @@ subroutine step
   call cpu_time(t2)
   call compute_density
   call cpu_time(t3)
-  call compute_pressure
-  call cpu_time(t4)
-  call compute_visc
+  call compute_forces
   call cpu_time(t5)
-  if(USE_SURFACE_TENSION) call compute_SF
   call ext_forces
   call cpu_time(t6)
   call posvel_update
@@ -370,8 +368,7 @@ subroutine step
 
   neigh_t = neigh_t  + t2-t1
   dens_t  = dens_t   + t3-t2
-  pres_t  = pres_t   + t4-t3
-  visc_t  = visc_t   + t5-t4
+  force_t = force_t  + t5-t3
   ef_t    = ef_t     + t6-t5
   ps_t    = ps_t     + t7-t6
 
@@ -384,56 +381,103 @@ subroutine neighbor_find
   use posvel
   use omp_lib
   implicit none
-  integer :: i, j, q, p
+  integer :: i, j, q, p, nb
   integer :: binx, biny, binz
   integer :: cbinx, cbiny, cbinz
-  integer :: stx, sty, stz
+  integer :: stx, sty, stz, housemates
   real(WP) :: distx, disty, distz, tdist2
+  real(WP)  :: t1, t2, t3, t4
 
   part_count = 0
   binpart = 0
 
+!  call cpu_time(t1)
   do i = 1, n
     binx = NINT((px(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
+!    print *, px(i), real(nbinx,WP)-1.0_WP,NINT((px(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
     biny = NINT((py(i))/(BOX_SIZE)*(real(nbiny,WP)-1.0_WP)) + 1
     binz = NINT((pz(i))/(BOX_SIZE)*(real(nbinz,WP)-1.0_WP)) + 1
     part_count(binx, biny, binz) = part_count(binx, biny, binz) + 1
     binpart(part_count(binx,biny,binz),binx,biny,binz) = i
   end do
+!  call cpu_time(t2)
 
   nbs = 0
   nc = 0
 
-  do i = 1, n
-    binx = NINT((px(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
-    biny = NINT((py(i))/(BOX_SIZE)*(real(nbiny,WP)-1.0_WP)) + 1
-    binz = NINT((pz(i))/(BOX_SIZE)*(real(nbinz,WP)-1.0_WP)) + 1
-    q = 0
-    do stx = -1, 1
-      cbinx = binx + stx
-      if(cbinx.lt.1 .or. cbinx.gt.nbinx) cycle
-      do sty = -1, 1
-        cbiny = biny + sty
-        if(cbiny.lt.1 .or. cbiny.gt.nbiny) cycle
-        do stz = -1, 1
-          cbinz = binz + stz
-          if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
-          do j = 1, part_count(cbinx, cbiny, cbinz)
-            p = binpart(j,cbinx,cbiny,cbinz)
-            distx = px(i) - px(p)
-            disty = py(i) - py(p)
-            distz = pz(i) - pz(p)
-            tdist2 = distx*distx + disty*disty + distz*distz
-            if(tdist2 .lt. h2 .and. p.ne.i) then
-              q = q + 1
-              nbs(i,q) = binpart(j,cbinx,cbiny,cbinz)
-            end if
+  do binx = 1, nbinx
+    do biny = 1, nbiny
+      do binz = 1, nbinz
+        do i = 1, part_count(binx,biny,binz)
+          p = binpart(i,binx,biny,binz)
+          binpart(i,binx,biny,binz) = -1
+          do stx = -1, 1
+            cbinx = binx + stx
+            if(cbinx.lt.1 .or. cbinx.gt.nbinx) cycle
+            do sty = -1, 1
+              cbiny = biny + sty
+              if(cbiny.lt.1 .or. cbiny.gt.nbiny) cycle
+              do stz = -1, 1
+                cbinz = binz + stz
+                if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
+                do j = 1, part_count(cbinx,cbiny, cbinz)
+                  nb = binpart(j,cbinx,cbiny,cbinz)
+                  if(nb .eq. -1) cycle
+                  distx = px(p) - px(nb)
+                  disty = py(p) - py(nb)
+                  distz = pz(p) - pz(nb)
+                  tdist2 = distx*distx + disty*disty + distz*distz
+                  if(tdist2 .lt. h2) then
+                    nc(p) = nc(p) + 1
+                    nbs(p,nc(p)) = nb
+                    nc(nb) = nc(nb) + 1
+                    nbs(nb,nc(nb)) = p
+                  end if
+                end do
+              end do
+            end do
           end do
         end do
       end do
     end do
-    nc(i) = q
   end do
+
+
+! OLD WAY
+!  do i = 1, n
+!    binx = NINT((px(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
+!    biny = NINT((py(i))/(BOX_SIZE)*(real(nbiny,WP)-1.0_WP)) + 1
+!    binz = NINT((pz(i))/(BOX_SIZE)*(real(nbinz,WP)-1.0_WP)) + 1
+!    do stx = -1, 1
+!      cbinx = binx + stx
+!      if(cbinx.lt.1 .or. cbinx.gt.nbinx) cycle
+!      do sty = -1, 1
+!        cbiny = biny + sty
+!        if(cbiny.lt.1 .or. cbiny.gt.nbiny) cycle
+!        do stz = -1, 1
+!          cbinz = binz + stz
+!          if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
+!          do j = 1, part_count(cbinx, cbiny, cbinz)
+!            p = binpart(j,cbinx,cbiny,cbinz)
+!            if(p.le.i) cycle
+!            distx = px(i) - px(p)
+!            disty = py(i) - py(p)
+!            distz = pz(i) - pz(p)
+!            tdist2 = distx*distx + disty*disty + distz*distz
+!            if(tdist2 .lt. h2 .and. p.ne.i) then
+!             nc(i) = nc(i) + 1
+!             nbs(i,nc(i)) = p
+!             nc(p) = nc(p) + 1
+!             nbs(p,nc(p)) = i
+!            end if
+!          end do
+!        end do
+!      end do
+!    end do
+!  end do
+
+!  call cpu_time(t3)
+!  print*, "times", t2-t1, t3-t2
 
 
   return
@@ -473,7 +517,7 @@ subroutine compute_density
   return
 end subroutine compute_density
 
-subroutine compute_pressure
+subroutine compute_forces
   use constants
   use neighbors
   use posvel
@@ -483,11 +527,17 @@ subroutine compute_pressure
   integer :: i, j, l, nb
   real(WP) :: sx, sy, sz
   real(WP) :: dx, dy, dz
-  real(WP) :: k, scorr, surfk
-  real(WP) :: c, Csurf, r2, m, q
+  real(WP) :: dvx, dvy, dvz
+  real(WP) :: kpres, kvisc
+  real(WP) :: cpres, cvisc, r2, m, q
 
 
-  c = 45.0_WP*mass/PI/h5*BULK_MODULUS*0.5_WP
+  fx = 0.0_WP
+  fy = 0.0_WP
+  fz = 0.0_WP
+
+  cpres = 45.0_WP*mass/PI/h5*BULK_MODULUS*0.5_WP
+  cvisc = -45.0_WP*mass/PI/h5*VISCOSITY
 
   do i = 1, n
     sx = 0.0_WP
@@ -498,83 +548,43 @@ subroutine compute_pressure
     l = nc(i)
     do j = 1, l
       nb = nbs(i,j)
-
+      if(nb.lt.i) cycle
       dx = px(i) - px(nb)
       dy = py(i) - py(nb)
       dz = pz(i) - pz(nb)
+      dvx = vx(i) - vx(nb)
+      dvy = vy(i) - vy(nb)
+      dvz = vz(i) - vz(nb)
+
       r2 = dx*dx + dy*dy + dz*dz
       m = sqrt(r2/h2)
       q = 1.0_WP - m
 
 
-      k = c / rho(nb) * q &
+      kpres = cpres / rho(nb) * q &
           * (rho(i)+rho(nb)-2.0_WP*PARTICLE_DENSITY) &
           * q / m
 
-      sx = sx + k*dx
-      sy = sy + k*dy
-      sz = sz + k*dz
+      kvisc = cvisc / rho(nb) * q
+
+
+      sx = sx + kpres*dx+kvisc*dvx
+      fx(nb) = fx(nb) - kpres*dx-kvisc*dvx
+      sy = sy + kpres*dy+kvisc*dvy
+      fy(nb) = fy(nb) - kpres*dy-kvisc*dvy
+      sz = sz + kpres*dz+kvisc*dvz
+      fz(nb) = fz(nb) - kpres*dz-kvisc*dvz
 
     end do
+    fx(i) = fx(i)+sx
+    fy(i) = fy(i)+sy
+    fz(i) = fz(i)+sz
 
-    fx(i) = sx/rho(i)
-    fy(i) = sy/rho(i)
-    fz(i) = sz/rho(i)
 
   end do
 
   return
-end subroutine compute_pressure
-
-subroutine compute_visc
-  use constants
-  use neighbors
-  use posvel
-  use forces
-  use state
-  implicit none
-  integer :: i, j, l, nb
-  real(WP) :: sx, sy, sz
-  real(WP) :: dvx, dvy, dvz
-  real(WP) :: dx, dy, dz
-  real(WP) :: k, c, r2
-
-  c = -45.0_WP*mass/PI/h5*VISCOSITY
-
-  do i = 1, n
-    sx = 0.0_WP
-    sy = 0.0_WP
-    sz = 0.0_WP
-
-    ! Compute viscous
-    l = nc(i)
-    do j = 1, l
-      nb = nbs(i,j)
-
-      dvx = vx(i) - vx(nb)
-      dvy = vy(i) - vy(nb)
-      dvz = vz(i) - vz(nb)
-      dx = px(i) - px(nb)
-      dy = py(i) - py(nb)
-      dz = pz(i) - pz(nb)
-      r2 = dx*dx + dy*dy + dz*dz
-
-      k = c / rho(nb) * (1.0_WP-sqrt(r2/h2))
-
-      sx = sx + k*dvx
-      sy = sy + k*dvy
-      sz = sz + k*dvz
-
-    end do
-
-    fx(i) = fx(i) + sx/rho(i)
-    fy(i) = fy(i) + sy/rho(i)
-    fz(i) = fz(i) + sz/rho(i)
-
-  end do
-
-  return
-end subroutine compute_visc
+end subroutine compute_forces
 
 subroutine compute_SF
   use posvel
@@ -638,6 +648,10 @@ subroutine ext_forces
   use constants
   use posvel
   implicit none
+
+  fx = fx/rho
+  fy = fy/rho
+  fz = fz/rho
 
   ! Only gravity for now
   fy = fy + GRAVITY
