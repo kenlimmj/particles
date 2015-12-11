@@ -227,11 +227,13 @@ subroutine init
   allocate(fy(n)); fy = 0.0_WP
   allocate(fz(n)); fz = 0.0_WP
 
-  ! Guess for allocation that at most particles
-  ! will be concentrated 100 times above even
+
+  ! Neighbor finding size creations
   nbinx = floor(BOX_SIZE/h) - 1
   nbiny = floor(BOX_SIZE/h) - 1
   nbinz = floor(BOX_SIZE/h) - 1
+
+ ! Need to find good way to estimate this so array not needlessly large
   max_part_guess = n
   allocate(part_count(nbinx,nbiny,nbinz))
   allocate(binpart(max_part_guess,nbinx,nbiny,nbinz)); binpart = 0
@@ -384,56 +386,103 @@ subroutine neighbor_find
   use posvel
   use omp_lib
   implicit none
-  integer :: i, j, q, p
+  integer :: i, j, q, p, nb
   integer :: binx, biny, binz
   integer :: cbinx, cbiny, cbinz
-  integer :: stx, sty, stz
+  integer :: stx, sty, stz, housemates
   real(WP) :: distx, disty, distz, tdist2
+  real(WP)  :: t1, t2, t3, t4
 
   part_count = 0
   binpart = 0
 
+!  call cpu_time(t1)
   do i = 1, n
     binx = NINT((px(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
+!    print *, px(i), real(nbinx,WP)-1.0_WP,NINT((px(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
     biny = NINT((py(i))/(BOX_SIZE)*(real(nbiny,WP)-1.0_WP)) + 1
     binz = NINT((pz(i))/(BOX_SIZE)*(real(nbinz,WP)-1.0_WP)) + 1
     part_count(binx, biny, binz) = part_count(binx, biny, binz) + 1
     binpart(part_count(binx,biny,binz),binx,biny,binz) = i
   end do
+!  call cpu_time(t2)
 
   nbs = 0
   nc = 0
 
-  do i = 1, n
-    binx = NINT((px(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
-    biny = NINT((py(i))/(BOX_SIZE)*(real(nbiny,WP)-1.0_WP)) + 1
-    binz = NINT((pz(i))/(BOX_SIZE)*(real(nbinz,WP)-1.0_WP)) + 1
-    q = 0
-    do stx = -1, 1
-      cbinx = binx + stx
-      if(cbinx.lt.1 .or. cbinx.gt.nbinx) cycle
-      do sty = -1, 1
-        cbiny = biny + sty
-        if(cbiny.lt.1 .or. cbiny.gt.nbiny) cycle
-        do stz = -1, 1
-          cbinz = binz + stz
-          if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
-          do j = 1, part_count(cbinx, cbiny, cbinz)
-            p = binpart(j,cbinx,cbiny,cbinz)
-            distx = px(i) - px(p)
-            disty = py(i) - py(p)
-            distz = pz(i) - pz(p)
-            tdist2 = distx*distx + disty*disty + distz*distz
-            if(tdist2 .lt. h2 .and. p.ne.i) then
-              q = q + 1
-              nbs(i,q) = binpart(j,cbinx,cbiny,cbinz)
-            end if
+  do binx = 1, nbinx
+    do biny = 1, nbiny
+      do binz = 1, nbinz
+        do i = 1, part_count(binx,biny,binz)
+          p = binpart(i,binx,biny,binz)
+          binpart(i,binx,biny,binz) = -1
+          do stx = -1, 1
+            cbinx = binx + stx
+            if(cbinx.lt.1 .or. cbinx.gt.nbinx) cycle
+            do sty = -1, 1
+              cbiny = biny + sty
+              if(cbiny.lt.1 .or. cbiny.gt.nbiny) cycle
+              do stz = -1, 1
+                cbinz = binz + stz
+                if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
+                do j = 1, part_count(cbinx,cbiny, cbinz)
+                  nb = binpart(j,cbinx,cbiny,cbinz)
+                  if(nb .eq. -1) cycle
+                  distx = px(p) - px(nb)
+                  disty = py(p) - py(nb)
+                  distz = pz(p) - pz(nb)
+                  tdist2 = distx*distx + disty*disty + distz*distz
+                  if(tdist2 .lt. h2) then
+                    nc(p) = nc(p) + 1
+                    nbs(p,nc(p)) = nb
+                    nc(nb) = nc(nb) + 1
+                    nbs(nb,nc(nb)) = p
+                  end if
+                end do
+              end do
+            end do
           end do
         end do
       end do
     end do
-    nc(i) = q
   end do
+
+
+! OLD WAY
+!  do i = 1, n
+!    binx = NINT((px(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
+!    biny = NINT((py(i))/(BOX_SIZE)*(real(nbiny,WP)-1.0_WP)) + 1
+!    binz = NINT((pz(i))/(BOX_SIZE)*(real(nbinz,WP)-1.0_WP)) + 1
+!    do stx = -1, 1
+!      cbinx = binx + stx
+!      if(cbinx.lt.1 .or. cbinx.gt.nbinx) cycle
+!      do sty = -1, 1
+!        cbiny = biny + sty
+!        if(cbiny.lt.1 .or. cbiny.gt.nbiny) cycle
+!        do stz = -1, 1
+!          cbinz = binz + stz
+!          if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
+!          do j = 1, part_count(cbinx, cbiny, cbinz)
+!            p = binpart(j,cbinx,cbiny,cbinz)
+!            if(p.le.i) cycle
+!            distx = px(i) - px(p)
+!            disty = py(i) - py(p)
+!            distz = pz(i) - pz(p)
+!            tdist2 = distx*distx + disty*disty + distz*distz
+!            if(tdist2 .lt. h2 .and. p.ne.i) then
+!             nc(i) = nc(i) + 1
+!             nbs(i,nc(i)) = p
+!             nc(p) = nc(p) + 1
+!             nbs(p,nc(p)) = i
+!            end if
+!          end do
+!        end do
+!      end do
+!    end do
+!  end do
+
+!  call cpu_time(t3)
+!  print*, "times", t2-t1, t3-t2
 
 
   return
