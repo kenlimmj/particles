@@ -91,7 +91,7 @@ module timers
   use precision
   implicit none
 
-  real(WP) :: neigh_t, dens_t, pres_t, visc_t, ef_t, ps_t, tot_t
+  real(WP) :: neigh_t, dens_t, force_t, ef_t, ps_t, tot_t
 
 end module timers
 
@@ -163,14 +163,13 @@ program sph_run
 
 
   total_time = init_stop-init_start+neigh_t+dens_t &
-                +pres_t+visc_t+ef_t+ps_t+deinit_stop-deinit_start
+                +force_t+ef_t+ps_t+deinit_stop-deinit_start
   write(*,"(A)")                 "Timing Information:                Total Time              Time Per Step"
   write(*,"(A)")                 "---------------------             ------------            ---------------"
   write(*,"(A,ES25.11)")         "Initialization:        ",init_stop-init_start
   write(*,"(A,ES25.11,ES25.11)") "Neighbor Calculation:  ",neigh_t,neigh_t/iter
   write(*,"(A,ES25.11,ES25.11)") "Density Calculation:   ",dens_t,dens_t/iter
-  write(*,"(A,ES25.11,ES25.11)") "Pressure Calculation:  ",pres_t,pres_t/iter
-  write(*,"(A,ES25.11,ES25.11)") "Viscosity Calculation: ",visc_t,visc_t/iter
+  write(*,"(A,ES25.11,ES25.11)") "Force Calculation:     ",force_t,force_t/iter
   write(*,"(A,ES25.11,ES25.11)") "Ext. Force Calculation:",ef_t,ef_t/iter
   write(*,"(A,ES25.11,ES25.11)") "Posvel Calculation:    ",ps_t,ps_t/iter
   write(*,"(A,ES25.11)")         "Deinitialization Time: ",deinit_stop-deinit_start
@@ -228,10 +227,10 @@ subroutine init
   allocate(fz(n)); fz = 0.0_WP
 
 
-  ! Neighbor finding size creations
-  nbinx = floor(BOX_SIZE/h) - 1
-  nbiny = floor(BOX_SIZE/h) - 1
-  nbinz = floor(BOX_SIZE/h) - 1
+  ! Neighbor finding size creations, each bin is ~2h
+    nbinx = floor(BOX_SIZE/h) - 1
+    nbiny = floor(BOX_SIZE/h) - 1
+    nbinz = floor(BOX_SIZE/h) - 1
 
  ! Need to find good way to estimate this so array not needlessly large
   max_part_guess = n
@@ -360,11 +359,8 @@ subroutine step
   call cpu_time(t2)
   call compute_density
   call cpu_time(t3)
-  call compute_pressure
-  call cpu_time(t4)
-  call compute_visc
+  call compute_forces
   call cpu_time(t5)
-  if(USE_SURFACE_TENSION) call compute_SF
   call ext_forces
   call cpu_time(t6)
   call posvel_update
@@ -372,8 +368,7 @@ subroutine step
 
   neigh_t = neigh_t  + t2-t1
   dens_t  = dens_t   + t3-t2
-  pres_t  = pres_t   + t4-t3
-  visc_t  = visc_t   + t5-t4
+  force_t = force_t  + t5-t3
   ef_t    = ef_t     + t6-t5
   ps_t    = ps_t     + t7-t6
 
@@ -522,7 +517,7 @@ subroutine compute_density
   return
 end subroutine compute_density
 
-subroutine compute_pressure
+subroutine compute_forces
   use constants
   use neighbors
   use posvel
@@ -532,11 +527,17 @@ subroutine compute_pressure
   integer :: i, j, l, nb
   real(WP) :: sx, sy, sz
   real(WP) :: dx, dy, dz
-  real(WP) :: k, scorr, surfk
-  real(WP) :: c, Csurf, r2, m, q
+  real(WP) :: dvx, dvy, dvz
+  real(WP) :: kpres, kvisc
+  real(WP) :: cpres, cvisc, r2, m, q
 
 
-  c = 45.0_WP*mass/PI/h5*BULK_MODULUS*0.5_WP
+  fx = 0.0_WP
+  fy = 0.0_WP
+  fz = 0.0_WP
+
+  cpres = 45.0_WP*mass/PI/h5*BULK_MODULUS*0.5_WP
+  cvisc = -45.0_WP*mass/PI/h5*VISCOSITY
 
   do i = 1, n
     sx = 0.0_WP
@@ -547,83 +548,43 @@ subroutine compute_pressure
     l = nc(i)
     do j = 1, l
       nb = nbs(i,j)
-
+      if(nb.lt.i) cycle
       dx = px(i) - px(nb)
       dy = py(i) - py(nb)
       dz = pz(i) - pz(nb)
+      dvx = vx(i) - vx(nb)
+      dvy = vy(i) - vy(nb)
+      dvz = vz(i) - vz(nb)
+
       r2 = dx*dx + dy*dy + dz*dz
       m = sqrt(r2/h2)
       q = 1.0_WP - m
 
 
-      k = c / rho(nb) * q &
+      kpres = cpres / rho(nb) * q &
           * (rho(i)+rho(nb)-2.0_WP*PARTICLE_DENSITY) &
           * q / m
 
-      sx = sx + k*dx
-      sy = sy + k*dy
-      sz = sz + k*dz
+      kvisc = cvisc / rho(nb) * q
+
+
+      sx = sx + kpres*dx+kvisc*dvx
+      fx(nb) = fx(nb) - kpres*dx-kvisc*dvx
+      sy = sy + kpres*dy+kvisc*dvy
+      fy(nb) = fy(nb) - kpres*dy-kvisc*dvy
+      sz = sz + kpres*dz+kvisc*dvz
+      fz(nb) = fz(nb) - kpres*dz-kvisc*dvz
 
     end do
+    fx(i) = fx(i)+sx
+    fy(i) = fy(i)+sy
+    fz(i) = fz(i)+sz
 
-    fx(i) = sx/rho(i)
-    fy(i) = sy/rho(i)
-    fz(i) = sz/rho(i)
 
   end do
 
   return
-end subroutine compute_pressure
-
-subroutine compute_visc
-  use constants
-  use neighbors
-  use posvel
-  use forces
-  use state
-  implicit none
-  integer :: i, j, l, nb
-  real(WP) :: sx, sy, sz
-  real(WP) :: dvx, dvy, dvz
-  real(WP) :: dx, dy, dz
-  real(WP) :: k, c, r2
-
-  c = -45.0_WP*mass/PI/h5*VISCOSITY
-
-  do i = 1, n
-    sx = 0.0_WP
-    sy = 0.0_WP
-    sz = 0.0_WP
-
-    ! Compute viscous
-    l = nc(i)
-    do j = 1, l
-      nb = nbs(i,j)
-
-      dvx = vx(i) - vx(nb)
-      dvy = vy(i) - vy(nb)
-      dvz = vz(i) - vz(nb)
-      dx = px(i) - px(nb)
-      dy = py(i) - py(nb)
-      dz = pz(i) - pz(nb)
-      r2 = dx*dx + dy*dy + dz*dz
-
-      k = c / rho(nb) * (1.0_WP-sqrt(r2/h2))
-
-      sx = sx + k*dvx
-      sy = sy + k*dvy
-      sz = sz + k*dvz
-
-    end do
-
-    fx(i) = fx(i) + sx/rho(i)
-    fy(i) = fy(i) + sy/rho(i)
-    fz(i) = fz(i) + sz/rho(i)
-
-  end do
-
-  return
-end subroutine compute_visc
+end subroutine compute_forces
 
 subroutine compute_SF
   use posvel
@@ -687,6 +648,10 @@ subroutine ext_forces
   use constants
   use posvel
   implicit none
+
+  fx = fx/rho
+  fy = fy/rho
+  fz = fz/rho
 
   ! Only gravity for now
   fy = fy + GRAVITY
