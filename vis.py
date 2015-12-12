@@ -18,7 +18,7 @@ from os.path import join
 from subprocess import call
 
 # The number of iteration steps taken
-NUM_ITER_STEPS = 100
+# NUM_ITER_STEPS = 100
 
 # Directory paths
 OUTPUT_DIR = join(getcwd(), 'output')
@@ -59,7 +59,7 @@ def main():
     particleFiles = glob(join(DATA_DIR, DATA_FNAME_GLOB))
 
     # The number of particle data files should be the number of iterations performed
-    assert(len(particleFiles) == NUM_ITER_STEPS + 1)
+    # assert(len(particleFiles) == NUM_ITER_STEPS + 1)
 
     # Generate figures in parallel BECAUSE WE BE PARALLEL PROGRAMMIN' YO'
     Pool().map(procParticleData, particleFiles)

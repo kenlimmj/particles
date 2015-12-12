@@ -72,9 +72,11 @@ void write_step(int step) {
     FILE * fout = fopen(fname, "w");
     fprintf(fout, "%d\n", n);
 
-    for (int i = 0; i < n; ++i) {
-        fprintf(fout, "%lf %lf %lf %lf %lf %lf\n", px[i], py[i], pz[i], vx[i], vy[i], vz[i]);
-    }
+    fprintf(fout, "%lf %lf %lf %lf %lf %lf\n", px[0:n], py[0:n], pz[0:n], vx[0:n], vy[0:n], vz[0:n]);
+
+    // for (int i = 0; i < n; ++i) {
+    //     fprintf(fout, "%lf %lf %lf %lf %lf %lf\n", px[i], py[i], pz[i], vx[i], vy[i], vz[i]);
+    // }
 
     fclose(fout);
 }
@@ -86,9 +88,11 @@ void write_candidates(int step) {
     FILE * fout = fopen(fname, "w");
     fprintf(fout, "%d\n", n);
 
-    for (int i = 0; i < n; ++i) {
-        fprintf(fout, "%lf %lf %lf %lf %lf %lf\n", cpx[i], cpy[i], cpz[i], cvx[i], cvy[i], cvz[i]);
-    }
+    fprintf(fout, "%lf %lf %lf %lf %lf %lf\n", cpx[0:n], cpy[0:n], cpz[0:n], cvx[0:n], cvy[0:n], cvz[0:n]);
+
+    // for (int i = 0; i < n; ++i) {
+    //     fprintf(fout, "%lf %lf %lf %lf %lf %lf\n", cpx[i], cpy[i], cpz[i], cvx[i], cvy[i], cvz[i]);
+    // }
 
     fclose(fout);
 }
@@ -127,6 +131,7 @@ void spikykernel(int i, int j, double gv[]) {
     }
     else {
         double f = c / pow(KERNEL_SIZE, 6) * pow(KERNEL_SIZE - r, 2) / r;
+        
         gv[0] = f * dx;
         gv[1] = f * dy;
         gv[2] = f * dz;
@@ -151,29 +156,24 @@ void step(double dt) {
     memset(fy, 0, n * sizeof(double));
     memset(fz, 0, n * sizeof(double));
 
-    // Apply forces
-    for (int i = 0; i < n; ++i) {
-        // Gravity
-        fy[i] += GRAVITY;
+    // Apply gravity forces
+    fy[0:n] += GRAVITY;
 
-        // Vorticity
-        fx[i] += vox[i];
-        fy[i] += voy[i];
-        fz[i] += voz[i];
-    }
+    // Apply vorticity forces
+    fx[0:n] += vox[0:n];
+    fy[0:n] += voy[0:n];
+    fz[0:n] += voz[0:n];
 
     // Compute candidate velocities and positions
-    for (int i = 0; i < n; ++i) {
-        cvx[i] = vx[i] + fx[i] * dt;
-        cvy[i] = vy[i] + fy[i] * dt;
-        cvz[i] = vz[i] + fz[i] * dt;
+    cvx[0:n] = vx[0:n] + fx[0:n] * dt;
+    cvy[0:n] = vy[0:n] + fy[0:n] * dt;
+    cvz[0:n] = vz[0:n] + fz[0:n] * dt;
 
-        // TODO Velocity dampening (if used) goes here
+    // TODO: Velocity dampening
 
-        cpx[i] = px[i] + cvx[i] * dt;
-        cpy[i] = py[i] + cvy[i] * dt;
-        cpz[i] = pz[i] + cvz[i] * dt;
-    }
+    cpx[0:n] = px[0:n] + cvx[0:n] * dt;
+    cpy[0:n] = py[0:n] + cvy[0:n] * dt;
+    cpz[0:n] = pz[0:n] + cvz[0:n] * dt;
 
     // Find neighbors
     // Place into grid
@@ -283,8 +283,9 @@ void step(double dt) {
                 double scorr = 0.0;
 
                 // Surface tension
-                // TODO Enable / disable surface tension
-                scorr = -ARTIFICIAL_PRESSURE_STRENGTH * pow(poly6kernel(i, nb) * PRESSURE_RADIUS_FACTOR, ARTIFICIAL_PRESSURE_POWER);
+                if (USE_SURFACE_TENSION) {
+                  scorr = -ARTIFICIAL_PRESSURE_STRENGTH * pow(poly6kernel(i, nb) * PRESSURE_RADIUS_FACTOR, ARTIFICIAL_PRESSURE_POWER);
+                }
 
                 spikykernel(i, nb, gv);
                 c = lm[i] + lm[nb] + scorr;
@@ -387,7 +388,6 @@ void step(double dt) {
         }
 
         mag = sqrt(sx * sx + sy * sy + sz * sz);
-
         if (mag < 1e-5) mag = 1e-5;
 
         sx /= mag;
@@ -405,6 +405,7 @@ void step(double dt) {
         double sy = 0.0;
         double sz = 0.0;
         double dx, dy, dz;
+
         for (int j = 0, l = nc[i]; j < l; ++j) {
             int nb = nbs[i][j];
             dx = cvx[nb] - cvx[i];
@@ -422,16 +423,14 @@ void step(double dt) {
         cvz[i] += ARTIFICIAL_VISCOSITY * sz;
     }
 
-    // Update particle
-    for (int i = 0; i < n; ++i) {
-        vx[i] = cvx[i];
-        vy[i] = cvy[i];
-        vz[i] = cvz[i];
+    // Update particles
+    vx[0:n] = cvx[0:n];
+    vy[0:n] = cvy[0:n];
+    vz[0:n] = cvz[0:n];
 
-        px[i] = cpx[i];
-        py[i] = cpy[i];
-        pz[i] = cpz[i];
-    }
+    px[0:n] = cpx[0:n];
+    py[0:n] = cpy[0:n];
+    pz[0:n] = cpz[0:n];
 }
 
 void run(int steps, double dt) {

@@ -1,4 +1,4 @@
-CC=gcc
+CC=icc
 FC=gfortran
 
 ANAFLAGS=-qopt-report=5 -qopt-report-phase=vec -parallel-source-info=2
