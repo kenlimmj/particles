@@ -34,4 +34,3 @@ clean:
 	@-rm *.o
 	@-rm output/data/particles*
 	@-rm output/data/frame*
-	@-rm output/movie*

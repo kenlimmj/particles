@@ -18,7 +18,7 @@ from os.path import join
 from subprocess import call
 
 # The number of iteration steps taken
-NUM_ITER_STEPS = 1000
+NUM_ITER_STEPS = 100
 
 # Directory paths
 OUTPUT_DIR = join(getcwd(), 'output')
