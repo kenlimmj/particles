@@ -141,6 +141,7 @@ program sph_run
     iter = iter + 1
 
     ! Simulation the fluid flow
+    !$OMP PARALLEL
     call step
     time = time + dt
 
@@ -233,7 +234,7 @@ subroutine init
     nbinz = floor(BOX_SIZE/h) - 1
 
  ! Need to find good way to estimate this so array not needlessly large
-  max_part_guess = n
+  max_part_guess = 100*n/(nbinx*nbiny*nbinz)
   allocate(part_count(nbinx,nbiny,nbinz))
   allocate(binpart(max_part_guess,nbinx,nbiny,nbinz)); binpart = 0
   allocate(nbs(n,max_part_guess)); nbs = 0
@@ -391,16 +392,13 @@ subroutine neighbor_find
   part_count = 0
   binpart = 0
 
-!  call cpu_time(t1)
   do i = 1, n
     binx = NINT((px(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
-!    print *, px(i), real(nbinx,WP)-1.0_WP,NINT((px(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
     biny = NINT((py(i))/(BOX_SIZE)*(real(nbiny,WP)-1.0_WP)) + 1
     binz = NINT((pz(i))/(BOX_SIZE)*(real(nbinz,WP)-1.0_WP)) + 1
     part_count(binx, biny, binz) = part_count(binx, biny, binz) + 1
     binpart(part_count(binx,biny,binz),binx,biny,binz) = i
   end do
-!  call cpu_time(t2)
 
   nbs = 0
   nc = 0
@@ -441,44 +439,6 @@ subroutine neighbor_find
       end do
     end do
   end do
-
-
-! OLD WAY
-!  do i = 1, n
-!    binx = NINT((px(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
-!    biny = NINT((py(i))/(BOX_SIZE)*(real(nbiny,WP)-1.0_WP)) + 1
-!    binz = NINT((pz(i))/(BOX_SIZE)*(real(nbinz,WP)-1.0_WP)) + 1
-!    do stx = -1, 1
-!      cbinx = binx + stx
-!      if(cbinx.lt.1 .or. cbinx.gt.nbinx) cycle
-!      do sty = -1, 1
-!        cbiny = biny + sty
-!        if(cbiny.lt.1 .or. cbiny.gt.nbiny) cycle
-!        do stz = -1, 1
-!          cbinz = binz + stz
-!          if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
-!          do j = 1, part_count(cbinx, cbiny, cbinz)
-!            p = binpart(j,cbinx,cbiny,cbinz)
-!            if(p.le.i) cycle
-!            distx = px(i) - px(p)
-!            disty = py(i) - py(p)
-!            distz = pz(i) - pz(p)
-!            tdist2 = distx*distx + disty*disty + distz*distz
-!            if(tdist2 .lt. h2 .and. p.ne.i) then
-!             nc(i) = nc(i) + 1
-!             nbs(i,nc(i)) = p
-!             nc(p) = nc(p) + 1
-!             nbs(p,nc(p)) = i
-!            end if
-!          end do
-!        end do
-!      end do
-!    end do
-!  end do
-
-!  call cpu_time(t3)
-!  print*, "times", t2-t1, t3-t2
-
 
   return
 end subroutine neighbor_find
