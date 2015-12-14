@@ -55,6 +55,21 @@ module posvel
   real(WP),dimension(:),allocatable ::  vx,  vy,  vz  ! Velocity
   real(WP),dimension(:),allocatable ::  vlx,  vly,  vlz  ! Velocity half time step behind
   real(WP),dimension(:),allocatable ::  rho           ! Density
+  !dir$ attributes align:64 :: px, py, pz
+  !dir$ attributes align:64 :: vx, vy, vz
+  !dir$ attributes align:64 :: vlxx, vly, vlz
+  !dir$ attributes align:64 :: rho
+  !DIR$ ASSUME_ALIGNED px: 64
+  !DIR$ ASSUME_ALIGNED py: 64
+  !DIR$ ASSUME_ALIGNED pz: 64
+  !DIR$ ASSUME_ALIGNED vx: 64
+  !DIR$ ASSUME_ALIGNED vy: 64
+  !DIR$ ASSUME_ALIGNED vz: 64
+  !DIR$ ASSUME_ALIGNED vlx: 64
+  !DIR$ ASSUME_ALIGNED vly: 64
+  !DIR$ ASSUME_ALIGNED vlz: 64
+  !DIR$ ASSUME_ALIGNED rho: 64
+
 end module
 
 ! ===================================== !
@@ -69,6 +84,11 @@ module neighbors
   integer,dimension(:,:),allocatable :: nbs
   integer,dimension(:,:,:),allocatable :: part_count
   integer,dimension(:,:,:,:),allocatable :: binpart
+  !dir$ attributes align:64 :: nc, nbs, part_count, binpart
+  !DIR$ ASSUME_ALIGNED nc: 64
+  !DIR$ ASSUME_ALIGNED nbs: 64
+  !DIR$ ASSUME_ALIGNED part_count: 64
+  !DIR$ ASSUME_ALIGNED binpart: 64
 
   ! Expected max particles in single bin
   integer :: nbinx, nbiny, nbinz
@@ -82,6 +102,10 @@ module forces
   use precision
   implicit none
   real(WP),dimension(:),allocatable :: fx, fy, fz  ! Total force
+  !dir$ attributes align:64 :: fx, fy, fz
+  !DIR$ ASSUME_ALIGNED fx: 64
+  !DIR$ ASSUME_ALIGNED fy: 64
+  !DIR$ ASSUME_ALIGNED fz: 64
 end module forces
 
 ! ===================================== !
@@ -140,8 +164,7 @@ program sph_run
   do while (time .lt. tfin)
     iter = iter + 1
 
-    ! Simulation the fluid flow
-    !$OMP PARALLEL
+    ! Simulate the fluid flow
     call step
     time = time + dt
 
@@ -593,9 +616,9 @@ subroutine compute_SF
     gwmag = sxGW*sxGW + syGW*syGW + szGW+szGW
     gwmag = sqrt(gwmag)
 
-    fx(i) = fx(i) - STC*mass/rho(i)*LW*sxGW/gwmag
-    fy(i) = fy(i) - STC*mass/rho(i)*LW*syGW/gwmag
-    fz(i) = fz(i) - STC*mass/rho(i)*LW*szGW/gwmag
+    fx(i) = fx(i) - STC*mass*LW*sxGW/gwmag
+    fy(i) = fy(i) - STC*mass*LW*syGW/gwmag
+    fz(i) = fz(i) - STC*mass*LW*szGW/gwmag
 
   end do
 
