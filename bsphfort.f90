@@ -57,7 +57,7 @@ module posvel
   real(WP),dimension(:),allocatable ::  rho           ! Density
   !dir$ attributes align:64 :: px, py, pz
   !dir$ attributes align:64 :: vx, vy, vz
-  !dir$ attributes align:64 :: vlxx, vly, vlz
+  !dir$ attributes align:64 :: vlx, vly, vlz
   !dir$ attributes align:64 :: rho
   !DIR$ ASSUME_ALIGNED px: 64
   !DIR$ ASSUME_ALIGNED py: 64
@@ -84,15 +84,14 @@ module neighbors
   integer,dimension(:,:),allocatable :: nbs
   integer,dimension(:,:,:),allocatable :: part_count
   integer,dimension(:,:,:,:),allocatable :: binpart
+  ! Expected max particles in single bin
+  integer :: nbinx, nbiny, nbinz
+  integer :: max_part_guess
   !dir$ attributes align:64 :: nc, nbs, part_count, binpart
   !DIR$ ASSUME_ALIGNED nc: 64
   !DIR$ ASSUME_ALIGNED nbs: 64
   !DIR$ ASSUME_ALIGNED part_count: 64
   !DIR$ ASSUME_ALIGNED binpart: 64
-
-  ! Expected max particles in single bin
-  integer :: nbinx, nbiny, nbinz
-  integer :: max_part_guess
 end module neighbors
 
 ! ===================================== !
