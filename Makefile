@@ -1,5 +1,5 @@
 CC=icc
-FC=gfortran
+FC=ifort
 
 ANAFLAGS=-qopt-report=5 -qopt-report-phase=vec -parallel-source-info=2
 OPTFLAGS=-fast -xHost -ansi-alias -restrict -mkl
@@ -10,7 +10,8 @@ LDFLAGS= -fopenmp
 LIBS= -lm
 
 #FFLAGS= -O3 -ftree-vectorize -ffast-math -funroll-loops -fomit-frame-pointer -pipe -finit-real=zero -fopenmp
-FFLAGS = -g -fbacktrace -Wall -pedantic -Wextra -W -Wno-unused-function -fbounds-check -fopenmp -Wunderflow
+#FFLAGS = -g -fbacktrace -Wall -pedantic -Wextra -W -Wno-unused-function -fbounds-check -fopenmp -Wunderflow
+FFLAGS = -O3 -xHost -ip -fast -qopt-report=5 -qopt-report-phase=vec -align
 .PHONY: all
 
 all: sphc sphfort bsphfort
