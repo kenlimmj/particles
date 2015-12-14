@@ -2,11 +2,11 @@
 
 #PBS -l nodes=1:ppn=24
 #PBS -l walltime=0:30:00
-#PBS -N visualizer
+#PBS -N vis
 #PBS -j oe
 
 module load cs5220
 module load anaconda
 module load utils
 cd $PBS_O_WORKDIR
-./visualize.sh
+python vis.py

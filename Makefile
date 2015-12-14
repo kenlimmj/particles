@@ -1,8 +1,8 @@
-CC=gcc
+CC=icc
 FC=gfortran
 
 ANAFLAGS=-qopt-report=5 -qopt-report-phase=vec -parallel-source-info=2
-OPTFLAGS=-fast -xHost -ansi-alias -restrict -mkl -openmp
+OPTFLAGS=-fast -xHost -ansi-alias -restrict -mkl
 
 CFLAGS=-std=c99 -g -pedantic -Wall -Werror
 CFLAGS+=#$(OPTFLAGS) $(ANAFLAGS)
@@ -32,7 +32,5 @@ bsphfort: bsphfort.o
 
 clean:
 	@-rm *.o
-	@-rm output/particles*
-	@-rm output/candidates*
-	@-rm output/frame*
-	@-rm output/movie*
+	@-rm output/data/particles*
+	@-rm output/data/frame*
