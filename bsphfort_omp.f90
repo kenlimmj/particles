@@ -189,19 +189,21 @@ subroutine init
   use neighbors
   use forces
   implicit none
-  character(30) :: init_file
+  character(30) :: init_file, proc_string
   integer :: i, unit
   real, dimension(:), allocatable :: data
 
   ! Read in command line argument init_file
   call get_command_argument(1,init_file)
-  call get_command_argument(2,procs)
-  if(len_trim(init_file) .eq. 0) then
+  call get_command_argument(2,proc_string)
+  if(len_trim(proc_string) .eq. 0) then
     print*, "Incorrect number of command line arguments"
     print*, "Correct usage is ./bsphfort (init_file) (procs)"
     print*, "Exiting..."
     stop
   end if
+
+  read (proc_string, *) procs
 
   ! Find length of initial condition file (number of particles)
   unit = 20
