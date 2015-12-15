@@ -249,8 +249,6 @@ subroutine init
   close(unit)
   deallocate(data)
 
-  call computePressureRadiusFactor
-
   call mass_change
 
   ! Print out initial particle positions
@@ -399,21 +397,229 @@ subroutine neighbor_find
   nbs = 0
   nc = 0
 
-  do binx = 1, nbinx
+  ! Left wall
+  binx = 1
     do biny = 1, nbiny
       do binz = 1, nbinz
         do i = 1, part_count(binx,biny,binz)
           p = binpart(i,binx,biny,binz)
           binpart(i,binx,biny,binz) = -1
-          do stx = -1, 1
+          do stx = 0, 1
             cbinx = binx + stx
-            if(cbinx.lt.1 .or. cbinx.gt.nbinx) cycle
             do sty = -1, 1
               cbiny = biny + sty
               if(cbiny.lt.1 .or. cbiny.gt.nbiny) cycle
               do stz = -1, 1
                 cbinz = binz + stz
                 if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
+                do j = 1, part_count(cbinx,cbiny, cbinz)
+                  nb = binpart(j,cbinx,cbiny,cbinz)
+                  if(nb .eq. -1) cycle
+                  distx = px(p) - px(nb)
+                  disty = py(p) - py(nb)
+                  distz = pz(p) - pz(nb)
+                  tdist2 = distx*distx + disty*disty + distz*distz
+                  if(tdist2 .lt. h2) then
+                    nc(p) = nc(p) + 1
+                    nbs(p,nc(p)) = nb
+                    nc(nb) = nc(nb) + 1
+                    nbs(nb,nc(nb)) = p
+                  end if
+                end do
+              end do
+            end do
+          end do
+        end do
+      end do
+    end do
+
+  ! Right wall
+  binx = nbinx
+    do biny = 1, nbiny
+      do binz = 1, nbinz
+        do i = 1, part_count(binx,biny,binz)
+          p = binpart(i,binx,biny,binz)
+          binpart(i,binx,biny,binz) = -1
+          do stx = -1, 0
+            cbinx = binx + stx
+            do sty = -1, 1
+              cbiny = biny + sty
+              if(cbiny.lt.1 .or. cbiny.gt.nbiny) cycle
+              do stz = -1, 1
+                cbinz = binz + stz
+                if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
+                do j = 1, part_count(cbinx,cbiny, cbinz)
+                  nb = binpart(j,cbinx,cbiny,cbinz)
+                  if(nb .eq. -1) cycle
+                  distx = px(p) - px(nb)
+                  disty = py(p) - py(nb)
+                  distz = pz(p) - pz(nb)
+                  tdist2 = distx*distx + disty*disty + distz*distz
+                  if(tdist2 .lt. h2) then
+                    nc(p) = nc(p) + 1
+                    nbs(p,nc(p)) = nb
+                    nc(nb) = nc(nb) + 1
+                    nbs(nb,nc(nb)) = p
+                  end if
+                end do
+              end do
+            end do
+          end do
+        end do
+      end do
+    end do
+
+  ! Bottom wall
+  biny = 1
+  do binx = 2, nbinx-1
+      do binz = 1, nbinz
+        do i = 1, part_count(binx,biny,binz)
+          p = binpart(i,binx,biny,binz)
+          binpart(i,binx,biny,binz) = -1
+          do stx = -1, 1
+            cbinx = binx + stx
+            do sty = 0, 1
+              cbiny = biny + sty
+              do stz = -1, 1
+                cbinz = binz + stz
+                if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
+                do j = 1, part_count(cbinx,cbiny, cbinz)
+                  nb = binpart(j,cbinx,cbiny,cbinz)
+                  if(nb .eq. -1) cycle
+                  distx = px(p) - px(nb)
+                  disty = py(p) - py(nb)
+                  distz = pz(p) - pz(nb)
+                  tdist2 = distx*distx + disty*disty + distz*distz
+                  if(tdist2 .lt. h2) then
+                    nc(p) = nc(p) + 1
+                    nbs(p,nc(p)) = nb
+                    nc(nb) = nc(nb) + 1
+                    nbs(nb,nc(nb)) = p
+                  end if
+                end do
+              end do
+            end do
+          end do
+        end do
+      end do
+  end do
+
+  ! Top wall
+  biny = nbiny
+  do binx = 2, nbinx-1
+      do binz = 1, nbinz
+        do i = 1, part_count(binx,biny,binz)
+          p = binpart(i,binx,biny,binz)
+          binpart(i,binx,biny,binz) = -1
+          do stx = -1, 1
+            cbinx = binx + stx
+            do sty = -1, 0
+              cbiny = biny + sty
+              do stz = -1, 1
+                cbinz = binz + stz
+                if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
+                do j = 1, part_count(cbinx,cbiny, cbinz)
+                  nb = binpart(j,cbinx,cbiny,cbinz)
+                  if(nb .eq. -1) cycle
+                  distx = px(p) - px(nb)
+                  disty = py(p) - py(nb)
+                  distz = pz(p) - pz(nb)
+                  tdist2 = distx*distx + disty*disty + distz*distz
+                  if(tdist2 .lt. h2) then
+                    nc(p) = nc(p) + 1
+                    nbs(p,nc(p)) = nb
+                    nc(nb) = nc(nb) + 1
+                    nbs(nb,nc(nb)) = p
+                  end if
+                end do
+              end do
+            end do
+          end do
+        end do
+      end do
+  end do
+
+  ! Forward wall
+  binz = 1
+  do binx = 2, nbinx-1
+    do biny = 2, nbiny-1
+        do i = 1, part_count(binx,biny,binz)
+          p = binpart(i,binx,biny,binz)
+          binpart(i,binx,biny,binz) = -1
+          do stx = -1, 1
+            cbinx = binx + stx
+            do sty = -1, 1
+              cbiny = biny + sty
+              do stz = 0, 1
+                cbinz = binz + stz
+                do j = 1, part_count(cbinx,cbiny, cbinz)
+                  nb = binpart(j,cbinx,cbiny,cbinz)
+                  if(nb .eq. -1) cycle
+                  distx = px(p) - px(nb)
+                  disty = py(p) - py(nb)
+                  distz = pz(p) - pz(nb)
+                  tdist2 = distx*distx + disty*disty + distz*distz
+                  if(tdist2 .lt. h2) then
+                    nc(p) = nc(p) + 1
+                    nbs(p,nc(p)) = nb
+                    nc(nb) = nc(nb) + 1
+                    nbs(nb,nc(nb)) = p
+                  end if
+                end do
+              end do
+            end do
+          end do
+        end do
+    end do
+  end do
+
+  ! Back Wall
+  binz = nbinz
+  do binx = 2, nbinx-1
+    do biny = 2, nbiny-1
+        do i = 1, part_count(binx,biny,binz)
+          p = binpart(i,binx,biny,binz)
+          binpart(i,binx,biny,binz) = -1
+          do stx = -1, 1
+            cbinx = binx + stx
+            do sty = -1, 1
+              cbiny = biny + sty
+              do stz = -1, 0
+                cbinz = binz + stz
+                do j = 1, part_count(cbinx,cbiny, cbinz)
+                  nb = binpart(j,cbinx,cbiny,cbinz)
+                  if(nb .eq. -1) cycle
+                  distx = px(p) - px(nb)
+                  disty = py(p) - py(nb)
+                  distz = pz(p) - pz(nb)
+                  tdist2 = distx*distx + disty*disty + distz*distz
+                  if(tdist2 .lt. h2) then
+                    nc(p) = nc(p) + 1
+                    nbs(p,nc(p)) = nb
+                    nc(nb) = nc(nb) + 1
+                    nbs(nb,nc(nb)) = p
+                  end if
+                end do
+              end do
+            end do
+          end do
+        end do
+    end do
+  end do
+
+  ! Rest
+  do binx = 2, nbinx-1
+    do biny = 2, nbiny-1
+      do binz = 2, nbinz-1
+        do i = 1, part_count(binx,biny,binz)
+          p = binpart(i,binx,biny,binz)
+          binpart(i,binx,biny,binz) = -1
+          do stx = -1, 1
+            cbinx = binx + stx
+            do sty = -1, 1
+              cbiny = biny + sty
+              do stz = -1, 1
+                cbinz = binz + stz
                 do j = 1, part_count(cbinx,cbiny, cbinz)
                   nb = binpart(j,cbinx,cbiny,cbinz)
                   if(nb .eq. -1) cycle

@@ -257,8 +257,6 @@ subroutine init
   close(unit)
   deallocate(data)
 
-  call computePressureRadiusFactor
-
   call mass_change
 
   ! Print out initial particle positions
@@ -386,12 +384,11 @@ subroutine neighbor_find
   use posvel
   use omp_lib
   implicit none
-  integer :: i, j, q, p, nb
+  integer :: i, j, q, p, nb, l
   integer :: binx, biny, binz
   integer :: cbinx, cbiny, cbinz
-  integer :: stx, sty, stz, housemates
+  integer :: stx, sty, stz
   real(WP) :: distx, disty, distz, tdist2
-  real(WP)  :: t1, t2, t3, t4
 
   ! $OMP WORKSHARE
   part_count = 0
@@ -413,16 +410,16 @@ subroutine neighbor_find
   nc = 0
   ! $OMP END WORKSHARE
 
-  ! $OMP DO private(q)
-  do binx = 1, nbinx
+  ! Left wall
+  binx = 1
+  ! $OMP DO private(q, binx, biny, binz, p, cbinx, cbiny, cbinz, nb, distx,disty,distz,tdist2)
     do biny = 1, nbiny
       do binz = 1, nbinz
         do i = 1, part_count(binx,biny,binz)
           p = binpart(i,binx,biny,binz)
-          q = 0
-          do stx = -1, 1
+          binpart(i,binx,biny,binz) = -1
+          do stx = 0, 1
             cbinx = binx + stx
-            if(cbinx.lt.1 .or. cbinx.gt.nbinx) cycle
             do sty = -1, 1
               cbiny = biny + sty
               if(cbiny.lt.1 .or. cbiny.gt.nbiny) cycle
@@ -431,19 +428,246 @@ subroutine neighbor_find
                 if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
                 do j = 1, part_count(cbinx,cbiny, cbinz)
                   nb = binpart(j,cbinx,cbiny,cbinz)
+                  if(nb .eq. -1) cycle
                   distx = px(p) - px(nb)
                   disty = py(p) - py(nb)
                   distz = pz(p) - pz(nb)
                   tdist2 = distx*distx + disty*disty + distz*distz
                   if(tdist2 .lt. h2) then
-                    q = q + 1
-                    nbs(p,q) = nb
+                    nc(p) = nc(p) + 1
+                    nbs(p,nc(p)) = nb
+                    nc(nb) = nc(nb) + 1
+                    nbs(nb,nc(nb)) = p
                   end if
                 end do
               end do
             end do
           end do
-        nc(p) = q
+        end do
+      end do
+    end do
+    ! $OMP END DO NOWAIT
+
+  ! Right wall
+  binx = nbinx
+  ! $OMP DO private(q, binx, biny, binz, p, cbinx, cbiny, cbinz, nb, distx,disty,distz,tdist2)
+    do biny = 1, nbiny
+      do binz = 1, nbinz
+        do i = 1, part_count(binx,biny,binz)
+          p = binpart(i,binx,biny,binz)
+          binpart(i,binx,biny,binz) = -1
+          do stx = -1, 0
+            cbinx = binx + stx
+            do sty = -1, 1
+              cbiny = biny + sty
+              if(cbiny.lt.1 .or. cbiny.gt.nbiny) cycle
+              do stz = -1, 1
+                cbinz = binz + stz
+                if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
+                do j = 1, part_count(cbinx,cbiny, cbinz)
+                  nb = binpart(j,cbinx,cbiny,cbinz)
+                  if(nb .eq. -1) cycle
+                  distx = px(p) - px(nb)
+                  disty = py(p) - py(nb)
+                  distz = pz(p) - pz(nb)
+                  tdist2 = distx*distx + disty*disty + distz*distz
+                  if(tdist2 .lt. h2) then
+                    nc(p) = nc(p) + 1
+                    nbs(p,nc(p)) = nb
+                    nc(nb) = nc(nb) + 1
+                    nbs(nb,nc(nb)) = p
+                  end if
+                end do
+              end do
+            end do
+          end do
+        end do
+      end do
+    end do
+    ! $OMP END DO NOWAIT
+
+
+  ! Bottom wall
+  biny = 1
+  ! $OMP DO private(q, binx, biny, binz, p, cbinx, cbiny, cbinz, nb, distx,disty,distz,tdist2)
+  do binx = 2, nbinx-1
+      do binz = 1, nbinz
+        do i = 1, part_count(binx,biny,binz)
+          p = binpart(i,binx,biny,binz)
+          binpart(i,binx,biny,binz) = -1
+          do stx = -1, 1
+            cbinx = binx + stx
+            do sty = 0, 1
+              cbiny = biny + sty
+              do stz = -1, 1
+                cbinz = binz + stz
+                if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
+                do j = 1, part_count(cbinx,cbiny, cbinz)
+                  nb = binpart(j,cbinx,cbiny,cbinz)
+                  if(nb .eq. -1) cycle
+                  distx = px(p) - px(nb)
+                  disty = py(p) - py(nb)
+                  distz = pz(p) - pz(nb)
+                  tdist2 = distx*distx + disty*disty + distz*distz
+                  if(tdist2 .lt. h2) then
+                    nc(p) = nc(p) + 1
+                    nbs(p,nc(p)) = nb
+                    nc(nb) = nc(nb) + 1
+                    nbs(nb,nc(nb)) = p
+                  end if
+                end do
+              end do
+            end do
+          end do
+        end do
+      end do
+  end do
+  ! $OMP END DO NOWAIT
+
+
+  ! Top wall
+  biny = nbiny
+  ! $OMP DO private(q, binx, biny, binz, p, cbinx, cbiny, cbinz, nb, distx,disty,distz,tdist2)
+  do binx = 2, nbinx-1
+      do binz = 1, nbinz
+        do i = 1, part_count(binx,biny,binz)
+          p = binpart(i,binx,biny,binz)
+          binpart(i,binx,biny,binz) = -1
+          do stx = -1, 1
+            cbinx = binx + stx
+            do sty = -1, 0
+              cbiny = biny + sty
+              do stz = -1, 1
+                cbinz = binz + stz
+                if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
+                do j = 1, part_count(cbinx,cbiny, cbinz)
+                  nb = binpart(j,cbinx,cbiny,cbinz)
+                  if(nb .eq. -1) cycle
+                  distx = px(p) - px(nb)
+                  disty = py(p) - py(nb)
+                  distz = pz(p) - pz(nb)
+                  tdist2 = distx*distx + disty*disty + distz*distz
+                  if(tdist2 .lt. h2) then
+                    nc(p) = nc(p) + 1
+                    nbs(p,nc(p)) = nb
+                    nc(nb) = nc(nb) + 1
+                    nbs(nb,nc(nb)) = p
+                  end if
+                end do
+              end do
+            end do
+          end do
+        end do
+      end do
+  end do
+  ! $OMP END DO NOWAIT
+
+
+  ! Forward wall
+  binz = 1
+  ! $OMP DO private(q, binx, biny, binz, p, cbinx, cbiny, cbinz, nb, distx,disty,distz,tdist2)
+  do binx = 2, nbinx-1
+    do biny = 2, nbiny-1
+        do i = 1, part_count(binx,biny,binz)
+          p = binpart(i,binx,biny,binz)
+          binpart(i,binx,biny,binz) = -1
+          do stx = -1, 1
+            cbinx = binx + stx
+            do sty = -1, 1
+              cbiny = biny + sty
+              do stz = 0, 1
+                cbinz = binz + stz
+                do j = 1, part_count(cbinx,cbiny, cbinz)
+                  nb = binpart(j,cbinx,cbiny,cbinz)
+                  if(nb .eq. -1) cycle
+                  distx = px(p) - px(nb)
+                  disty = py(p) - py(nb)
+                  distz = pz(p) - pz(nb)
+                  tdist2 = distx*distx + disty*disty + distz*distz
+                  if(tdist2 .lt. h2) then
+                    nc(p) = nc(p) + 1
+                    nbs(p,nc(p)) = nb
+                    nc(nb) = nc(nb) + 1
+                    nbs(nb,nc(nb)) = p
+                  end if
+                end do
+              end do
+            end do
+          end do
+        end do
+    end do
+  end do
+  ! $OMP END DO NOWAIT
+
+
+  ! Back Wall
+  binz = nbinz
+  ! $OMP DO private(q, binx, biny, binz, p, cbinx, cbiny, cbinz, nb, distx,disty,distz,tdist2)
+  do binx = 2, nbinx-1
+    do biny = 2, nbiny-1
+        do i = 1, part_count(binx,biny,binz)
+          p = binpart(i,binx,biny,binz)
+          binpart(i,binx,biny,binz) = -1
+          do stx = -1, 1
+            cbinx = binx + stx
+            do sty = -1, 1
+              cbiny = biny + sty
+              do stz = -1, 0
+                cbinz = binz + stz
+                do j = 1, part_count(cbinx,cbiny, cbinz)
+                  nb = binpart(j,cbinx,cbiny,cbinz)
+                  if(nb .eq. -1) cycle
+                  distx = px(p) - px(nb)
+                  disty = py(p) - py(nb)
+                  distz = pz(p) - pz(nb)
+                  tdist2 = distx*distx + disty*disty + distz*distz
+                  if(tdist2 .lt. h2) then
+                    nc(p) = nc(p) + 1
+                    nbs(p,nc(p)) = nb
+                    nc(nb) = nc(nb) + 1
+                    nbs(nb,nc(nb)) = p
+                  end if
+                end do
+              end do
+            end do
+          end do
+        end do
+    end do
+  end do
+  ! $OMP END DO NOWAIT
+
+
+  ! Rest
+  ! $OMP DO private(q, binx, biny, binz, p, cbinx, cbiny, cbinz, nb, distx,disty,distz,tdist2)
+  do binx = 2, nbinx-1
+    do biny = 2, nbiny-1
+      do binz = 2, nbinz-1
+        do i = 1, part_count(binx,biny,binz)
+          p = binpart(i,binx,biny,binz)
+          binpart(i,binx,biny,binz) = -1
+          do stx = -1, 1
+            cbinx = binx + stx
+            do sty = -1, 1
+              cbiny = biny + sty
+              do stz = -1, 1
+                cbinz = binz + stz
+                do j = 1, part_count(cbinx,cbiny, cbinz)
+                  nb = binpart(j,cbinx,cbiny,cbinz)
+                  if(nb .eq. -1) cycle
+                  distx = px(p) - px(nb)
+                  disty = py(p) - py(nb)
+                  distz = pz(p) - pz(nb)
+                  tdist2 = distx*distx + disty*disty + distz*distz
+                  if(tdist2 .lt. h2) then
+                    nc(p) = nc(p) + 1
+                    nbs(p,nc(p)) = nb
+                    nc(nb) = nc(nb) + 1
+                    nbs(nb,nc(nb)) = p
+                  end if
+                end do
+              end do
+            end do
+          end do
         end do
       end do
     end do
@@ -463,10 +687,13 @@ subroutine compute_density
   real(WP) :: rhosum, c, r2
   real(WP) :: dx, dy, dz, kpd
 
+  ! $OMP WORKSHARE
   rho = (315.0_WP/64.0_WP/PI)*mass/h3
+  ! $OMP END WORKSHARE
   c = 315.0_WP/64.0_WP/PI*mass/h9
 
-  ! $OMP DO private(rhosum)
+
+  ! $OMP DO private(rhosum, dx, dy, dz, r2, kpd, nb, i, l, j)
   do i = 1, n
     rhosum = 0.0_WP
 
@@ -483,7 +710,7 @@ subroutine compute_density
 
     end do
 
-  rho(i) = rho(i) + rhosum
+    rho(i) = rho(i) + rhosum
   end do
   ! $OMP END DO
 
@@ -507,7 +734,7 @@ subroutine compute_forces
   cpres = 45.0_WP*mass/PI/h5*BULK_MODULUS*0.5_WP
   cvisc = -45.0_WP*mass/PI/h5*VISCOSITY
 
-  ! $OMP DO private(sx,sy,sz)
+  ! $OMP DO private(sx,sy,sz,i,l,j,nb, dx,dy,dz,dvx,dvy,dvz,r2,m,q,kpres,kvisc)
   do i = 1, n
     sx = 0.0_WP
     sy = 0.0_WP
@@ -517,6 +744,7 @@ subroutine compute_forces
     l = nc(i)
     do j = 1, l
       nb = nbs(i,j)
+      if(nb .lt. i) cycle
       dx = px(i) - px(nb)
       dy = py(i) - py(nb)
       dz = pz(i) - pz(nb)
@@ -537,8 +765,11 @@ subroutine compute_forces
 
 
       sx = sx + kpres*dx+kvisc*dvx
+      fx(nb) = fx(nb) -kpres*dx+kvisc*dvx
       sy = sy + kpres*dy+kvisc*dvy
+      fy(nb) = fy(nb) - kpres*dy+kvisc*dvy
       sz = sz + kpres*dz+kvisc*dvz
+      fz(nb) = fz(nb) - kpres*dz+kvisc*dvz
 
     end do
     fx(i) = sx
