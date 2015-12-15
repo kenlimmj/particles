@@ -4,7 +4,7 @@
 module precision
 
   implicit none
-  integer, parameter :: WP = kind(1.0d0)
+  integer, parameter :: WP = 4
 end module
 
 ! ===================================== !
@@ -19,6 +19,7 @@ module state
   integer :: iter, frame
   real(WP) :: frame_freq
   real(WP) :: mass
+  INTEGER :: my_id
 end module
 
 ! ===================================== !
@@ -95,7 +96,7 @@ module forces
   use precision
   implicit none
   real(WP),dimension(:),allocatable :: fx, fy, fz  ! Total force
-  !dir$ attributes align:64 :: fx, fy, fz
+  !DIR$ attributes align:64 :: fx, fy, fz
   !DIR$ ASSUME_ALIGNED fx: 64
   !DIR$ ASSUME_ALIGNED fy: 64
   !DIR$ ASSUME_ALIGNED fz: 64
@@ -119,6 +120,7 @@ program sph_run
   use state
   use posvel
   use timers
+  use omp_lib
   implicit none
   real(WP) :: init_start, init_stop
   real(WP) :: write_start, write_stop, write_sum
@@ -134,30 +136,31 @@ program sph_run
   twrite = frame_freq
   call cpu_time(init_stop)
 
-  ! $OMP parallel default(shared) num_threads(procs)
   iter = 0
+  time = 0.0_WP
   do while (time .lt. tfin)
-    iter = iter + 1
+ !   if(my_id.eq.0) 
+     iter = iter + 1
 
     ! Simulate the fluid flow
     call step
+    !if(my_id.eq.0)
     time = time + dt
 
-    if(time .ge. twrite) then
-      ! $OMP critical
-      call cpu_time(write_start)
-      twrite = twrite + frame_freq
-      print*,"Iteration: ",iter," Time: ",time
-      print*,"Max U: ", maxval(vx(:))," Max V: ",maxval(vy(:))," Max W: ",maxval(vz(:))
-      print*,"  "
-      call particle_write
-      call cpu_time(write_stop)
-      write_sum = write_sum + (write_stop-write_start)
-      ! $OMP end critical
-    end if
+    !if(my_id .eq. 0) then
+      if(time .ge. twrite) then
+        call cpu_time(write_start)
+        twrite = twrite + frame_freq
+        print*,"Iteration: ",iter," Time: ",time
+        print*,"Max U: ", maxval(vx(:))," Max V: ",maxval(vy(:))," Max W: ",maxval(vz(:))
+        print*,"  "
+        call particle_write
+        call cpu_time(write_stop)
+        write_sum = write_sum + (write_stop-write_start)
+      end if
+!    end if
 
   end do
-  ! $OMP end parallel
 
   call cpu_time(deinit_start)
   call deinit
@@ -174,6 +177,7 @@ program sph_run
   write(*,"(A,ES25.11,ES25.11)") "Force Calculation:     ",force_t,force_t/iter
   write(*,"(A,ES25.11,ES25.11)") "Ext. Force Calculation:",ef_t,ef_t/iter
   write(*,"(A,ES25.11,ES25.11)") "Posvel Calculation:    ",ps_t,ps_t/iter
+  write(*,"(A,ES25.11,ES25.11)") "File Writing:          ",write_sum,write_sum/iter
   write(*,"(A,ES25.11)")         "Deinitialization Time: ",deinit_stop-deinit_start
   write(*,"(A,ES25.11,ES25.11)") "Total Time:            ",total_time,total_time/iter
 
@@ -232,7 +236,7 @@ subroutine init
   allocate(fz(n)); fz = 0.0_WP
 
 
-  ! Neighbor finding size creations, each bin is ~2h
+  ! Neighbor finding size creations, each bin is ~h
     nbinx = floor(BOX_SIZE/h) - 1
     nbiny = floor(BOX_SIZE/h) - 1
     nbinz = floor(BOX_SIZE/h) - 1
@@ -354,26 +358,30 @@ subroutine step
   use constants
   use state
   use timers
+  use omp_lib
   implicit none
   real(WP) :: t1, t2, t3, t4, t5, t6, t7
 
-  call cpu_time(t1)
+  my_id = 0
+  if(my_id.eq.0) call cpu_time(t1)
   call neighbor_find
-  call cpu_time(t2)
+  if(my_id.eq.0) call cpu_time(t2)
   call compute_density
-  call cpu_time(t3)
+  if(my_id.eq.0) call cpu_time(t3)
   call compute_forces
-  call cpu_time(t5)
+  if(my_id.eq.0) call cpu_time(t5)
   call ext_forces
-  call cpu_time(t6)
+  if(my_id.eq.0) call cpu_time(t6)
   call posvel_update
-  call cpu_time(t7)
+  if(my_id.eq.0) call cpu_time(t7)
 
-  neigh_t = neigh_t  + t2-t1
-  dens_t  = dens_t   + t3-t2
-  force_t = force_t  + t5-t3
-  ef_t    = ef_t     + t6-t5
-  ps_t    = ps_t     + t7-t6
+  if(my_id.eq.0) then
+    neigh_t = neigh_t  + t2-t1
+    dens_t  = dens_t   + t3-t2
+    force_t = force_t  + t5-t3
+    ef_t    = ef_t     + t6-t5
+    ps_t    = ps_t     + t7-t6
+  end if
 
 end subroutine step
 
@@ -382,7 +390,6 @@ subroutine neighbor_find
   use state
   use neighbors
   use posvel
-  use omp_lib
   implicit none
   integer :: i, j, q, p, nb, l
   integer :: binx, biny, binz
@@ -390,12 +397,9 @@ subroutine neighbor_find
   integer :: stx, sty, stz
   real(WP) :: distx, disty, distz, tdist2
 
-  ! $OMP WORKSHARE
   part_count = 0
   binpart = 0
-  ! $OMP END WORKSHARE
 
-  ! $OMP DO
   do i = 1, n
     binx = NINT((px(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
     biny = NINT((py(i))/(BOX_SIZE)*(real(nbiny,WP)-1.0_WP)) + 1
@@ -403,276 +407,44 @@ subroutine neighbor_find
     part_count(binx, biny, binz) = part_count(binx, biny, binz) + 1
     binpart(part_count(binx,biny,binz),binx,biny,binz) = i
   end do
-  ! $OMP END DO
 
-  ! $OMP WORKSHARE
   nbs = 0
   nc = 0
-  ! $OMP END WORKSHARE
 
-  ! Left wall
-  binx = 1
-  ! $OMP DO private(q, binx, biny, binz, p, cbinx, cbiny, cbinz, nb, distx,disty,distz,tdist2)
-    do biny = 1, nbiny
-      do binz = 1, nbinz
-        do i = 1, part_count(binx,biny,binz)
-          p = binpart(i,binx,biny,binz)
-          binpart(i,binx,biny,binz) = -1
-          do stx = 0, 1
-            cbinx = binx + stx
-            do sty = -1, 1
-              cbiny = biny + sty
-              if(cbiny.lt.1 .or. cbiny.gt.nbiny) cycle
-              do stz = -1, 1
-                cbinz = binz + stz
-                if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
-                do j = 1, part_count(cbinx,cbiny, cbinz)
-                  nb = binpart(j,cbinx,cbiny,cbinz)
-                  if(nb .eq. -1) cycle
-                  distx = px(p) - px(nb)
-                  disty = py(p) - py(nb)
-                  distz = pz(p) - pz(nb)
-                  tdist2 = distx*distx + disty*disty + distz*distz
-                  if(tdist2 .lt. h2) then
-                    nc(p) = nc(p) + 1
-                    nbs(p,nc(p)) = nb
-                    nc(nb) = nc(nb) + 1
-                    nbs(nb,nc(nb)) = p
-                  end if
-                end do
-              end do
-            end do
+  !$OMP PARALLEL DO default(none) shared(nbs,nc,nbinx,nbiny,nbinz,px,py,pz,h2,part_count,binpart) &
+  !$OMP private(q,i,binx,biny,binz,stx,sty,stz,cbinx,cbiny,cbinz,nb,distx,disty,distz,tdist2) &
+  !$OMP NUM_THREADS(procs)
+  do i = 1, n
+    binx = NINT((px(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
+    biny = NINT((py(i))/(BOX_SIZE)*(real(nbiny,WP)-1.0_WP)) + 1
+    binz = NINT((pz(i))/(BOX_SIZE)*(real(nbinz,WP)-1.0_WP)) + 1
+    q = 0
+    do stx = -1, 1
+      cbinx = binx + stx
+      if(cbinx .eq. 0 .or. cbinx .eq. nbinx+1) cycle
+      do sty = -1, 1
+        cbiny = biny + sty
+        if(cbiny .eq. 0 .or. cbiny .eq. nbiny+1) cycle
+        do stz = -1, 1
+          cbinz = binz + stz
+          if(cbinz .eq. 0 .or. cbinz .eq. nbinz+1) cycle
+          do j = 1, part_count(cbinx,cbiny,cbinz)
+            nb = binpart(j,cbinx,cbiny,cbinz)
+            distx = px(i) - px(nb)
+            disty = py(i) - py(nb)
+            distz = pz(i) - pz(nb)
+            tdist2 = distx*distx + disty*disty + distz*distz
+            if(tdist2 .lt. h2 .and. nb.ne.i) then
+              q = q + 1
+              nbs(i,q) = nb
+            end if
           end do
         end do
       end do
     end do
-    ! $OMP END DO NOWAIT
-
-  ! Right wall
-  binx = nbinx
-  ! $OMP DO private(q, binx, biny, binz, p, cbinx, cbiny, cbinz, nb, distx,disty,distz,tdist2)
-    do biny = 1, nbiny
-      do binz = 1, nbinz
-        do i = 1, part_count(binx,biny,binz)
-          p = binpart(i,binx,biny,binz)
-          binpart(i,binx,biny,binz) = -1
-          do stx = -1, 0
-            cbinx = binx + stx
-            do sty = -1, 1
-              cbiny = biny + sty
-              if(cbiny.lt.1 .or. cbiny.gt.nbiny) cycle
-              do stz = -1, 1
-                cbinz = binz + stz
-                if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
-                do j = 1, part_count(cbinx,cbiny, cbinz)
-                  nb = binpart(j,cbinx,cbiny,cbinz)
-                  if(nb .eq. -1) cycle
-                  distx = px(p) - px(nb)
-                  disty = py(p) - py(nb)
-                  distz = pz(p) - pz(nb)
-                  tdist2 = distx*distx + disty*disty + distz*distz
-                  if(tdist2 .lt. h2) then
-                    nc(p) = nc(p) + 1
-                    nbs(p,nc(p)) = nb
-                    nc(nb) = nc(nb) + 1
-                    nbs(nb,nc(nb)) = p
-                  end if
-                end do
-              end do
-            end do
-          end do
-        end do
-      end do
-    end do
-    ! $OMP END DO NOWAIT
-
-
-  ! Bottom wall
-  biny = 1
-  ! $OMP DO private(q, binx, biny, binz, p, cbinx, cbiny, cbinz, nb, distx,disty,distz,tdist2)
-  do binx = 2, nbinx-1
-      do binz = 1, nbinz
-        do i = 1, part_count(binx,biny,binz)
-          p = binpart(i,binx,biny,binz)
-          binpart(i,binx,biny,binz) = -1
-          do stx = -1, 1
-            cbinx = binx + stx
-            do sty = 0, 1
-              cbiny = biny + sty
-              do stz = -1, 1
-                cbinz = binz + stz
-                if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
-                do j = 1, part_count(cbinx,cbiny, cbinz)
-                  nb = binpart(j,cbinx,cbiny,cbinz)
-                  if(nb .eq. -1) cycle
-                  distx = px(p) - px(nb)
-                  disty = py(p) - py(nb)
-                  distz = pz(p) - pz(nb)
-                  tdist2 = distx*distx + disty*disty + distz*distz
-                  if(tdist2 .lt. h2) then
-                    nc(p) = nc(p) + 1
-                    nbs(p,nc(p)) = nb
-                    nc(nb) = nc(nb) + 1
-                    nbs(nb,nc(nb)) = p
-                  end if
-                end do
-              end do
-            end do
-          end do
-        end do
-      end do
+  nc(i) = q
   end do
-  ! $OMP END DO NOWAIT
-
-
-  ! Top wall
-  biny = nbiny
-  ! $OMP DO private(q, binx, biny, binz, p, cbinx, cbiny, cbinz, nb, distx,disty,distz,tdist2)
-  do binx = 2, nbinx-1
-      do binz = 1, nbinz
-        do i = 1, part_count(binx,biny,binz)
-          p = binpart(i,binx,biny,binz)
-          binpart(i,binx,biny,binz) = -1
-          do stx = -1, 1
-            cbinx = binx + stx
-            do sty = -1, 0
-              cbiny = biny + sty
-              do stz = -1, 1
-                cbinz = binz + stz
-                if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
-                do j = 1, part_count(cbinx,cbiny, cbinz)
-                  nb = binpart(j,cbinx,cbiny,cbinz)
-                  if(nb .eq. -1) cycle
-                  distx = px(p) - px(nb)
-                  disty = py(p) - py(nb)
-                  distz = pz(p) - pz(nb)
-                  tdist2 = distx*distx + disty*disty + distz*distz
-                  if(tdist2 .lt. h2) then
-                    nc(p) = nc(p) + 1
-                    nbs(p,nc(p)) = nb
-                    nc(nb) = nc(nb) + 1
-                    nbs(nb,nc(nb)) = p
-                  end if
-                end do
-              end do
-            end do
-          end do
-        end do
-      end do
-  end do
-  ! $OMP END DO NOWAIT
-
-
-  ! Forward wall
-  binz = 1
-  ! $OMP DO private(q, binx, biny, binz, p, cbinx, cbiny, cbinz, nb, distx,disty,distz,tdist2)
-  do binx = 2, nbinx-1
-    do biny = 2, nbiny-1
-        do i = 1, part_count(binx,biny,binz)
-          p = binpart(i,binx,biny,binz)
-          binpart(i,binx,biny,binz) = -1
-          do stx = -1, 1
-            cbinx = binx + stx
-            do sty = -1, 1
-              cbiny = biny + sty
-              do stz = 0, 1
-                cbinz = binz + stz
-                do j = 1, part_count(cbinx,cbiny, cbinz)
-                  nb = binpart(j,cbinx,cbiny,cbinz)
-                  if(nb .eq. -1) cycle
-                  distx = px(p) - px(nb)
-                  disty = py(p) - py(nb)
-                  distz = pz(p) - pz(nb)
-                  tdist2 = distx*distx + disty*disty + distz*distz
-                  if(tdist2 .lt. h2) then
-                    nc(p) = nc(p) + 1
-                    nbs(p,nc(p)) = nb
-                    nc(nb) = nc(nb) + 1
-                    nbs(nb,nc(nb)) = p
-                  end if
-                end do
-              end do
-            end do
-          end do
-        end do
-    end do
-  end do
-  ! $OMP END DO NOWAIT
-
-
-  ! Back Wall
-  binz = nbinz
-  ! $OMP DO private(q, binx, biny, binz, p, cbinx, cbiny, cbinz, nb, distx,disty,distz,tdist2)
-  do binx = 2, nbinx-1
-    do biny = 2, nbiny-1
-        do i = 1, part_count(binx,biny,binz)
-          p = binpart(i,binx,biny,binz)
-          binpart(i,binx,biny,binz) = -1
-          do stx = -1, 1
-            cbinx = binx + stx
-            do sty = -1, 1
-              cbiny = biny + sty
-              do stz = -1, 0
-                cbinz = binz + stz
-                do j = 1, part_count(cbinx,cbiny, cbinz)
-                  nb = binpart(j,cbinx,cbiny,cbinz)
-                  if(nb .eq. -1) cycle
-                  distx = px(p) - px(nb)
-                  disty = py(p) - py(nb)
-                  distz = pz(p) - pz(nb)
-                  tdist2 = distx*distx + disty*disty + distz*distz
-                  if(tdist2 .lt. h2) then
-                    nc(p) = nc(p) + 1
-                    nbs(p,nc(p)) = nb
-                    nc(nb) = nc(nb) + 1
-                    nbs(nb,nc(nb)) = p
-                  end if
-                end do
-              end do
-            end do
-          end do
-        end do
-    end do
-  end do
-  ! $OMP END DO NOWAIT
-
-
-  ! Rest
-  ! $OMP DO private(q, binx, biny, binz, p, cbinx, cbiny, cbinz, nb, distx,disty,distz,tdist2)
-  do binx = 2, nbinx-1
-    do biny = 2, nbiny-1
-      do binz = 2, nbinz-1
-        do i = 1, part_count(binx,biny,binz)
-          p = binpart(i,binx,biny,binz)
-          binpart(i,binx,biny,binz) = -1
-          do stx = -1, 1
-            cbinx = binx + stx
-            do sty = -1, 1
-              cbiny = biny + sty
-              do stz = -1, 1
-                cbinz = binz + stz
-                do j = 1, part_count(cbinx,cbiny, cbinz)
-                  nb = binpart(j,cbinx,cbiny,cbinz)
-                  if(nb .eq. -1) cycle
-                  distx = px(p) - px(nb)
-                  disty = py(p) - py(nb)
-                  distz = pz(p) - pz(nb)
-                  tdist2 = distx*distx + disty*disty + distz*distz
-                  if(tdist2 .lt. h2) then
-                    nc(p) = nc(p) + 1
-                    nbs(p,nc(p)) = nb
-                    nc(nb) = nc(nb) + 1
-                    nbs(nb,nc(nb)) = p
-                  end if
-                end do
-              end do
-            end do
-          end do
-        end do
-      end do
-    end do
-  end do
-  ! $OMP END DO
+  !$OMP END PARALLEL DO
 
   return
 end subroutine neighbor_find
@@ -687,13 +459,9 @@ subroutine compute_density
   real(WP) :: rhosum, c, r2
   real(WP) :: dx, dy, dz, kpd
 
-  ! $OMP WORKSHARE
   rho = (315.0_WP/64.0_WP/PI)*mass/h3
-  ! $OMP END WORKSHARE
   c = 315.0_WP/64.0_WP/PI*mass/h9
 
-
-  ! $OMP DO private(rhosum, dx, dy, dz, r2, kpd, nb, i, l, j)
   do i = 1, n
     rhosum = 0.0_WP
 
@@ -707,12 +475,10 @@ subroutine compute_density
       r2 = dx*dx + dy*dy + dz*dz
       kpd = h2 - r2
       rhosum = rhosum + c * kpd * kpd * kpd
-
     end do
 
     rho(i) = rho(i) + rhosum
   end do
-  ! $OMP END DO
 
   return
 end subroutine compute_density
@@ -734,7 +500,6 @@ subroutine compute_forces
   cpres = 45.0_WP*mass/PI/h5*BULK_MODULUS*0.5_WP
   cvisc = -45.0_WP*mass/PI/h5*VISCOSITY
 
-  ! $OMP DO private(sx,sy,sz,i,l,j,nb, dx,dy,dz,dvx,dvy,dvz,r2,m,q,kpres,kvisc)
   do i = 1, n
     sx = 0.0_WP
     sy = 0.0_WP
@@ -744,7 +509,6 @@ subroutine compute_forces
     l = nc(i)
     do j = 1, l
       nb = nbs(i,j)
-      if(nb .lt. i) cycle
       dx = px(i) - px(nb)
       dy = py(i) - py(nb)
       dz = pz(i) - pz(nb)
@@ -765,11 +529,8 @@ subroutine compute_forces
 
 
       sx = sx + kpres*dx+kvisc*dvx
-      fx(nb) = fx(nb) -kpres*dx+kvisc*dvx
       sy = sy + kpres*dy+kvisc*dvy
-      fy(nb) = fy(nb) - kpres*dy+kvisc*dvy
       sz = sz + kpres*dz+kvisc*dvz
-      fz(nb) = fz(nb) - kpres*dz+kvisc*dvz
 
     end do
     fx(i) = sx
@@ -777,7 +538,6 @@ subroutine compute_forces
     fz(i) = sz
 
   end do
-  ! $OMP END DO
 
   return
 end subroutine compute_forces
@@ -788,16 +548,12 @@ subroutine ext_forces
   use posvel
   implicit none
 
-  ! $OMP WORKSHARE
   fx = fx/rho
   fy = fy/rho
   fz = fz/rho
-  ! $OMP END WORKSHARE
 
   ! Only gravity for now
-  ! $OMP WORKSHARE
   fy = fy + GRAVITY
-  ! $OMP END WORKSHARE
 
   return
 end subroutine ext_forces
@@ -812,55 +568,39 @@ subroutine posvel_update
 
   if(iter.eq.1) then
 
-    ! $OMP WORKSHARE
     vlx = vx
     vly = vy
     vlz = vz
-    ! $OMP END WORKSHARE
 
-    ! $OMP WORKSHARE
     vlx = vlx + 0.5_WP*dt * fx
     vly = vly + 0.5_WP*dt * fy
     vlz = vlz + 0.5_WP*dt * fz
-    ! $OMP END WORKSHARE
 
-    ! $OMP WORKSHARE
     vx = vx + dt*fx
     vy = vy + dt*fy
     vz = vz + dt*fz
-    ! $OMP END WORKSHARE
 
-    ! $OMP WORKSHARE
     px = px + dt*vlx
     py = py + dt*vly
     pz = pz + dt*vlz
-    ! $OMP END WORKSHARE
 
   else
 
-    ! $OMP WORKSHARE
     vlx = vlx + dt * fx
     vly = vly + dt * fy
     vlz = vlz + dt * fz
-    ! $OMP END WORKSHARE
 
-    ! $OMP WORKSHARE
     vx = vlx
     vy = vly
     vz = vlz
-    ! $OMP END WORKSHARE
 
-    ! $OMP WORKSHARE
     vx = vx + 0.5_WP*dt*fx
     vy = vy + 0.5_WP*dt*fy
     vz = vz + 0.5_WP*dt*fz
-    ! $OMP END WORKSHARE
 
-    ! $OMP WORKSHARE
     px = px + dt*vlx
     py = py + dt*vly
     pz = pz + dt*vlz
-    ! $OMP END WORKSHARE
   end if
 
   call enforce_BCs
@@ -875,7 +615,6 @@ subroutine enforce_BCs
   implicit none
   integer :: i
 
-  ! $OMP DO
   do i = 1, n
 
     if(px(i) .lt. 0.0_WP) then
@@ -903,7 +642,6 @@ subroutine enforce_BCs
     end if
 
   end do
-  ! $OMP END DO
 
   return
 end subroutine enforce_BCs

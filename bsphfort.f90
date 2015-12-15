@@ -4,7 +4,7 @@
 module precision
 
   implicit none
-  integer, parameter :: WP = kind(1.0d0)
+  integer, parameter :: WP = 4
 end module
 
 ! ===================================== !
