@@ -140,6 +140,7 @@ program sph_run
   !$OMP PARALLEL NUM_THREADS(procs) default(shared)
   iter = 0
   time = 0.0_WP
+  write_sum = 0.0_WP
   do while (time .lt. tfin)
     !$OMP MASTER
     iter = iter + 1
@@ -196,6 +197,7 @@ subroutine init
   use posvel
   use neighbors
   use forces
+  use timers
   implicit none
   character(30) :: init_file, proc_string
   integer :: i, unit
@@ -270,6 +272,14 @@ subroutine init
   ! Print out initial particle positions
   frame = 0
   call particle_write
+
+  ! Initialize timers
+  neigh_t = 0.0_WP
+  dens_t = 0.0_WP
+  force_t = 0.0_WP
+  ef_t = 0.0_WP
+  ps_t = 0.0_WP
+  tot_t = 0.0_WP
 
   return
 end subroutine init
@@ -634,7 +644,6 @@ subroutine neighbor_find
       do binz = 2, nbinz-1
         do i = 1, part_count(binx,biny,binz)
           p = binpart(i,binx,biny,binz)
-          binpart(i,binx,biny,binz) = -1
           do stx = -1, 1
             cbinx = binx + stx
             do sty = -1, 1
@@ -643,7 +652,7 @@ subroutine neighbor_find
                 cbinz = binz + stz
                 do j = 1, part_count(cbinx,cbiny, cbinz)
                   nb = binpart(j,cbinx,cbiny,cbinz)
-                  if(nb .eq. -1) cycle
+                  if(nb .le. p) cycle
                   distx = px(p) - px(nb)
                   disty = py(p) - py(nb)
                   distz = pz(p) - pz(nb)
