@@ -128,6 +128,7 @@ program sph_run
   real(WP) :: total_time
   real(WP) :: twrite
 
+
   init_start = omp_get_wtime()
   time = 0.0_WP
   dt = 0.0_WP
@@ -135,7 +136,6 @@ program sph_run
   call init
   twrite = frame_freq
   init_stop = omp_get_wtime()
-
 
   !$OMP PARALLEL NUM_THREADS(procs) default(shared)
   iter = 0
@@ -268,8 +268,6 @@ subroutine init
   close(unit)
   deallocate(data)
 
-  call mass_change
-
   ! Print out initial particle positions
   frame = 0
   call particle_write
@@ -282,6 +280,8 @@ subroutine init
   ps_t = 0.0_WP
   tot_t = 0.0_WP
 
+  call mass_change
+
   return
 end subroutine init
 
@@ -289,13 +289,83 @@ subroutine mass_change
   use posvel
   use state
   use constants
+  use neighbors
+  use forces
   implicit none
-  integer :: i
   real(WP) :: rho0, rho2s, rhos
+  integer :: i, j, q, p, nb, l
+  integer :: binx, biny, binz, tbins, bin
+  integer :: cbinx, cbiny, cbinz
+  integer :: stx, sty, stz
+  real(WP) :: distx, disty, distz, tdist2
+  real(WP) :: rhosum, c, r2
+  real(WP) :: dx, dy, dz, kpd
 
   mass = 1
-  call neighbor_find
-  call compute_density
+
+  do i = 1, n
+    binx = NINT((px(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
+    biny = NINT((py(i))/(BOX_SIZE)*(real(nbiny,WP)-1.0_WP)) + 1
+    binz = NINT((pz(i))/(BOX_SIZE)*(real(nbinz,WP)-1.0_WP)) + 1
+    part_count(binx, biny, binz) = part_count(binx, biny, binz) + 1
+    binpart(part_count(binx,biny,binz),binx,biny,binz) = i
+  end do
+
+  tbins = nbinx*nbiny*nbinz
+  do bin = 0, tbins-1
+    binz = bin / nbinx / nbiny + 1
+    biny = mod(bin / nbinx, nbinz) + 1
+    binx = mod(bin,nbinx) + 1
+    do i = 1, part_count(binx,biny,binz)
+      p = binpart(i,binx,biny,binz)
+      q = 0
+      do stz = -1, 1
+        cbinz = binz + stz
+        if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
+        do sty = -1, 1
+          cbiny = biny + sty
+          if(cbiny.lt.1 .or. cbiny.gt.nbiny) cycle
+          do stx = -1, 1
+            cbinx = binx + stx
+            if(cbinx.lt.1 .or. cbinx.gt.nbinx) cycle
+            do j = 1, part_count(cbinx,cbiny, cbinz)
+              nb = binpart(j,cbinx,cbiny,cbinz)
+              distx = px(p) - px(nb)
+              disty = py(p) - py(nb)
+              distz = pz(p) - pz(nb)
+              tdist2 = distx*distx + disty*disty + distz*distz
+              if(tdist2 .lt. h2 .and. nb.ne.p) then
+                q = q + 1
+                nbs(p,q) = nb
+              end if
+            end do
+          end do
+        end do
+      end do
+      nc(p) = q
+    end do
+  end do
+
+  rho = (315.0_WP/64.0_WP/PI)*mass/h3
+  c = 315.0_WP/64.0_WP/PI*mass/h9
+
+  do i = 1, n
+    rhosum = 0.0_WP
+
+    l = nc(i)
+    do j = 1, l
+      nb = nbs(i,j)
+      dx = px(i) - px(nb)
+      dy = py(i) - py(nb)
+      dz = pz(i) - pz(nb)
+      r2 = dx*dx + dy*dy + dz*dz
+      kpd = h2 - r2
+      rhosum = rhosum + c * kpd * kpd * kpd
+    end do
+
+    rho(i) = rho(i) + rhosum
+  end do
+
   rho0 = PARTICLE_DENSITY
   rho2s = 0.0_WP
   rhos = 0.0_WP
@@ -435,42 +505,39 @@ subroutine neighbor_find
   !$OMP DO private(binz,biny,binx,p,nb,cbinx,cbiny,cbinz,distx,disty,distz,tdist2) &
   !$OMP SCHEDULE(DYNAMIC,step)
   do bin = 0, tbins-1
-        binz = bin / nbinx / nbiny + 1
-        biny = mod(bin / nbinx, nbinz) + 1
-        binx = mod(bin,nbinx) + 1
-        do i = 1, part_count(binx,biny,binz)
-          p = binpart(i,binx,biny,binz)
-          binpart(i,binx,biny,binz) = -1
-          do stz = -1, 1
-            cbinz = binz + stz
-            if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
-            do sty = -1, 1
-              cbiny = biny + sty
-              if(cbiny.lt.1 .or. cbiny.gt.nbiny) cycle
-              do stx = -1, 1
-                cbinx = binx + stx
-                if(cbinx.lt.1 .or. cbinx.gt.nbinx) cycle
-                do j = 1, part_count(cbinx,cbiny, cbinz)
-                  nb = binpart(j,cbinx,cbiny,cbinz)
-                  if(nb .eq. -1) cycle
-                  distx = px(p) - px(nb)
-                  disty = py(p) - py(nb)
-                  distz = pz(p) - pz(nb)
-                  tdist2 = distx*distx + disty*disty + distz*distz
-                  if(tdist2 .lt. h2) then
-                    nc(p) = nc(p) + 1
-                    nc(nb) = nc(nb) + 1
-                    nbs(p,nc(p)) = nb
-                    nbs(nb,nc(nb)) = p
-                  end if
-                end do
-              end do
+    binz = bin / nbinx / nbiny + 1
+    biny = mod(bin / nbinx, nbinz) + 1
+    binx = mod(bin,nbinx) + 1
+    do i = 1, part_count(binx,biny,binz)
+      p = binpart(i,binx,biny,binz)
+      q = 0
+      do stz = -1, 1
+        cbinz = binz + stz
+        if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
+        do sty = -1, 1
+          cbiny = biny + sty
+          if(cbiny.lt.1 .or. cbiny.gt.nbiny) cycle
+          do stx = -1, 1
+            cbinx = binx + stx
+            if(cbinx.lt.1 .or. cbinx.gt.nbinx) cycle
+            do j = 1, part_count(cbinx,cbiny, cbinz)
+              nb = binpart(j,cbinx,cbiny,cbinz)
+              distx = px(p) - px(nb)
+              disty = py(p) - py(nb)
+              distz = pz(p) - pz(nb)
+              tdist2 = distx*distx + disty*disty + distz*distz
+              if(tdist2 .lt. h2 .and. nb.ne.p) then
+                q = q + 1
+                nbs(p,q) = nb
+              end if
             end do
           end do
         end do
+      end do
+      nc(p) = q
+    end do
   end do
   !$OMP END DO
-!stop
   return
 end subroutine neighbor_find
 
@@ -496,7 +563,6 @@ subroutine compute_density
     l = nc(i)
     do j = 1, l
       nb = nbs(i,j)
-
       dx = px(i) - px(nb)
       dy = py(i) - py(nb)
       dz = pz(i) - pz(nb)
