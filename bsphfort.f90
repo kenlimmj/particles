@@ -28,7 +28,7 @@ module constants
   implicit none
   real(WP), parameter :: GRAVITY = -9.8_WP
   real(WP), parameter :: PI = 3.14159265_WP
-  real(WP), parameter :: BOX_SIZE =1.0_WP
+  real(WP) :: BOX_SIZE
   real(WP), parameter :: PARTICLE_DENSITY = 1000.0_WP
   real(WP) :: h, h2, h3, h4, h5, h9       ! KERNEL_SIZE
   real(WP), parameter :: BULK_MODULUS = 1000.0_WP
@@ -207,6 +207,7 @@ subroutine init
   read(unit,*) tfin         ! Second line is finish time of simulation
   read(unit,*) dt           ! Third line is time step
   read(unit,*) frame_freq   ! Fourth line is viz frame frequency
+  read(unit,*) BOX_SIZE   ! Fifth line is BOX_SIZE
 
   ! Allocate everything
   allocate(px(n)); px = 0.0_WP
