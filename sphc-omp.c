@@ -34,6 +34,10 @@ double * fz;
 
 // Neighbors
 int gridsize;
+int * gx;
+int * gy;
+int * gz;
+omp_lock_t * gridlock;
 int * gridc;
 int ** grid;
 int * nc;
@@ -156,17 +160,20 @@ void spikykernel(int i, int j, double gv[]) {
 }
 
 // Viscosity kernel
-double viscositykernel(int i, int j) {
+void viscositykernel(int i, int j, double gv[]) {
     const double c = 315.0 / (64.0 * PI);
     double dx = cvx[i] - cvx[j];
     double dy = cvy[i] - cvy[j];
     double dz = cvz[i] - cvz[j];
     double r = sqrt(dx * dx + dy * dy + dz * dz);
-  
-    // THIS ISNT RIGHT. THIS IS FROM POLY6
-    return (r > KERNEL_SIZE) ? 0 : c * pow(
+    
+    double k = (r > KERNEL_SIZE) ? 0 : c * pow(
         KERNEL_SIZE * KERNEL_SIZE - r * r, 3
     ) / pow(KERNEL_SIZE, 9);
+    
+    gv[0] = k * dx;
+    gv[1] = k * dy;
+    gv[2] = k * dz;
 }
 
 // Advance particles by a single step
@@ -179,7 +186,7 @@ void step(double dt) {
     start = omp_get_wtime();
 
     // Apply forces
-    #pragma omp single
+    #pragma omp for
     for (int i = 0; i < n; ++i) {
         // Gravity
         fx[i] = 0.0;
@@ -199,7 +206,7 @@ void step(double dt) {
     }
     
     // Compute candidate velocities and positions
-    #pragma omp single
+    #pragma omp for
     for (int i = 0; i < n; ++i) {
         cvx[i] = vx[i] + fx[i] * dt;
         cvy[i] = vy[i] + fy[i] * dt;
@@ -221,34 +228,32 @@ void step(double dt) {
     // Find neighbors
     // Place into grid
     #pragma omp single
-    memset(gridc, 0, n * sizeof(int));
-    #pragma omp single
+    memset(gridc, 0, gridsize * gridsize * gridsize * sizeof(int));
+    #pragma omp for
     for (int i = 0; i < n; ++i) {
-        int gx = (px[i] / KERNEL_SIZE);
-        int gy = (py[i] / KERNEL_SIZE);
-        int gz = (pz[i] / KERNEL_SIZE);
-        if (gx < 0) gx = 0; else if (gx >= gridsize) gx = gridsize - 1;
-        if (gy < 0) gy = 0; else if (gy >= gridsize) gy = gridsize - 1;
-        if (gz < 0) gz = 0; else if (gz >= gridsize) gz = gridsize - 1;
-
-        int offset = gx * gridsize * gridsize + gy * gridsize + gz;
+        gx[i] = (px[i] / KERNEL_SIZE);
+        gy[i] = (py[i] / KERNEL_SIZE);
+        gz[i] = (pz[i] / KERNEL_SIZE);
+        if (gx[i] < 0) gx[i] = 0; else if (gx[i] >= gridsize) gx[i] = gridsize - 1;
+        if (gy[i] < 0) gy[i] = 0; else if (gy[i] >= gridsize) gy[i] = gridsize - 1;
+        if (gz[i] < 0) gz[i] = 0; else if (gz[i] >= gridsize) gz[i] = gridsize - 1;
+        
+        int offset = gx[i] * gridsize * gridsize + gy[i] * gridsize + gz[i];
+        omp_set_lock(&gridlock[offset]);
         grid[offset][gridc[offset]] = i;
         gridc[offset]++;
+        omp_unset_lock(&gridlock[offset]);
     }
 
     // Find neighbors using the grid
     #pragma omp single
     memset(nc, 0, n * sizeof(int));
-    #pragma omp single
+    #pragma omp for
     for (int i = 0; i < n; ++i) {
-        int gx = (px[i] / KERNEL_SIZE);
-        int gy = (py[i] / KERNEL_SIZE);
-        int gz = (pz[i] / KERNEL_SIZE);
-
         // Look at surrounding grid spaces
-        for (int gox = gx - 1; gox <= gx + 1; ++gox) {
-        for (int goy = gy - 1; goy <= gy + 1; ++goy) {
-        for (int goz = gz - 1; goz <= gz + 1; ++goz) {
+        for (int gox = gx[i] - 1; gox <= gx[i] + 1; ++gox) {
+        for (int goy = gy[i] - 1; goy <= gy[i] + 1; ++goy) {
+        for (int goz = gz[i] - 1; goz <= gz[i] + 1; ++goz) {
             if (gox < 0 || gox >= gridsize) continue;
             if (goy < 0 || goy >= gridsize) continue;
             if (goz < 0 || goz >= gridsize) continue;
@@ -278,9 +283,9 @@ void step(double dt) {
     start = omp_get_wtime();
     }
     
-    #pragma omp single
     for (int iteration = 0; iteration < ITERATIONS_PER_STEP; iteration++) {
         // Compute lambda
+        #pragma omp for
         for (int i = 0; i < n; ++i) {
             double rho = 0.0;
             double numer = 0.0;
@@ -317,6 +322,7 @@ void step(double dt) {
         }
 
         // Jiggle particles
+        #pragma omp for
         for (int i = 0; i < n; ++i) {
             // Compute pressure
             double sx = 0.0;
@@ -386,7 +392,7 @@ void step(double dt) {
     }
     
     // Compute angular velocity
-    #pragma omp single
+    #pragma omp for
     for (int i = 0; i < n; ++i) {
         double sx = 0.0;
         double sy = 0.0;
@@ -395,14 +401,11 @@ void step(double dt) {
         double velx, vely, velz;
         for (int j = 0, l = nc[i]; j < l; ++j) {
             int nb = nbs[i][j];
-          // I THINK VX, VY, VZ SHOULDNT BE VELOCITY BUT A DIFFERENT VARIABLE FOR VORTICITY
-          // (+corrected)
             velx = cvx[nb] - cvx[i];
             vely = cvy[nb] - cvy[i];
             velz = cvz[nb] - cvz[i];
 
             spikykernel(i, nb, gv);
-          // SAME QUESTION HERE FOR VX VY VZ
             sx += vely * gv[2] - velz * gv[1];
             sy += velz * gv[0] - velx * gv[2];
             sz += velx * gv[1] - vely * gv[0];
@@ -415,7 +418,7 @@ void step(double dt) {
     }
 
     // Compute vorticity force
-    #pragma omp single
+    #pragma omp for
     for (int i = 0; i < n; ++i) {
         double sx = 0.0;
         double sy = 0.0;
@@ -445,7 +448,6 @@ void step(double dt) {
 
         vox[i] = (sy * dpz[i] - sz * dpy[i]) * VORTICITY_COEFFICIENT;
         voy[i] = (sz * dpx[i] - sx * dpz[i]) * VORTICITY_COEFFICIENT;
-        // I THINK BELOW SHOULD BE SX*DPY - SY*DPX (+corrected)
         voz[i] = (sx * dpy[i] - sy * dpx[i]) * VORTICITY_COEFFICIENT;
     }
     
@@ -456,22 +458,19 @@ void step(double dt) {
     }
     
     // Viscosity
-    #pragma omp single
+    #pragma omp for
     for (int i = 0; i < n; ++i) {
         double sx = 0.0;
         double sy = 0.0;
         double sz = 0.0;
         double dx, dy, dz;
+        double gv[3];
         for (int j = 0, l = nc[i]; j < l; ++j) {
             int nb = nbs[i][j];
-            dx = cvx[nb] - cvx[i];
-            dy = cvy[nb] - cvy[i];
-            dz = cvz[nb] - cvz[i];
-            // I THINK THE POLY6KERNEL IS USED IN THE JAVA VERSION?
-            double c = viscositykernel(i, nb);
-            sx += c * dx;
-            sy += c * dy;
-            sz += c * dz;
+            viscositykernel(i, nb, gv);
+            sx += gv[0];
+            sy += gv[1];
+            sz += gv[2];
         }
         cvx[i] += ARTIFICIAL_VISCOSITY * sx;
         cvy[i] += ARTIFICIAL_VISCOSITY * sy;
@@ -485,7 +484,7 @@ void step(double dt) {
     }
     
     // Update particle
-    #pragma omp single
+    #pragma omp for
     for (int i = 0; i < n; ++i) {
         vx[i] = cvx[i];
         vy[i] = cvy[i];
@@ -566,7 +565,14 @@ void init(const char * initfile) {
     fz = (double *) malloc(n * sizeof(double));
 
     gridsize = (int) (BOX_SIZE / KERNEL_SIZE + 0.5);
-    gridc = (int *) malloc(gridsize * gridsize * gridsize * n * sizeof(int));
+    gx = (int *) malloc(n * sizeof(int));
+    gy = (int *) malloc(n * sizeof(int));
+    gz = (int *) malloc(n * sizeof(int));
+    gridlock = (omp_lock_t *) malloc(gridsize * gridsize * gridsize * sizeof(omp_lock_t));
+    for (int i = 0; i < gridsize * gridsize * gridsize; ++i) {
+        omp_init_lock(&gridlock[i]);
+    }
+    gridc = (int *) malloc(gridsize * gridsize * gridsize * sizeof(int));
     grid = (int **) malloc(gridsize * gridsize * gridsize * sizeof(int *));
     for (int i = 0; i < gridsize * gridsize * gridsize; ++i) {
         grid[i] = (int *) malloc(n * sizeof(int));
