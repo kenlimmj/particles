@@ -12,16 +12,17 @@ import math
 ######## INPUT PARAMETERS ###############
 # File name to write
 filename = "init.txt"    # File name to write
-tfin = 3.00              # End time of simulation
+tfin = 1.00              # End time of simulation
 dt = 0.0001              # Time step
 ff = 0.05                # Time between viz frames
 h = 0.05                 # Kernel (particle) size
+bs = 1.00                # Cubic domain side length
 Lix = 0.00               # Starting of fluid in x
 Liy = 0.00               # Starting of fluid in y
 Liz = 0.00               # Starting of fluid in z
 Lfx = 0.50               # End of fluid in x
-Lfy = 0.75               # End of fluid in y
-Lfz = 0.25               # End of fluid in z
+Lfy = 0.50               # End of fluid in y
+Lfz = 0.50               # End of fluid in z
 Ivx = 0.0                # Initial x velocity
 Ivy = 0.0                # Initial y Velocity
 Ivz = 0.0                # Initial z velocity
@@ -66,6 +67,8 @@ fid.write("\n")
 fid.write(str(dt))
 fid.write("\n")
 fid.write(str(ff))
+fid.write("\n")
+fid.write(str(bs))
 fid.write("\n")
 for i in range(0,nx):
   for j in range(0,ny):
