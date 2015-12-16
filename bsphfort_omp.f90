@@ -136,18 +136,22 @@ program sph_run
   twrite = frame_freq
   call cpu_time(init_stop)
 
+
+  !$OMP PARALLEL NUM_THREADS(procs) default(shared)
   iter = 0
   time = 0.0_WP
   do while (time .lt. tfin)
- !   if(my_id.eq.0) 
-     iter = iter + 1
+    !$OMP MASTER
+    iter = iter + 1
+    !$OMP END MASTER
 
     ! Simulate the fluid flow
     call step
-    !if(my_id.eq.0)
+    !$OMP MASTER
     time = time + dt
+    !$OMP END MASTER
 
-    !if(my_id .eq. 0) then
+    !$OMP MASTER
       if(time .ge. twrite) then
         call cpu_time(write_start)
         twrite = twrite + frame_freq
@@ -158,9 +162,10 @@ program sph_run
         call cpu_time(write_stop)
         write_sum = write_sum + (write_stop-write_start)
       end if
-!    end if
-
+    !$OMP END MASTER
+    !$OMP BARRIER
   end do
+  !$OMP END PARALLEL
 
   call cpu_time(deinit_start)
   call deinit
@@ -362,26 +367,24 @@ subroutine step
   implicit none
   real(WP) :: t1, t2, t3, t4, t5, t6, t7
 
-  my_id = 0
-  if(my_id.eq.0) call cpu_time(t1)
-  call neighbor_find
-  if(my_id.eq.0) call cpu_time(t2)
-  call compute_density
-  if(my_id.eq.0) call cpu_time(t3)
-  call compute_forces
-  if(my_id.eq.0) call cpu_time(t5)
-  call ext_forces
-  if(my_id.eq.0) call cpu_time(t6)
-  call posvel_update
-  if(my_id.eq.0) call cpu_time(t7)
 
-  if(my_id.eq.0) then
-    neigh_t = neigh_t  + t2-t1
-    dens_t  = dens_t   + t3-t2
-    force_t = force_t  + t5-t3
-    ef_t    = ef_t     + t6-t5
-    ps_t    = ps_t     + t7-t6
-  end if
+  call cpu_time(t1)
+  call neighbor_find
+  call cpu_time(t2)
+  call compute_density
+  call cpu_time(t3)
+  call compute_forces
+  call cpu_time(t5)
+  call ext_forces
+  call cpu_time(t6)
+  call posvel_update
+  call cpu_time(t7)
+
+  neigh_t = neigh_t  + (t2-t1)/procs
+  dens_t  = dens_t   + (t3-t2)/procs
+  force_t = force_t  + (t5-t3)/procs
+  ef_t    = ef_t     + (t6-t5)/procs
+  ps_t    = ps_t     + (t7-t6)/procs
 
 end subroutine step
 
@@ -390,6 +393,7 @@ subroutine neighbor_find
   use state
   use neighbors
   use posvel
+  use omp_lib
   implicit none
   integer :: i, j, q, p, nb, l
   integer :: binx, biny, binz
@@ -397,9 +401,12 @@ subroutine neighbor_find
   integer :: stx, sty, stz
   real(WP) :: distx, disty, distz, tdist2
 
+  !$OMP WORKSHARE
   part_count = 0
   binpart = 0
+  !$OMP END WORKSHARE
 
+  !$OMP SINGLE
   do i = 1, n
     binx = NINT((px(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
     biny = NINT((py(i))/(BOX_SIZE)*(real(nbiny,WP)-1.0_WP)) + 1
@@ -407,14 +414,15 @@ subroutine neighbor_find
     part_count(binx, biny, binz) = part_count(binx, biny, binz) + 1
     binpart(part_count(binx,biny,binz),binx,biny,binz) = i
   end do
+  !$OMP END SINGLE
 
+  !$OMP WORKSHARE
   nbs = 0
   nc = 0
+  !$OMP END WORKSHARE
 
-  !$OMP PARALLEL DO default(none) shared(nbs,nc,nbinx,nbiny,nbinz,px,py,pz,h2,part_count,binpart) &
-  !$OMP private(q,i,binx,biny,binz,stx,sty,stz,cbinx,cbiny,cbinz,nb,distx,disty,distz,tdist2) &
-  !$OMP NUM_THREADS(procs)
-  do i = 1, n
+  !$OMP DO private(binx,biny,binz,cbinx,cbiny,cbinz,nb,distx,disty,distz,tdist2,q)
+  do i = 1,n
     binx = NINT((px(i))/(BOX_SIZE)*(real(nbinx,WP)-1.0_WP)) + 1
     biny = NINT((py(i))/(BOX_SIZE)*(real(nbiny,WP)-1.0_WP)) + 1
     binz = NINT((pz(i))/(BOX_SIZE)*(real(nbinz,WP)-1.0_WP)) + 1
@@ -442,9 +450,9 @@ subroutine neighbor_find
         end do
       end do
     end do
-  nc(i) = q
+    nc(i) = q
   end do
-  !$OMP END PARALLEL DO
+  !$OMP END DO
 
   return
 end subroutine neighbor_find
@@ -459,9 +467,12 @@ subroutine compute_density
   real(WP) :: rhosum, c, r2
   real(WP) :: dx, dy, dz, kpd
 
+  !$OMP WORKSHARE
   rho = (315.0_WP/64.0_WP/PI)*mass/h3
+  !$OMP END WORKSHARE
   c = 315.0_WP/64.0_WP/PI*mass/h9
 
+  !$OMP DO private(rhosum,nb,dx,dy,dz,r2,kpd)
   do i = 1, n
     rhosum = 0.0_WP
 
@@ -479,6 +490,7 @@ subroutine compute_density
 
     rho(i) = rho(i) + rhosum
   end do
+  !$OMP END DO
 
   return
 end subroutine compute_density
@@ -500,6 +512,7 @@ subroutine compute_forces
   cpres = 45.0_WP*mass/PI/h5*BULK_MODULUS*0.5_WP
   cvisc = -45.0_WP*mass/PI/h5*VISCOSITY
 
+  !$OMP DO private(sx,sy,sz,nb,dx,dy,dz,dvx,dvy,dvz,r2,m,q,kpres,kvisc)
   do i = 1, n
     sx = 0.0_WP
     sy = 0.0_WP
@@ -520,13 +533,11 @@ subroutine compute_forces
       m = sqrt(r2/h2)
       q = 1.0_WP - m
 
-
       kpres = cpres / rho(nb) * q &
           * (rho(i)+rho(nb)-2.0_WP*PARTICLE_DENSITY) &
           * q / m
 
       kvisc = cvisc / rho(nb) * q
-
 
       sx = sx + kpres*dx+kvisc*dvx
       sy = sy + kpres*dy+kvisc*dvy
@@ -538,6 +549,7 @@ subroutine compute_forces
     fz(i) = sz
 
   end do
+  !$OMP END DO
 
   return
 end subroutine compute_forces
@@ -548,12 +560,11 @@ subroutine ext_forces
   use posvel
   implicit none
 
+  !$OMP WORKSHARE
   fx = fx/rho
-  fy = fy/rho
+  fy = fy/rho + GRAVITY
   fz = fz/rho
-
-  ! Only gravity for now
-  fy = fy + GRAVITY
+  !$OMP END WORKSHARE
 
   return
 end subroutine ext_forces
@@ -568,39 +579,51 @@ subroutine posvel_update
 
   if(iter.eq.1) then
 
+    !$OMP WORKSHARE
     vlx = vx
     vly = vy
     vlz = vz
+    !$OMP END WORKSHARE
 
+    !$OMP WORKSHARE
     vlx = vlx + 0.5_WP*dt * fx
     vly = vly + 0.5_WP*dt * fy
     vlz = vlz + 0.5_WP*dt * fz
+    !$OMP END WORKSHARE
+
+    !$OMP WORKSHARE
+    px = px + dt*vlx
+    py = py + dt*vly
+    pz = pz + dt*vlz
 
     vx = vx + dt*fx
     vy = vy + dt*fy
     vz = vz + dt*fz
-
-    px = px + dt*vlx
-    py = py + dt*vly
-    pz = pz + dt*vlz
+    !$OMP END WORKSHARE
 
   else
 
+    !$OMP WORKSHARE
     vlx = vlx + dt * fx
     vly = vly + dt * fy
     vlz = vlz + dt * fz
 
-    vx = vlx
-    vy = vly
-    vz = vlz
-
-    vx = vx + 0.5_WP*dt*fx
-    vy = vy + 0.5_WP*dt*fy
-    vz = vz + 0.5_WP*dt*fz
-
     px = px + dt*vlx
     py = py + dt*vly
     pz = pz + dt*vlz
+    !$OMP END WORKSHARE
+
+    !$OMP WORKSHARE
+    vx = vlx
+    vy = vly
+    vz = vlz
+    !$OMP END WORKSHARE
+
+    !$OMP WORKSHARE
+    vx = vx + 0.5_WP*dt*fx
+    vy = vy + 0.5_WP*dt*fy
+    vz = vz + 0.5_WP*dt*fz
+    !$OMP END WORKSHARE
   end if
 
   call enforce_BCs
@@ -615,6 +638,7 @@ subroutine enforce_BCs
   implicit none
   integer :: i
 
+  !$OMP DO
   do i = 1, n
 
     if(px(i) .lt. 0.0_WP) then
@@ -642,6 +666,7 @@ subroutine enforce_BCs
     end if
 
   end do
+  !$OMP END DO
 
   return
 end subroutine enforce_BCs
