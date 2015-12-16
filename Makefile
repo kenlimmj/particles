@@ -1,11 +1,11 @@
-CC=gcc
+CC=icc
 FC=gfortran
 
 ANAFLAGS=-qopt-report=5 -qopt-report-phase=vec -parallel-source-info=2
 OPTFLAGS=-fast -xHost -ansi-alias -restrict -mkl -openmp
 
 CFLAGS=-std=c99 -g -pedantic -Wall -Werror
-CFLAGS+=#$(OPTFLAGS) $(ANAFLAGS)
+CFLAGS+=$(OPTFLAGS)
 LDFLAGS= -fopenmp
 LIBS= -lm
 
@@ -13,9 +13,12 @@ LIBS= -lm
 FFLAGS = -g -fbacktrace -Wall -pedantic -Wextra -W -Wno-unused-function -fbounds-check -fopenmp -Wunderflow
 .PHONY: all
 
-all: sphc sphfort bsphfort
+all: sphc sphc-omp sphfort bsphfort
 
 sphc: sphc.o
+	$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
+
+sphc-omp: sphc-omp.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
 
 sphfort: sphfort.o
