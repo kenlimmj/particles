@@ -11,14 +11,14 @@ import math
 
 ######## INPUT PARAMETERS ###############
 # File name to write
-filename = "init.txt"    # File name to write
-box = 1.0                 # Box size
-Lix = 0.05               # Starting of fluid in x
-Liy = 0.05               # Starting of fluid in y
-Liz = 0.05               # Starting of fluid in z
-Lfx = 0.56               # End of fluid in x
-Lfy = 0.81               # End of fluid in y
-Lfz = 0.56               # End of fluid in z
+filename = sys.argv[1]   # File name to write
+box = 10.0                # Box size
+Lix = 0.0                # Starting of fluid in x
+Liy = 0.0                # Starting of fluid in y
+Liz = 0.0                # Starting of fluid in z
+Lfx = 6.0                # End of fluid in x
+Lfy = 0.6                # End of fluid in y
+Lfz = 6.0                # End of fluid in z
 Ivx = 0.0                # Initial x velocity
 Ivy = 0.0                # Initial y Velocity
 Ivz = 0.0                # Initial z velocity
@@ -26,10 +26,13 @@ Ivz = 0.0                # Initial z velocity
 
 
 ######## NOTHING NEEDS TO BE CHANGED AFTER THIS POINT #######
-pdist = 0.05
-nx = int(math.ceil(float(Lfx-Lix)/pdist))
-ny = int(math.ceil(float(Lfy-Liy)/pdist))
-nz = int(math.ceil(float(Lfz-Liz)/pdist))
+pdist = 0.06
+Lfx = Lfx - pdist
+Lfy = Lfy - pdist
+Lfz = Lfz - pdist
+nx = int((Lfx-Lix)/pdist + 0.5) + 1
+ny = int((Lfy-Liy)/pdist + 0.5) + 1
+nz = int((Lfz-Liz)/pdist + 0.5) + 1
 n = nx*ny*nz   # Total number of particles
 
 # Initialize
