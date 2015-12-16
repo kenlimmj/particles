@@ -12,24 +12,21 @@ import math
 ######## INPUT PARAMETERS ###############
 # File name to write
 filename = "init.txt"    # File name to write
-tfin = 3.00              # End time of simulation
-dt = 0.0001              # Time step
-ff = 0.05                # Time between viz frames
-h = 0.025                 # Kernel (particle) size
-Lix = 0.20               # Starting of fluid in x
-Liy = 0.25               # Starting of fluid in y
-Liz = 0.10               # Starting of fluid in z
-Lfx = 0.60               # End of fluid in x
-Lfy = 0.75               # End of fluid in y
-Lfz = 0.90               # End of fluid in z
-Ivx = 5.0                # Initial x velocity
+box = 1.0                 # Box size
+Lix = 0.05               # Starting of fluid in x
+Liy = 0.05               # Starting of fluid in y
+Liz = 0.05               # Starting of fluid in z
+Lfx = 0.55               # End of fluid in x
+Lfy = 0.80               # End of fluid in y
+Lfz = 0.55               # End of fluid in z
+Ivx = 0.0                # Initial x velocity
 Ivy = 0.0                # Initial y Velocity
 Ivz = 0.0                # Initial z velocity
 
 
 
 ######## NOTHING NEEDS TO BE CHANGED AFTER THIS POINT #######
-pdist = h/1.3
+pdist = 0.05
 nx = int(math.ceil(float(Lfx-Lix)/pdist))
 ny = int(math.ceil(float(Lfy-Liy)/pdist))
 nz = int(math.ceil(float(Lfz-Liz)/pdist))
@@ -59,13 +56,7 @@ vz[:] = Ivz
 fid = open(filename, 'w')
 fid.write(str(n))
 fid.write("\n")
-fid.write(str(h))
-fid.write("\n")
-fid.write(str(tfin))
-fid.write("\n")
-fid.write(str(dt))
-fid.write("\n")
-fid.write(str(ff))
+fid.write(str(box))
 fid.write("\n")
 for i in range(0,nx):
   for j in range(0,ny):

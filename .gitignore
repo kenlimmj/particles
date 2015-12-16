@@ -1,9 +1,8 @@
 # Created by https://www.gitignore.io/api/latex,c++,fortran,java,linux,osx,sublimetext,tex,visualstudio,visualstudiocode,emacs,vim,python
 
 ## output
-output/particles*
-output/candidates*
-output/frame*
+output/data/*
+output/frame/*
 sphc
 *.o*
 *.mp4

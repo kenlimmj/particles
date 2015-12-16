@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <omp.h>
 #include "constants.h"
 
 // Current time
@@ -61,12 +62,22 @@ double * vox;
 double * voy;
 double * voz;
 
+// Timing
+double total_time_force = 0.0;
+double total_time_candidate = 0.0;
+double total_time_neighbor = 0.0;
+double total_time_solve = 0.0;
+double total_time_vorticity = 0.0;
+double total_time_viscosity = 0.0;
+double total_time_update = 0.0;
+
 // Write output
 void write_step(int step) {
     char fname[200];
-    sprintf(fname, "output/particles_%05d", step);
+    sprintf(fname, "output/data/particles_%05d", step);
     FILE * fout = fopen(fname, "w");
     fprintf(fout, "%d\n", n);
+    fprintf(fout, "%lf\n", BOX_SIZE);
     for (int i = 0; i < n; ++i) {
         fprintf(fout, "%lf %lf %lf %lf %lf %lf\n",
             px[i], py[i], pz[i], vx[i], vy[i], vz[i]);
@@ -76,9 +87,10 @@ void write_step(int step) {
 
 void write_candidates(int step) {
     char fname[200];
-    sprintf(fname, "output/candidates_%05d", step);
+    sprintf(fname, "output/data/candidates_%05d", step);
     FILE * fout = fopen(fname, "w");
     fprintf(fout, "%d\n", n);
+    fprintf(fout, "%lf\n", BOX_SIZE);
     for (int i = 0; i < n; ++i) {
         fprintf(fout, "%lf %lf %lf %lf %lf %lf\n",
             cpx[i], cpy[i], cpz[i], cvx[i], cvy[i], cvz[i]);
@@ -89,7 +101,7 @@ void write_candidates(int step) {
 // Runtime computed constant
 double PRESSURE_RADIUS_FACTOR = 0.0;
 
-void computePressureRadiusFactor() {
+void computeConstants() {
     const double c = 315.0 / (64.0 * PI);
     double r = ARTIFICIAL_PRESSURE_RADIUS;
     PRESSURE_RADIUS_FACTOR = 1.0 / (c * pow(
@@ -154,6 +166,10 @@ double viscositykernel(int i, int j) {
 
 // Advance particles by a single step
 void step(double dt) {
+    double start;
+    
+    start = omp_get_wtime();
+    
     // Clear forces
     memset(fx, 0, n * sizeof(double));
     memset(fy, 0, n * sizeof(double));
@@ -169,7 +185,11 @@ void step(double dt) {
         fy[i] += voy[i];
         fz[i] += voz[i];
     }
-
+    
+    double time_force = omp_get_wtime() - start;
+    
+    start = omp_get_wtime();
+    
     // Compute candidate velocities and positions
     for (int i = 0; i < n; ++i) {
         cvx[i] = vx[i] + fx[i] * dt;
@@ -182,7 +202,11 @@ void step(double dt) {
         cpy[i] = py[i] + cvy[i] * dt;
         cpz[i] = pz[i] + cvz[i] * dt;
     }
-
+    
+    double time_candidate = omp_get_wtime() - start;
+    
+    start = omp_get_wtime();
+    
     // Find neighbors
     // Place into grid
     memset(gridc, 0, n * sizeof(int));
@@ -232,7 +256,11 @@ void step(double dt) {
         }
         }
     }
-
+    
+    double time_neighbor = omp_get_wtime() - start;
+    
+    start = omp_get_wtime();
+    
     for (int iteration = 0; iteration < ITERATIONS_PER_STEP; iteration++) {
         // Compute lambda
         for (int i = 0; i < n; ++i) {
@@ -332,7 +360,11 @@ void step(double dt) {
             }
         }
     }
-
+    
+    double time_solve = omp_get_wtime() - start;
+    
+    start = omp_get_wtime();
+    
     // Compute angular velocity
     for (int i = 0; i < n; ++i) {
         double sx = 0.0;
@@ -394,7 +426,11 @@ void step(double dt) {
         // I THINK BELOW SHOULD BE SX*DPY - SY*DPX (+corrected)
         voz[i] = (sx * dpy[i] - sy * dpx[i]) * VORTICITY_COEFFICIENT;
     }
-
+    
+    double time_vorticity = omp_get_wtime() - start;
+    
+    start = omp_get_wtime();
+    
     // Viscosity
     for (int i = 0; i < n; ++i) {
         double sx = 0.0;
@@ -416,7 +452,11 @@ void step(double dt) {
         cvy[i] += ARTIFICIAL_VISCOSITY * sy;
         cvz[i] += ARTIFICIAL_VISCOSITY * sz;
     }
-
+    
+    double time_viscosity = omp_get_wtime() - start;
+    
+    start = omp_get_wtime();
+    
     // Update particle
     for (int i = 0; i < n; ++i) {
         vx[i] = cvx[i];
@@ -427,6 +467,25 @@ void step(double dt) {
         py[i] = cpy[i];
         pz[i] = cpz[i];
     }
+    
+    double time_update = omp_get_wtime() - start;
+    
+    printf("Forces:     %lf\n", time_force);
+    printf("Candidates: %lf\n", time_candidate);
+    printf("Neighbors:  %lf\n", time_neighbor);
+    printf("Iterations: %lf\n", time_solve);
+    printf("Vorticity:  %lf\n", time_vorticity);
+    printf("Viscosity:  %lf\n", time_viscosity);
+    printf("Update:     %lf\n", time_update);
+    printf("\n");
+    
+    total_time_force += time_force;
+    total_time_candidate += time_candidate;
+    total_time_neighbor += time_neighbor;
+    total_time_solve += time_solve;
+    total_time_vorticity += time_vorticity;
+    total_time_viscosity += time_viscosity;
+    total_time_update += time_update;
 }
 
 void run(int steps, double dt) {
@@ -440,12 +499,22 @@ void run(int steps, double dt) {
         }
         write_step(i);
     }
+    
+    printf("Total Forces:     %lf\n", total_time_force);
+    printf("Total Candidates: %lf\n", total_time_candidate);
+    printf("Total Neighbors:  %lf\n", total_time_neighbor);
+    printf("Total Iterations: %lf\n", total_time_solve);
+    printf("Total Vorticity:  %lf\n", total_time_vorticity);
+    printf("Total Viscosity:  %lf\n", total_time_viscosity);
+    printf("Total Update:     %lf\n", total_time_update);
+    printf("\n");
 }
 
 void init(const char * initfile) {
     FILE * fin = fopen(initfile, "r");
     // Read number of particles
     fscanf(fin, "%d", &n);
+    fscanf(fin, "%lf", &BOX_SIZE);
 
     // Allocate arrays
     ox = (double *) malloc(n * sizeof(double));
@@ -506,8 +575,7 @@ void init(const char * initfile) {
         oz[i] = pz[i];
     }
 
-    // Compute pressure radius factor
-    computePressureRadiusFactor();
+    computeConstants();
 
     fclose(fin);
 }
