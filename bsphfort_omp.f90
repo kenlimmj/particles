@@ -128,13 +128,13 @@ program sph_run
   real(WP) :: total_time
   real(WP) :: twrite
 
-  call cpu_time(init_start)
+  init_start = omp_get_wtime()
   time = 0.0_WP
   dt = 0.0_WP
 
   call init
   twrite = frame_freq
-  call cpu_time(init_stop)
+  init_stop = omp_get_wtime()
 
 
   !$OMP PARALLEL NUM_THREADS(procs) default(shared)
@@ -154,13 +154,13 @@ program sph_run
 
     !$OMP MASTER
       if(time .ge. twrite) then
-        call cpu_time(write_start)
+        write_start = omp_get_wtime()
         twrite = twrite + frame_freq
         print*,"Iteration: ",iter," Time: ",time
         print*,"Max U: ", maxval(vx(:))," Max V: ",maxval(vy(:))," Max W: ",maxval(vz(:))
         print*,"  "
         call particle_write
-        call cpu_time(write_stop)
+        write_stop = omp_get_wtime()
         write_sum = write_sum + (write_stop-write_start)
       end if
     !$OMP END MASTER
@@ -168,12 +168,13 @@ program sph_run
   end do
   !$OMP END PARALLEL
 
-  call cpu_time(deinit_start)
+  deinit_start = omp_get_wtime()
   call deinit
-  call cpu_time(deinit_stop)
+  deinit_stop = omp_get_wtime()
 
-  total_time = init_stop-init_start+neigh_t+dens_t &
-                +force_t+ef_t+ps_t+deinit_stop-deinit_start
+
+
+  total_time = deinit_stop-init_start
   write(*,"(A)")                 "Timing Information:                Total Time              Time Per Step"
   write(*,"(A)")                 "---------------------             ------------            ---------------"
   write(*,"(A,ES25.11)")         "Initialization:        ",init_stop-init_start
@@ -377,17 +378,17 @@ subroutine step
   real(WP) :: t1, t2, t3, t4, t5, t6, t7
 
 
-  call cpu_time(t1)
+  t1 = omp_get_wtime()
   call neighbor_find
-  call cpu_time(t2)
+  t2 = omp_get_wtime()
   call compute_density
-  call cpu_time(t3)
+  t3 = omp_get_wtime()
   call compute_forces
-  call cpu_time(t5)
+  t5 = omp_get_wtime()
   call ext_forces
-  call cpu_time(t6)
+  t6 = omp_get_wtime()
   call posvel_update
-  call cpu_time(t7)
+  t7 = omp_get_wtime()
 
   neigh_t = neigh_t  + (t2-t1)/procs
   dens_t  = dens_t   + (t3-t2)/procs
@@ -405,9 +406,11 @@ subroutine neighbor_find
   use omp_lib
   implicit none
   integer :: i, j, q, p, nb, l
-  integer :: binx, biny, binz
+  integer :: binx, biny, binz, tbins, bin
   integer :: cbinx, cbiny, cbinz
+  integer :: mnbinx, mnbiny, mnbinz
   integer :: stx, sty, stz
+  integer :: step
   real(WP) :: distx, disty, distz, tdist2
 
   !$OMP WORKSHARE
@@ -425,242 +428,39 @@ subroutine neighbor_find
     part_count(binx, biny, binz) = part_count(binx, biny, binz) + 1
     binpart(part_count(binx,biny,binz),binx,biny,binz) = i
   end do
-
-  ! Left wall
-  binx = 1
-    do biny = 1, nbiny
-      do binz = 1, nbinz
-        do i = 1, part_count(binx,biny,binz)
-          p = binpart(i,binx,biny,binz)
-          binpart(i,binx,biny,binz) = -1
-          do stx = 0, 1
-            cbinx = binx + stx
-            do sty = -1, 1
-              cbiny = biny + sty
-              if(cbiny.lt.1 .or. cbiny.gt.nbiny) cycle
-              do stz = -1, 1
-                cbinz = binz + stz
-                if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
-                do j = 1, part_count(cbinx,cbiny, cbinz)
-                  nb = binpart(j,cbinx,cbiny,cbinz)
-                  if(nb .eq. -1) cycle
-                  distx = px(p) - px(nb)
-                  disty = py(p) - py(nb)
-                  distz = pz(p) - pz(nb)
-                  tdist2 = distx*distx + disty*disty + distz*distz
-                  if(tdist2 .lt. h2) then
-                    nc(p) = nc(p) + 1
-                    nbs(p,nc(p)) = nb
-                    nc(nb) = nc(nb) + 1
-                    nbs(nb,nc(nb)) = p
-                  end if
-                end do
-              end do
-            end do
-          end do
-        end do
-      end do
-    end do
-
-  ! Right wall
-  binx = nbinx
-    do biny = 1, nbiny
-      do binz = 1, nbinz
-        do i = 1, part_count(binx,biny,binz)
-          p = binpart(i,binx,biny,binz)
-          binpart(i,binx,biny,binz) = -1
-          do stx = -1, 0
-            cbinx = binx + stx
-            do sty = -1, 1
-              cbiny = biny + sty
-              if(cbiny.lt.1 .or. cbiny.gt.nbiny) cycle
-              do stz = -1, 1
-                cbinz = binz + stz
-                if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
-                do j = 1, part_count(cbinx,cbiny, cbinz)
-                  nb = binpart(j,cbinx,cbiny,cbinz)
-                  if(nb .eq. -1) cycle
-                  distx = px(p) - px(nb)
-                  disty = py(p) - py(nb)
-                  distz = pz(p) - pz(nb)
-                  tdist2 = distx*distx + disty*disty + distz*distz
-                  if(tdist2 .lt. h2) then
-                    nc(p) = nc(p) + 1
-                    nbs(p,nc(p)) = nb
-                    nc(nb) = nc(nb) + 1
-                    nbs(nb,nc(nb)) = p
-                  end if
-                end do
-              end do
-            end do
-          end do
-        end do
-      end do
-    end do
-
-  ! Bottom wall
-  biny = 1
-  do binx = 2, nbinx-1
-      do binz = 1, nbinz
-        do i = 1, part_count(binx,biny,binz)
-          p = binpart(i,binx,biny,binz)
-          binpart(i,binx,biny,binz) = -1
-          do stx = -1, 1
-            cbinx = binx + stx
-            do sty = 0, 1
-              cbiny = biny + sty
-              do stz = -1, 1
-                cbinz = binz + stz
-                if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
-                do j = 1, part_count(cbinx,cbiny, cbinz)
-                  nb = binpart(j,cbinx,cbiny,cbinz)
-                  if(nb .eq. -1) cycle
-                  distx = px(p) - px(nb)
-                  disty = py(p) - py(nb)
-                  distz = pz(p) - pz(nb)
-                  tdist2 = distx*distx + disty*disty + distz*distz
-                  if(tdist2 .lt. h2) then
-                    nc(p) = nc(p) + 1
-                    nbs(p,nc(p)) = nb
-                    nc(nb) = nc(nb) + 1
-                    nbs(nb,nc(nb)) = p
-                  end if
-                end do
-              end do
-            end do
-          end do
-        end do
-      end do
-  end do
-
-  ! Top wall
-  biny = nbiny
-  do binx = 2, nbinx-1
-      do binz = 1, nbinz
-        do i = 1, part_count(binx,biny,binz)
-          p = binpart(i,binx,biny,binz)
-          binpart(i,binx,biny,binz) = -1
-          do stx = -1, 1
-            cbinx = binx + stx
-            do sty = -1, 0
-              cbiny = biny + sty
-              do stz = -1, 1
-                cbinz = binz + stz
-                if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
-                do j = 1, part_count(cbinx,cbiny, cbinz)
-                  nb = binpart(j,cbinx,cbiny,cbinz)
-                  if(nb .eq. -1) cycle
-                  distx = px(p) - px(nb)
-                  disty = py(p) - py(nb)
-                  distz = pz(p) - pz(nb)
-                  tdist2 = distx*distx + disty*disty + distz*distz
-                  if(tdist2 .lt. h2) then
-                    nc(p) = nc(p) + 1
-                    nbs(p,nc(p)) = nb
-                    nc(nb) = nc(nb) + 1
-                    nbs(nb,nc(nb)) = p
-                  end if
-                end do
-              end do
-            end do
-          end do
-        end do
-      end do
-  end do
-
-  ! Forward wall
-  binz = 1
-  do binx = 2, nbinx-1
-    do biny = 2, nbiny-1
-        do i = 1, part_count(binx,biny,binz)
-          p = binpart(i,binx,biny,binz)
-          binpart(i,binx,biny,binz) = -1
-          do stx = -1, 1
-            cbinx = binx + stx
-            do sty = -1, 1
-              cbiny = biny + sty
-              do stz = 0, 1
-                cbinz = binz + stz
-                do j = 1, part_count(cbinx,cbiny, cbinz)
-                  nb = binpart(j,cbinx,cbiny,cbinz)
-                  if(nb .eq. -1) cycle
-                  distx = px(p) - px(nb)
-                  disty = py(p) - py(nb)
-                  distz = pz(p) - pz(nb)
-                  tdist2 = distx*distx + disty*disty + distz*distz
-                  if(tdist2 .lt. h2) then
-                    nc(p) = nc(p) + 1
-                    nbs(p,nc(p)) = nb
-                    nc(nb) = nc(nb) + 1
-                    nbs(nb,nc(nb)) = p
-                  end if
-                end do
-              end do
-            end do
-          end do
-        end do
-    end do
-  end do
-
-  ! Back Wall
-  binz = nbinz
-  do binx = 2, nbinx-1
-    do biny = 2, nbiny-1
-        do i = 1, part_count(binx,biny,binz)
-          p = binpart(i,binx,biny,binz)
-          binpart(i,binx,biny,binz) = -1
-          do stx = -1, 1
-            cbinx = binx + stx
-            do sty = -1, 1
-              cbiny = biny + sty
-              do stz = -1, 0
-                cbinz = binz + stz
-                do j = 1, part_count(cbinx,cbiny, cbinz)
-                  nb = binpart(j,cbinx,cbiny,cbinz)
-                  if(nb .eq. -1) cycle
-                  distx = px(p) - px(nb)
-                  disty = py(p) - py(nb)
-                  distz = pz(p) - pz(nb)
-                  tdist2 = distx*distx + disty*disty + distz*distz
-                  if(tdist2 .lt. h2) then
-                    nc(p) = nc(p) + 1
-                    nbs(p,nc(p)) = nb
-                    nc(nb) = nc(nb) + 1
-                    nbs(nb,nc(nb)) = p
-                  end if
-                end do
-              end do
-            end do
-          end do
-        end do
-    end do
-  end do
   !$OMP END SINGLE
 
-  ! Rest
-  !$OMP DO private(cbinx,cbiny,cbinz,distx,disty,distz,tdist2)
-  do binx = 2, nbinx-1
-    do biny = 2, nbiny-1
-      do binz = 2, nbinz-1
+  tbins = nbinx*nbiny*nbinz
+  step = tbins/procs/100
+  !$OMP DO private(binz,biny,binx,p,nb,cbinx,cbiny,cbinz,distx,disty,distz,tdist2) &
+  !$OMP SCHEDULE(DYNAMIC,step)
+  do bin = 0, tbins-1
+        binz = bin / nbinx / nbiny + 1
+        biny = mod(bin / nbinx, nbinz) + 1
+        binx = mod(bin,nbinx) + 1
         do i = 1, part_count(binx,biny,binz)
           p = binpart(i,binx,biny,binz)
-          do stx = -1, 1
-            cbinx = binx + stx
+          binpart(i,binx,biny,binz) = -1
+          do stz = -1, 1
+            cbinz = binz + stz
+            if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
             do sty = -1, 1
               cbiny = biny + sty
-              do stz = -1, 1
-                cbinz = binz + stz
+              if(cbiny.lt.1 .or. cbiny.gt.nbiny) cycle
+              do stx = -1, 1
+                cbinx = binx + stx
+                if(cbinx.lt.1 .or. cbinx.gt.nbinx) cycle
                 do j = 1, part_count(cbinx,cbiny, cbinz)
                   nb = binpart(j,cbinx,cbiny,cbinz)
-                  if(nb .le. p) cycle
+                  if(nb .eq. -1) cycle
                   distx = px(p) - px(nb)
                   disty = py(p) - py(nb)
                   distz = pz(p) - pz(nb)
                   tdist2 = distx*distx + disty*disty + distz*distz
                   if(tdist2 .lt. h2) then
                     nc(p) = nc(p) + 1
-                    nbs(p,nc(p)) = nb
                     nc(nb) = nc(nb) + 1
+                    nbs(p,nc(p)) = nb
                     nbs(nb,nc(nb)) = p
                   end if
                 end do
@@ -668,11 +468,9 @@ subroutine neighbor_find
             end do
           end do
         end do
-      end do
-    end do
   end do
   !$OMP END DO
-
+!stop
   return
 end subroutine neighbor_find
 

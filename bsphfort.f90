@@ -118,6 +118,7 @@ program sph_run
   use state
   use posvel
   use timers
+  use omp_lib
   implicit none
   real(WP) :: init_start, init_stop
   real(WP) :: write_start, write_stop, write_sum
@@ -125,13 +126,13 @@ program sph_run
   real(WP) :: total_time
   real(WP) :: twrite
 
-  call cpu_time(init_start)
+  init_start = omp_get_wtime()
   time = 0.0_WP
   dt = 0.0_WP
 
   call init
   twrite = frame_freq
-  call cpu_time(init_stop)
+  init_stop = omp_get_wtime()
 
   iter = 0
   do while (time .lt. tfin)
@@ -142,25 +143,25 @@ program sph_run
     time = time + dt
 
     if(time .ge. twrite) then
-      call cpu_time(write_start)
+      write_start = omp_get_wtime()
       twrite = twrite + frame_freq
       print*,"Iteration: ",iter," Time: ",time
       print*,"Max U: ", maxval(vx(:))," Max V: ",maxval(vy(:))," Max W: ",maxval(vz(:))
       print*,"  "
       call particle_write
-      call cpu_time(write_stop)
+      write_stop = omp_get_wtime()
       write_sum = write_sum + (write_stop-write_start)
     end if
 
   end do
 
-  call cpu_time(deinit_start)
+  deinit_start = omp_get_wtime()
   call deinit
-  call cpu_time(deinit_stop)
+  deinit_stop = omp_get_wtime()
 
 
-  total_time = init_stop-init_start+neigh_t+dens_t &
-                +force_t+ef_t+ps_t+deinit_stop-deinit_start
+  total_time = deinit_stop-init_start
+
   write(*,"(A)")                 "Timing Information:                Total Time              Time Per Step"
   write(*,"(A)")                 "---------------------             ------------            ---------------"
   write(*,"(A,ES25.11)")         "Initialization:        ",init_stop-init_start
@@ -346,20 +347,21 @@ subroutine step
   use constants
   use state
   use timers
+  use omp_lib
   implicit none
   real(WP) :: t1, t2, t3, t4, t5, t6, t7
 
-  call cpu_time(t1)
+  t1 = omp_get_wtime()
   call neighbor_find
-  call cpu_time(t2)
+  t2 = omp_get_wtime()
   call compute_density
-  call cpu_time(t3)
+  t3 = omp_get_wtime()
   call compute_forces
-  call cpu_time(t5)
+  t5 = omp_get_wtime()
   call ext_forces
-  call cpu_time(t6)
+  t6 = omp_get_wtime()
   call posvel_update
-  call cpu_time(t7)
+  t7 = omp_get_wtime()
 
   neigh_t = neigh_t  + t2-t1
   dens_t  = dens_t   + t3-t2
@@ -381,7 +383,6 @@ subroutine neighbor_find
   integer :: cbinx, cbiny, cbinz
   integer :: stx, sty, stz, housemates
   real(WP) :: distx, disty, distz, tdist2
-  real(WP)  :: t1, t2, t3, t4
 
   part_count = 0
   binpart = 0
@@ -399,19 +400,19 @@ subroutine neighbor_find
 
   ! Left wall
   binx = 1
-    do biny = 1, nbiny
-      do binz = 1, nbinz
+    do binz = 1, nbinz
+      do biny = 1, nbiny
         do i = 1, part_count(binx,biny,binz)
           p = binpart(i,binx,biny,binz)
           binpart(i,binx,biny,binz) = -1
-          do stx = 0, 1
-            cbinx = binx + stx
+          do stz = -1, 1
+            cbinz = binz + stz
+            if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
             do sty = -1, 1
               cbiny = biny + sty
               if(cbiny.lt.1 .or. cbiny.gt.nbiny) cycle
-              do stz = -1, 1
-                cbinz = binz + stz
-                if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
+              do stx = 0, 1
+                cbinx = binx + stx
                 do j = 1, part_count(cbinx,cbiny, cbinz)
                   nb = binpart(j,cbinx,cbiny,cbinz)
                   if(nb .eq. -1) cycle
@@ -435,19 +436,19 @@ subroutine neighbor_find
 
   ! Right wall
   binx = nbinx
-    do biny = 1, nbiny
-      do binz = 1, nbinz
+    do binz = 1, nbinz
+      do biny = 1, nbiny
         do i = 1, part_count(binx,biny,binz)
           p = binpart(i,binx,biny,binz)
           binpart(i,binx,biny,binz) = -1
-          do stx = -1, 0
-            cbinx = binx + stx
+          do stz = -1, 1
+            cbinz = binz + stz
+            if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
             do sty = -1, 1
               cbiny = biny + sty
               if(cbiny.lt.1 .or. cbiny.gt.nbiny) cycle
-              do stz = -1, 1
-                cbinz = binz + stz
-                if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
+              do stx = -1, 0
+                cbinx = binx + stx
                 do j = 1, part_count(cbinx,cbiny, cbinz)
                   nb = binpart(j,cbinx,cbiny,cbinz)
                   if(nb .eq. -1) cycle
@@ -471,18 +472,18 @@ subroutine neighbor_find
 
   ! Bottom wall
   biny = 1
-  do binx = 2, nbinx-1
-      do binz = 1, nbinz
+    do binz = 1, nbinz
+      do binx = 2, nbinx-1
         do i = 1, part_count(binx,biny,binz)
           p = binpart(i,binx,biny,binz)
           binpart(i,binx,biny,binz) = -1
-          do stx = -1, 1
-            cbinx = binx + stx
+          do stz = -1, 1
+            cbinz = binz + stz
+            if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
             do sty = 0, 1
               cbiny = biny + sty
-              do stz = -1, 1
-                cbinz = binz + stz
-                if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
+              do stx = -1, 1
+                cbinx = binx + stx
                 do j = 1, part_count(cbinx,cbiny, cbinz)
                   nb = binpart(j,cbinx,cbiny,cbinz)
                   if(nb .eq. -1) cycle
@@ -506,18 +507,18 @@ subroutine neighbor_find
 
   ! Top wall
   biny = nbiny
-  do binx = 2, nbinx-1
-      do binz = 1, nbinz
+    do binz = 1, nbinz
+      do binx = 2, nbinx-1
         do i = 1, part_count(binx,biny,binz)
           p = binpart(i,binx,biny,binz)
           binpart(i,binx,biny,binz) = -1
-          do stx = -1, 1
-            cbinx = binx + stx
+          do stz = -1, 1
+            cbinz = binz + stz
+            if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
             do sty = -1, 0
               cbiny = biny + sty
-              do stz = -1, 1
-                cbinz = binz + stz
-                if(cbinz.lt.1 .or. cbinz.gt.nbinz) cycle
+              do stx = -1, 1
+                cbinx = binx + stx
                 do j = 1, part_count(cbinx,cbiny, cbinz)
                   nb = binpart(j,cbinx,cbiny,cbinz)
                   if(nb .eq. -1) cycle
@@ -541,17 +542,17 @@ subroutine neighbor_find
 
   ! Forward wall
   binz = 1
-  do binx = 2, nbinx-1
     do biny = 2, nbiny-1
+      do binx = 2, nbinx-1
         do i = 1, part_count(binx,biny,binz)
           p = binpart(i,binx,biny,binz)
           binpart(i,binx,biny,binz) = -1
-          do stx = -1, 1
-            cbinx = binx + stx
+          do stz = 0, 1
+            cbinz = binz + stz
             do sty = -1, 1
               cbiny = biny + sty
-              do stz = 0, 1
-                cbinz = binz + stz
+              do stx = -1, 1
+                cbinx = binx + stx
                 do j = 1, part_count(cbinx,cbiny, cbinz)
                   nb = binpart(j,cbinx,cbiny,cbinz)
                   if(nb .eq. -1) cycle
@@ -575,17 +576,17 @@ subroutine neighbor_find
 
   ! Back Wall
   binz = nbinz
-  do binx = 2, nbinx-1
     do biny = 2, nbiny-1
+      do binx = 2, nbinx-1
         do i = 1, part_count(binx,biny,binz)
           p = binpart(i,binx,biny,binz)
           binpart(i,binx,biny,binz) = -1
-          do stx = -1, 1
-            cbinx = binx + stx
+          do stz = -1, 0
+            cbinz = binz + stz
             do sty = -1, 1
               cbiny = biny + sty
-              do stz = -1, 0
-                cbinz = binz + stz
+              do stx = -1, 1
+                cbinx = binx + stx
                 do j = 1, part_count(cbinx,cbiny, cbinz)
                   nb = binpart(j,cbinx,cbiny,cbinz)
                   if(nb .eq. -1) cycle
@@ -608,18 +609,18 @@ subroutine neighbor_find
   end do
 
   ! Rest
-  do binx = 2, nbinx-1
+  do binz = 2, nbinz-1
     do biny = 2, nbiny-1
-      do binz = 2, nbinz-1
+      do binx = 2, nbinx-1
         do i = 1, part_count(binx,biny,binz)
           p = binpart(i,binx,biny,binz)
           binpart(i,binx,biny,binz) = -1
-          do stx = -1, 1
-            cbinx = binx + stx
+          do stz = -1, 1
+            cbinz = binz + stz
             do sty = -1, 1
               cbiny = biny + sty
-              do stz = -1, 1
-                cbinz = binz + stz
+              do stx = -1, 1
+                cbinx = binx + stx
                 do j = 1, part_count(cbinx,cbiny, cbinz)
                   nb = binpart(j,cbinx,cbiny,cbinz)
                   if(nb .eq. -1) cycle
