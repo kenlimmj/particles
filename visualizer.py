@@ -32,9 +32,9 @@ velocities = np.ndarray((n,3))
 fig = plt.figure(figsize=(10,10))
 def plot_frame(i):
   ax = fig.add_subplot(111, projection='3d')
-  ax.set_xlim(0.0, 1.0)
-  ax.set_ylim(0.0, 1.0)
-  ax.set_zlim(0.0, 2.0)
+  ax.set_xlim(0.0, 2.5)
+  ax.set_ylim(0.0, 2.5)
+  ax.set_zlim(0.0, 3.0)
   data = np.loadtxt("./particles_"+times[i], skiprows=1)
   locations[:,0] = data[:,0]
   locations[:,1] = data[:,1]
