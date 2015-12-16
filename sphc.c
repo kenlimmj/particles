@@ -209,7 +209,7 @@ void step(double dt) {
     
     // Find neighbors
     // Place into grid
-    memset(gridc, 0, n * sizeof(int));
+    memset(gridc, 0, gridsize * gridsize * gridsize * sizeof(int));
     for (int i = 0; i < n; ++i) {
         int gx = (px[i] / KERNEL_SIZE);
         int gy = (py[i] / KERNEL_SIZE);
@@ -534,7 +534,7 @@ void init(const char * initfile) {
     fz = (double *) malloc(n * sizeof(double));
 
     gridsize = (int) (BOX_SIZE / KERNEL_SIZE + 0.5);
-    gridc = (int *) malloc(gridsize * gridsize * gridsize * n * sizeof(int));
+    gridc = (int *) malloc(gridsize * gridsize * gridsize * sizeof(int));
     grid = (int **) malloc(gridsize * gridsize * gridsize * sizeof(int *));
     for (int i = 0; i < gridsize * gridsize * gridsize; ++i) {
         grid[i] = (int *) malloc(n * sizeof(int));

@@ -12,13 +12,13 @@ import math
 ######## INPUT PARAMETERS ###############
 # File name to write
 filename = sys.argv[1]   # File name to write
-box = 10.0                # Box size
+box = 4.0                # Box size
 Lix = 0.0                # Starting of fluid in x
 Liy = 0.0                # Starting of fluid in y
 Liz = 0.0                # Starting of fluid in z
-Lfx = 6.0                # End of fluid in x
-Lfy = 0.6                # End of fluid in y
-Lfz = 6.0                # End of fluid in z
+Lfx = 1.92               # End of fluid in x
+Lfy = 1.92               # End of fluid in y
+Lfz = 1.92               # End of fluid in z
 Ivx = 0.0                # Initial x velocity
 Ivy = 0.0                # Initial y Velocity
 Ivz = 0.0                # Initial z velocity

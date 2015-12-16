@@ -26,7 +26,6 @@ sphc
 *.ind
 *.ist
 *.lof
-*.log
 *.lot
 *.maf
 *.mtc
@@ -181,7 +180,6 @@ sftp-config.json
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof
-*.log
 *.lot
 *.fls
 *.out
@@ -380,7 +378,6 @@ artifacts/
 *.tlh
 *.tmp
 *.tmp_proj
-*.log
 *.vspscc
 *.vssscc
 .builds
@@ -636,7 +633,6 @@ coverage.xml
 *.pot
 
 # Django stuff:
-*.log
 
 # Sphinx documentation
 docs/_build/

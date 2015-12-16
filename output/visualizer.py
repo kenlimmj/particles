@@ -41,7 +41,7 @@ def main(fname):
     ax.set_xlim(-0.25 * bs, 1.25 * bs)
     ax.set_ylim(-0.25 * bs, 1.25 * bs)
     ax.set_zlim(0.0, bs * 1.5)
-    ax.scatter(px, pz, py, s=10*10, c=[(0, 0, 1, 0.5)] * n)
+    ax.scatter(px, pz, py, edgecolors='none', s=20, c=[(0, 0, 1, 0.1)] * n)
     fig.savefig(outname)
 
 

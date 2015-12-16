@@ -363,24 +363,24 @@ void step(double dt) {
             // Resolve collisions
             if (cpy[i] < 0.0) { // Floor
                 cpy[i] = 0.0;
-                cvy[i] = -cvy[i];
+                cvy[i] = -0.75 * cvy[i];
             }
 
             if (cpx[i] < 0.0) { // Wall
                 cpx[i] = 0.0;
-                cvx[i] = -cvx[i];
+                cvx[i] = -0.75 * cvx[i];
             }
             if (cpx[i] > BOX_SIZE) { // Wall
                 cpx[i] = BOX_SIZE;
-                cvx[i] = -cvx[i];
+                cvx[i] = -0.75 * cvx[i];
             }
             if (cpz[i] < 0.0) { // Wall
                 cpz[i] = 0.0;
-                cvz[i] = -cvz[i];
+                cvz[i] = -0.75 * cvz[i];
             }
             if (cpz[i] > BOX_SIZE) { // Wall
                 cpz[i] = BOX_SIZE;
-                cvz[i] = -cvz[i];
+                cvz[i] = -0.75 * cvz[i];
             }
         }
     }

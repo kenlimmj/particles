@@ -7,5 +7,5 @@
 
 module load cs5220
 cd $PBS_O_WORKDIR
-./sphc init.txt 100 0.01
+./sphc init100k.txt 100 0.01
 

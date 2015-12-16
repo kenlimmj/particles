@@ -1,0 +1,4008 @@
+Forces:     0.000333
+Candidates: 0.000334
+Neighbors:  0.008045
+Iterations: 0.021757
+Vorticity:  0.002038
+Viscosity:  0.000597
+Update:     0.000083
+
+Forces:     0.000032
+Candidates: 0.000056
+Neighbors:  0.005277
+Iterations: 0.023030
+Vorticity:  0.002011
+Viscosity:  0.000574
+Update:     0.000061
+
+Forces:     0.000041
+Candidates: 0.000071
+Neighbors:  0.006884
+Iterations: 0.021159
+Vorticity:  0.002032
+Viscosity:  0.000575
+Update:     0.000051
+
+Forces:     0.000023
+Candidates: 0.000049
+Neighbors:  0.006902
+Iterations: 0.021601
+Vorticity:  0.002076
+Viscosity:  0.000588
+Update:     0.000063
+
+Forces:     0.000032
+Candidates: 0.000050
+Neighbors:  0.006915
+Iterations: 0.021972
+Vorticity:  0.002116
+Viscosity:  0.000599
+Update:     0.000051
+
+Forces:     0.000084
+Candidates: 0.000172
+Neighbors:  0.007434
+Iterations: 0.022856
+Vorticity:  0.002191
+Viscosity:  0.000635
+Update:     0.000112
+
+Forces:     0.000040
+Candidates: 0.000059
+Neighbors:  0.007277
+Iterations: 0.023037
+Vorticity:  0.002219
+Viscosity:  0.000642
+Update:     0.000059
+
+Forces:     0.000045
+Candidates: 0.000057
+Neighbors:  0.007289
+Iterations: 0.023222
+Vorticity:  0.002237
+Viscosity:  0.000648
+Update:     0.000059
+
+Forces:     0.000040
+Candidates: 0.000059
+Neighbors:  0.007233
+Iterations: 0.023320
+Vorticity:  0.002244
+Viscosity:  0.000651
+Update:     0.000056
+
+Forces:     0.000040
+Candidates: 0.000057
+Neighbors:  0.007332
+Iterations: 0.023383
+Vorticity:  0.002253
+Viscosity:  0.000653
+Update:     0.000057
+
+Forces:     0.000162
+Candidates: 0.000376
+Neighbors:  0.007558
+Iterations: 0.023064
+Vorticity:  0.002216
+Viscosity:  0.000648
+Update:     0.000059
+
+Forces:     0.000030
+Candidates: 0.000068
+Neighbors:  0.007040
+Iterations: 0.022931
+Vorticity:  0.002211
+Viscosity:  0.000648
+Update:     0.000055
+
+Forces:     0.000029
+Candidates: 0.000064
+Neighbors:  0.007086
+Iterations: 0.022921
+Vorticity:  0.002207
+Viscosity:  0.000648
+Update:     0.000056
+
+Forces:     0.000033
+Candidates: 0.000072
+Neighbors:  0.007001
+Iterations: 0.022910
+Vorticity:  0.002230
+Viscosity:  0.000648
+Update:     0.000056
+
+Forces:     0.000030
+Candidates: 0.000061
+Neighbors:  0.006988
+Iterations: 0.022890
+Vorticity:  0.002206
+Viscosity:  0.000649
+Update:     0.000056
+
+Forces:     0.000044
+Candidates: 0.000177
+Neighbors:  0.007101
+Iterations: 0.022906
+Vorticity:  0.002203
+Viscosity:  0.000646
+Update:     0.000165
+
+Forces:     0.000032
+Candidates: 0.000067
+Neighbors:  0.007110
+Iterations: 0.022458
+Vorticity:  0.002161
+Viscosity:  0.000646
+Update:     0.000057
+
+Forces:     0.000037
+Candidates: 0.000071
+Neighbors:  0.007041
+Iterations: 0.022444
+Vorticity:  0.002159
+Viscosity:  0.000648
+Update:     0.000057
+
+Forces:     0.000035
+Candidates: 0.000070
+Neighbors:  0.007005
+Iterations: 0.022427
+Vorticity:  0.002156
+Viscosity:  0.000648
+Update:     0.000057
+
+Forces:     0.000033
+Candidates: 0.000071
+Neighbors:  0.006996
+Iterations: 0.022423
+Vorticity:  0.002154
+Viscosity:  0.000648
+Update:     0.000057
+
+Forces:     0.000048
+Candidates: 0.000176
+Neighbors:  0.007107
+Iterations: 0.022473
+Vorticity:  0.002159
+Viscosity:  0.000648
+Update:     0.000165
+
+Forces:     0.000035
+Candidates: 0.000072
+Neighbors:  0.007126
+Iterations: 0.022555
+Vorticity:  0.002160
+Viscosity:  0.000646
+Update:     0.000058
+
+Forces:     0.000040
+Candidates: 0.000070
+Neighbors:  0.007046
+Iterations: 0.022433
+Vorticity:  0.002155
+Viscosity:  0.000649
+Update:     0.000056
+
+Forces:     0.000033
+Candidates: 0.000070
+Neighbors:  0.007023
+Iterations: 0.022449
+Vorticity:  0.002160
+Viscosity:  0.000650
+Update:     0.000058
+
+Forces:     0.000036
+Candidates: 0.000072
+Neighbors:  0.007125
+Iterations: 0.022494
+Vorticity:  0.002163
+Viscosity:  0.000651
+Update:     0.000056
+
+Forces:     0.000052
+Candidates: 0.000174
+Neighbors:  0.007237
+Iterations: 0.022554
+Vorticity:  0.002164
+Viscosity:  0.000648
+Update:     0.000169
+
+Forces:     0.000036
+Candidates: 0.000071
+Neighbors:  0.007062
+Iterations: 0.022524
+Vorticity:  0.002166
+Viscosity:  0.000652
+Update:     0.000058
+
+Forces:     0.000035
+Candidates: 0.000074
+Neighbors:  0.007014
+Iterations: 0.022536
+Vorticity:  0.002167
+Viscosity:  0.000656
+Update:     0.000057
+
+Forces:     0.000038
+Candidates: 0.000073
+Neighbors:  0.007139
+Iterations: 0.022551
+Vorticity:  0.002170
+Viscosity:  0.000653
+Update:     0.000059
+
+Forces:     0.000035
+Candidates: 0.000078
+Neighbors:  0.007051
+Iterations: 0.022570
+Vorticity:  0.002169
+Viscosity:  0.000656
+Update:     0.000056
+
+Forces:     0.000048
+Candidates: 0.000178
+Neighbors:  0.007134
+Iterations: 0.022649
+Vorticity:  0.002170
+Viscosity:  0.000659
+Update:     0.000158
+
+Forces:     0.000035
+Candidates: 0.000076
+Neighbors:  0.007045
+Iterations: 0.022652
+Vorticity:  0.002174
+Viscosity:  0.000662
+Update:     0.000059
+
+Forces:     0.000032
+Candidates: 0.000076
+Neighbors:  0.007052
+Iterations: 0.022690
+Vorticity:  0.002177
+Viscosity:  0.000660
+Update:     0.000057
+
+Forces:     0.000040
+Candidates: 0.000076
+Neighbors:  0.007048
+Iterations: 0.022704
+Vorticity:  0.002183
+Viscosity:  0.000662
+Update:     0.000059
+
+Forces:     0.000036
+Candidates: 0.000075
+Neighbors:  0.007165
+Iterations: 0.022714
+Vorticity:  0.002183
+Viscosity:  0.000662
+Update:     0.000058
+
+Forces:     0.000055
+Candidates: 0.000180
+Neighbors:  0.007321
+Iterations: 0.022858
+Vorticity:  0.002189
+Viscosity:  0.000644
+Update:     0.000156
+
+Forces:     0.000035
+Candidates: 0.000077
+Neighbors:  0.007136
+Iterations: 0.022785
+Vorticity:  0.002186
+Viscosity:  0.000641
+Update:     0.000057
+
+Forces:     0.000036
+Candidates: 0.000079
+Neighbors:  0.007194
+Iterations: 0.022814
+Vorticity:  0.002189
+Viscosity:  0.000643
+Update:     0.000057
+
+Forces:     0.000040
+Candidates: 0.000079
+Neighbors:  0.007120
+Iterations: 0.022850
+Vorticity:  0.002192
+Viscosity:  0.000645
+Update:     0.000056
+
+Forces:     0.000037
+Candidates: 0.000077
+Neighbors:  0.007129
+Iterations: 0.022888
+Vorticity:  0.002197
+Viscosity:  0.000644
+Update:     0.000057
+
+Forces:     0.000053
+Candidates: 0.000184
+Neighbors:  0.007222
+Iterations: 0.022963
+Vorticity:  0.002204
+Viscosity:  0.000645
+Update:     0.000157
+
+Forces:     0.000035
+Candidates: 0.000076
+Neighbors:  0.007155
+Iterations: 0.022949
+Vorticity:  0.002202
+Viscosity:  0.000644
+Update:     0.000057
+
+Forces:     0.000033
+Candidates: 0.000085
+Neighbors:  0.007242
+Iterations: 0.022996
+Vorticity:  0.002210
+Viscosity:  0.000647
+Update:     0.000057
+
+Forces:     0.000038
+Candidates: 0.000078
+Neighbors:  0.007194
+Iterations: 0.023040
+Vorticity:  0.002207
+Viscosity:  0.000650
+Update:     0.000058
+
+Forces:     0.000039
+Candidates: 0.000077
+Neighbors:  0.007175
+Iterations: 0.023035
+Vorticity:  0.002213
+Viscosity:  0.000648
+Update:     0.000055
+
+Forces:     0.000050
+Candidates: 0.000184
+Neighbors:  0.007288
+Iterations: 0.023172
+Vorticity:  0.002223
+Viscosity:  0.000651
+Update:     0.000158
+
+Forces:     0.000036
+Candidates: 0.000078
+Neighbors:  0.007206
+Iterations: 0.023169
+Vorticity:  0.002226
+Viscosity:  0.000650
+Update:     0.000057
+
+Forces:     0.000039
+Candidates: 0.000076
+Neighbors:  0.007214
+Iterations: 0.023201
+Vorticity:  0.002230
+Viscosity:  0.000654
+Update:     0.000057
+
+Forces:     0.000035
+Candidates: 0.000078
+Neighbors:  0.007327
+Iterations: 0.023254
+Vorticity:  0.002235
+Viscosity:  0.000655
+Update:     0.000057
+
+Forces:     0.000039
+Candidates: 0.000072
+Neighbors:  0.007288
+Iterations: 0.023314
+Vorticity:  0.002243
+Viscosity:  0.000655
+Update:     0.000057
+
+Forces:     0.000052
+Candidates: 0.000181
+Neighbors:  0.007368
+Iterations: 0.023377
+Vorticity:  0.002247
+Viscosity:  0.000656
+Update:     0.000159
+
+Forces:     0.000036
+Candidates: 0.000074
+Neighbors:  0.007274
+Iterations: 0.023429
+Vorticity:  0.002252
+Viscosity:  0.000657
+Update:     0.000055
+
+Forces:     0.000035
+Candidates: 0.000073
+Neighbors:  0.007308
+Iterations: 0.023515
+Vorticity:  0.002259
+Viscosity:  0.000662
+Update:     0.000059
+
+Forces:     0.000036
+Candidates: 0.000084
+Neighbors:  0.007324
+Iterations: 0.023572
+Vorticity:  0.002264
+Viscosity:  0.000661
+Update:     0.000059
+
+Forces:     0.000037
+Candidates: 0.000081
+Neighbors:  0.007346
+Iterations: 0.023684
+Vorticity:  0.002270
+Viscosity:  0.000664
+Update:     0.000057
+
+Forces:     0.000052
+Candidates: 0.000183
+Neighbors:  0.007446
+Iterations: 0.023754
+Vorticity:  0.002279
+Viscosity:  0.000665
+Update:     0.000157
+
+Forces:     0.000039
+Candidates: 0.000085
+Neighbors:  0.007385
+Iterations: 0.026374
+Vorticity:  0.002273
+Viscosity:  0.000652
+Update:     0.000084
+
+Forces:     0.000046
+Candidates: 0.000081
+Neighbors:  0.007525
+Iterations: 0.023576
+Vorticity:  0.002266
+Viscosity:  0.000653
+Update:     0.000057
+
+Forces:     0.000032
+Candidates: 0.000066
+Neighbors:  0.007467
+Iterations: 0.023653
+Vorticity:  0.002268
+Viscosity:  0.000655
+Update:     0.000056
+
+Forces:     0.000030
+Candidates: 0.000065
+Neighbors:  0.007452
+Iterations: 0.023704
+Vorticity:  0.002272
+Viscosity:  0.000657
+Update:     0.000055
+
+Forces:     0.000034
+Candidates: 0.000195
+Neighbors:  0.007534
+Iterations: 0.023767
+Vorticity:  0.002283
+Viscosity:  0.000658
+Update:     0.000170
+
+Forces:     0.000030
+Candidates: 0.000067
+Neighbors:  0.007483
+Iterations: 0.023862
+Vorticity:  0.002291
+Viscosity:  0.000661
+Update:     0.000052
+
+Forces:     0.000031
+Candidates: 0.000068
+Neighbors:  0.007483
+Iterations: 0.023910
+Vorticity:  0.002296
+Viscosity:  0.000661
+Update:     0.000053
+
+Forces:     0.000029
+Candidates: 0.000065
+Neighbors:  0.007540
+Iterations: 0.023992
+Vorticity:  0.002303
+Viscosity:  0.000664
+Update:     0.000055
+
+Forces:     0.000032
+Candidates: 0.000066
+Neighbors:  0.007543
+Iterations: 0.024215
+Vorticity:  0.002314
+Viscosity:  0.000666
+Update:     0.000055
+
+Forces:     0.000032
+Candidates: 0.000198
+Neighbors:  0.007553
+Iterations: 0.024197
+Vorticity:  0.002322
+Viscosity:  0.000668
+Update:     0.000179
+
+Forces:     0.000033
+Candidates: 0.000066
+Neighbors:  0.007552
+Iterations: 0.024305
+Vorticity:  0.002332
+Viscosity:  0.000671
+Update:     0.000055
+
+Forces:     0.000032
+Candidates: 0.000068
+Neighbors:  0.007575
+Iterations: 0.024422
+Vorticity:  0.002344
+Viscosity:  0.000674
+Update:     0.000055
+
+Forces:     0.000032
+Candidates: 0.000068
+Neighbors:  0.007611
+Iterations: 0.024526
+Vorticity:  0.002356
+Viscosity:  0.000674
+Update:     0.000055
+
+Forces:     0.000031
+Candidates: 0.000069
+Neighbors:  0.007621
+Iterations: 0.024647
+Vorticity:  0.002362
+Viscosity:  0.000678
+Update:     0.000055
+
+Forces:     0.000033
+Candidates: 0.000193
+Neighbors:  0.007642
+Iterations: 0.024765
+Vorticity:  0.002376
+Viscosity:  0.000682
+Update:     0.000177
+
+Forces:     0.000033
+Candidates: 0.000071
+Neighbors:  0.007645
+Iterations: 0.024920
+Vorticity:  0.002389
+Viscosity:  0.000685
+Update:     0.000054
+
+Forces:     0.000031
+Candidates: 0.000065
+Neighbors:  0.007671
+Iterations: 0.025041
+Vorticity:  0.002405
+Viscosity:  0.000688
+Update:     0.000056
+
+Forces:     0.000032
+Candidates: 0.000073
+Neighbors:  0.007739
+Iterations: 0.025185
+Vorticity:  0.002418
+Viscosity:  0.000691
+Update:     0.000053
+
+Forces:     0.000029
+Candidates: 0.000074
+Neighbors:  0.007729
+Iterations: 0.025361
+Vorticity:  0.002434
+Viscosity:  0.000692
+Update:     0.000055
+
+Forces:     0.000036
+Candidates: 0.000201
+Neighbors:  0.007751
+Iterations: 0.025579
+Vorticity:  0.002458
+Viscosity:  0.000690
+Update:     0.000183
+
+Forces:     0.000039
+Candidates: 0.000068
+Neighbors:  0.007854
+Iterations: 0.025791
+Vorticity:  0.002475
+Viscosity:  0.000698
+Update:     0.000064
+
+Forces:     0.000041
+Candidates: 0.000071
+Neighbors:  0.007926
+Iterations: 0.027316
+Vorticity:  0.002544
+Viscosity:  0.000751
+Update:     0.000064
+
+Forces:     0.000035
+Candidates: 0.000086
+Neighbors:  0.007888
+Iterations: 0.026695
+Vorticity:  0.002557
+Viscosity:  0.000751
+Update:     0.000058
+
+Forces:     0.000030
+Candidates: 0.000076
+Neighbors:  0.007801
+Iterations: 0.026880
+Vorticity:  0.002570
+Viscosity:  0.000755
+Update:     0.000058
+
+Forces:     0.000046
+Candidates: 0.000192
+Neighbors:  0.007938
+Iterations: 0.027043
+Vorticity:  0.002590
+Viscosity:  0.000760
+Update:     0.000155
+
+Forces:     0.000033
+Candidates: 0.000079
+Neighbors:  0.007833
+Iterations: 0.027242
+Vorticity:  0.002606
+Viscosity:  0.000765
+Update:     0.000056
+
+Forces:     0.000033
+Candidates: 0.000085
+Neighbors:  0.007855
+Iterations: 0.027429
+Vorticity:  0.002626
+Viscosity:  0.000771
+Update:     0.000056
+
+Forces:     0.000032
+Candidates: 0.000081
+Neighbors:  0.007976
+Iterations: 0.027614
+Vorticity:  0.002647
+Viscosity:  0.000776
+Update:     0.000057
+
+Forces:     0.000035
+Candidates: 0.000087
+Neighbors:  0.007917
+Iterations: 0.027834
+Vorticity:  0.002679
+Viscosity:  0.000781
+Update:     0.000057
+
+Forces:     0.000047
+Candidates: 0.000198
+Neighbors:  0.008022
+Iterations: 0.028072
+Vorticity:  0.002695
+Viscosity:  0.000788
+Update:     0.000163
+
+Forces:     0.000033
+Candidates: 0.000077
+Neighbors:  0.007969
+Iterations: 0.028257
+Vorticity:  0.002715
+Viscosity:  0.000790
+Update:     0.000060
+
+Forces:     0.000036
+Candidates: 0.000086
+Neighbors:  0.007977
+Iterations: 0.028516
+Vorticity:  0.002738
+Viscosity:  0.000796
+Update:     0.000059
+
+Forces:     0.000032
+Candidates: 0.000088
+Neighbors:  0.008010
+Iterations: 0.028756
+Vorticity:  0.002761
+Viscosity:  0.000802
+Update:     0.000057
+
+Forces:     0.000034
+Candidates: 0.000089
+Neighbors:  0.008074
+Iterations: 0.029023
+Vorticity:  0.002787
+Viscosity:  0.000811
+Update:     0.000058
+
+Forces:     0.000048
+Candidates: 0.000199
+Neighbors:  0.008200
+Iterations: 0.029306
+Vorticity:  0.002818
+Viscosity:  0.000814
+Update:     0.000158
+
+Forces:     0.000039
+Candidates: 0.000083
+Neighbors:  0.008149
+Iterations: 0.029558
+Vorticity:  0.002838
+Viscosity:  0.000823
+Update:     0.000057
+
+Forces:     0.000036
+Candidates: 0.000082
+Neighbors:  0.008286
+Iterations: 0.029832
+Vorticity:  0.002868
+Viscosity:  0.000829
+Update:     0.000057
+
+Forces:     0.000036
+Candidates: 0.000085
+Neighbors:  0.008253
+Iterations: 0.030152
+Vorticity:  0.002896
+Viscosity:  0.000833
+Update:     0.000057
+
+Forces:     0.000034
+Candidates: 0.000083
+Neighbors:  0.008350
+Iterations: 0.030494
+Vorticity:  0.002930
+Viscosity:  0.000845
+Update:     0.000059
+
+Forces:     0.000054
+Candidates: 0.000202
+Neighbors:  0.008423
+Iterations: 0.030806
+Vorticity:  0.002969
+Viscosity:  0.000853
+Update:     0.000163
+
+Forces:     0.000034
+Candidates: 0.000094
+Neighbors:  0.008352
+Iterations: 0.031103
+Vorticity:  0.002992
+Viscosity:  0.000858
+Update:     0.000059
+
+Forces:     0.000033
+Candidates: 0.000079
+Neighbors:  0.008384
+Iterations: 0.031412
+Vorticity:  0.003023
+Viscosity:  0.000866
+Update:     0.000058
+
+Forces:     0.000035
+Candidates: 0.000097
+Neighbors:  0.008421
+Iterations: 0.031773
+Vorticity:  0.003055
+Viscosity:  0.000875
+Update:     0.000057
+
+Forces:     0.000033
+Candidates: 0.000083
+Neighbors:  0.008449
+Iterations: 0.032120
+Vorticity:  0.003092
+Viscosity:  0.000880
+Update:     0.000060
+
+Forces:     0.000049
+Candidates: 0.000205
+Neighbors:  0.008610
+Iterations: 0.032472
+Vorticity:  0.003117
+Viscosity:  0.000849
+Update:     0.000165
+
+Forces:     0.000041
+Candidates: 0.000093
+Neighbors:  0.008667
+Iterations: 0.032418
+Vorticity:  0.003152
+Viscosity:  0.000855
+Update:     0.000061
+
+Forces:     0.000046
+Candidates: 0.000095
+Neighbors:  0.008611
+Iterations: 0.032732
+Vorticity:  0.003189
+Viscosity:  0.000862
+Update:     0.000063
+
+Forces:     0.000044
+Candidates: 0.000098
+Neighbors:  0.008721
+Iterations: 0.033130
+Vorticity:  0.003226
+Viscosity:  0.000872
+Update:     0.000060
+
+Forces:     0.000043
+Candidates: 0.000096
+Neighbors:  0.008697
+Iterations: 0.033529
+Vorticity:  0.003269
+Viscosity:  0.000879
+Update:     0.000062
+
+Forces:     0.000058
+Candidates: 0.000206
+Neighbors:  0.008917
+Iterations: 0.034027
+Vorticity:  0.003313
+Viscosity:  0.000886
+Update:     0.000166
+
+Forces:     0.000041
+Candidates: 0.000099
+Neighbors:  0.008763
+Iterations: 0.034333
+Vorticity:  0.003349
+Viscosity:  0.000895
+Update:     0.000062
+
+Forces:     0.000041
+Candidates: 0.000097
+Neighbors:  0.008759
+Iterations: 0.034719
+Vorticity:  0.003388
+Viscosity:  0.000907
+Update:     0.000063
+
+Forces:     0.000041
+Candidates: 0.000100
+Neighbors:  0.008924
+Iterations: 0.035115
+Vorticity:  0.003431
+Viscosity:  0.000914
+Update:     0.000062
+
+Forces:     0.000046
+Candidates: 0.000098
+Neighbors:  0.008886
+Iterations: 0.035462
+Vorticity:  0.003470
+Viscosity:  0.000923
+Update:     0.000063
+
+Forces:     0.000060
+Candidates: 0.000203
+Neighbors:  0.008986
+Iterations: 0.036074
+Vorticity:  0.003516
+Viscosity:  0.000941
+Update:     0.000167
+
+Forces:     0.000044
+Candidates: 0.000101
+Neighbors:  0.008985
+Iterations: 0.036416
+Vorticity:  0.003544
+Viscosity:  0.000945
+Update:     0.000063
+
+Forces:     0.000044
+Candidates: 0.000098
+Neighbors:  0.009010
+Iterations: 0.036674
+Vorticity:  0.003587
+Viscosity:  0.000952
+Update:     0.000065
+
+Forces:     0.000039
+Candidates: 0.000098
+Neighbors:  0.009014
+Iterations: 0.037103
+Vorticity:  0.003627
+Viscosity:  0.000960
+Update:     0.000066
+
+Forces:     0.000045
+Candidates: 0.000099
+Neighbors:  0.009064
+Iterations: 0.037467
+Vorticity:  0.003669
+Viscosity:  0.000969
+Update:     0.000063
+
+Forces:     0.000063
+Candidates: 0.000207
+Neighbors:  0.009186
+Iterations: 0.037953
+Vorticity:  0.003713
+Viscosity:  0.000979
+Update:     0.000166
+
+Forces:     0.000044
+Candidates: 0.000097
+Neighbors:  0.009144
+Iterations: 0.038293
+Vorticity:  0.003741
+Viscosity:  0.000985
+Update:     0.000066
+
+Forces:     0.000041
+Candidates: 0.000110
+Neighbors:  0.009169
+Iterations: 0.038671
+Vorticity:  0.003787
+Viscosity:  0.000993
+Update:     0.000064
+
+Forces:     0.000046
+Candidates: 0.000100
+Neighbors:  0.009253
+Iterations: 0.039031
+Vorticity:  0.003820
+Viscosity:  0.001005
+Update:     0.000067
+
+Forces:     0.000045
+Candidates: 0.000101
+Neighbors:  0.009253
+Iterations: 0.039448
+Vorticity:  0.003864
+Viscosity:  0.001011
+Update:     0.000065
+
+Forces:     0.000064
+Candidates: 0.000214
+Neighbors:  0.009414
+Iterations: 0.039945
+Vorticity:  0.003914
+Viscosity:  0.001024
+Update:     0.000166
+
+Forces:     0.000043
+Candidates: 0.000100
+Neighbors:  0.009365
+Iterations: 0.040293
+Vorticity:  0.003952
+Viscosity:  0.001027
+Update:     0.000064
+
+Forces:     0.000047
+Candidates: 0.000101
+Neighbors:  0.009394
+Iterations: 0.040679
+Vorticity:  0.003994
+Viscosity:  0.001039
+Update:     0.000066
+
+Forces:     0.000047
+Candidates: 0.000103
+Neighbors:  0.009541
+Iterations: 0.041068
+Vorticity:  0.004031
+Viscosity:  0.001049
+Update:     0.000065
+
+Forces:     0.000047
+Candidates: 0.000103
+Neighbors:  0.009584
+Iterations: 0.041474
+Vorticity:  0.004074
+Viscosity:  0.001057
+Update:     0.000066
+
+Forces:     0.000066
+Candidates: 0.000211
+Neighbors:  0.009675
+Iterations: 0.041945
+Vorticity:  0.004117
+Viscosity:  0.001068
+Update:     0.000173
+
+Forces:     0.000045
+Candidates: 0.000099
+Neighbors:  0.009629
+Iterations: 0.042220
+Vorticity:  0.004156
+Viscosity:  0.001072
+Update:     0.000066
+
+Forces:     0.000048
+Candidates: 0.000094
+Neighbors:  0.009775
+Iterations: 0.042574
+Vorticity:  0.004197
+Viscosity:  0.001078
+Update:     0.000065
+
+Forces:     0.000049
+Candidates: 0.000100
+Neighbors:  0.009825
+Iterations: 0.042961
+Vorticity:  0.004226
+Viscosity:  0.001088
+Update:     0.000065
+
+Forces:     0.000048
+Candidates: 0.000106
+Neighbors:  0.009830
+Iterations: 0.043278
+Vorticity:  0.004268
+Viscosity:  0.001096
+Update:     0.000067
+
+Forces:     0.000062
+Candidates: 0.000214
+Neighbors:  0.010024
+Iterations: 0.043905
+Vorticity:  0.004308
+Viscosity:  0.001108
+Update:     0.000171
+
+Forces:     0.000045
+Candidates: 0.000108
+Neighbors:  0.009959
+Iterations: 0.043925
+Vorticity:  0.004347
+Viscosity:  0.001112
+Update:     0.000067
+
+Forces:     0.000050
+Candidates: 0.000105
+Neighbors:  0.009994
+Iterations: 0.044174
+Vorticity:  0.004377
+Viscosity:  0.001118
+Update:     0.000068
+
+Forces:     0.000042
+Candidates: 0.000103
+Neighbors:  0.010111
+Iterations: 0.044512
+Vorticity:  0.004417
+Viscosity:  0.001127
+Update:     0.000071
+
+Forces:     0.000053
+Candidates: 0.000111
+Neighbors:  0.010131
+Iterations: 0.044793
+Vorticity:  0.004451
+Viscosity:  0.001136
+Update:     0.000069
+
+Forces:     0.000066
+Candidates: 0.000220
+Neighbors:  0.010263
+Iterations: 0.045177
+Vorticity:  0.004490
+Viscosity:  0.001146
+Update:     0.000168
+
+Forces:     0.000049
+Candidates: 0.000107
+Neighbors:  0.010243
+Iterations: 0.045354
+Vorticity:  0.004515
+Viscosity:  0.001150
+Update:     0.000069
+
+Forces:     0.000045
+Candidates: 0.000113
+Neighbors:  0.010249
+Iterations: 0.045746
+Vorticity:  0.004554
+Viscosity:  0.001157
+Update:     0.000067
+
+Forces:     0.000049
+Candidates: 0.000108
+Neighbors:  0.010417
+Iterations: 0.046013
+Vorticity:  0.004590
+Viscosity:  0.001196
+Update:     0.000065
+
+Forces:     0.000049
+Candidates: 0.000109
+Neighbors:  0.010487
+Iterations: 0.046508
+Vorticity:  0.004638
+Viscosity:  0.001171
+Update:     0.000067
+
+Forces:     0.000072
+Candidates: 0.000217
+Neighbors:  0.010507
+Iterations: 0.046703
+Vorticity:  0.004660
+Viscosity:  0.001179
+Update:     0.000174
+
+Forces:     0.000048
+Candidates: 0.000112
+Neighbors:  0.010607
+Iterations: 0.046912
+Vorticity:  0.004687
+Viscosity:  0.001187
+Update:     0.000064
+
+Forces:     0.000053
+Candidates: 0.000111
+Neighbors:  0.010593
+Iterations: 0.047172
+Vorticity:  0.004723
+Viscosity:  0.001194
+Update:     0.000069
+
+Forces:     0.000049
+Candidates: 0.000108
+Neighbors:  0.010620
+Iterations: 0.047404
+Vorticity:  0.004755
+Viscosity:  0.001241
+Update:     0.000065
+
+Forces:     0.000047
+Candidates: 0.000111
+Neighbors:  0.010801
+Iterations: 0.047757
+Vorticity:  0.004793
+Viscosity:  0.001208
+Update:     0.000067
+
+Forces:     0.000071
+Candidates: 0.000225
+Neighbors:  0.010812
+Iterations: 0.048138
+Vorticity:  0.004838
+Viscosity:  0.001215
+Update:     0.000172
+
+Forces:     0.000049
+Candidates: 0.000110
+Neighbors:  0.010802
+Iterations: 0.048379
+Vorticity:  0.004869
+Viscosity:  0.001222
+Update:     0.000065
+
+Forces:     0.000050
+Candidates: 0.000115
+Neighbors:  0.010853
+Iterations: 0.048698
+Vorticity:  0.004902
+Viscosity:  0.001231
+Update:     0.000070
+
+Forces:     0.000048
+Candidates: 0.000112
+Neighbors:  0.010900
+Iterations: 0.048997
+Vorticity:  0.004938
+Viscosity:  0.001234
+Update:     0.000065
+
+Forces:     0.000051
+Candidates: 0.000112
+Neighbors:  0.010957
+Iterations: 0.049417
+Vorticity:  0.004979
+Viscosity:  0.001245
+Update:     0.000066
+
+Forces:     0.000091
+Candidates: 0.000277
+Neighbors:  0.011457
+Iterations: 0.051088
+Vorticity:  0.005456
+Viscosity:  0.001312
+Update:     0.000171
+
+Forces:     0.000044
+Candidates: 0.000107
+Neighbors:  0.011114
+Iterations: 0.049888
+Vorticity:  0.005035
+Viscosity:  0.001310
+Update:     0.000063
+
+Forces:     0.000050
+Candidates: 0.000111
+Neighbors:  0.011205
+Iterations: 0.050168
+Vorticity:  0.005071
+Viscosity:  0.001315
+Update:     0.000062
+
+Forces:     0.000054
+Candidates: 0.000112
+Neighbors:  0.011217
+Iterations: 0.050477
+Vorticity:  0.005104
+Viscosity:  0.001317
+Update:     0.000061
+
+Forces:     0.000041
+Candidates: 0.000100
+Neighbors:  0.011272
+Iterations: 0.050713
+Vorticity:  0.005130
+Viscosity:  0.001323
+Update:     0.000061
+
+Forces:     0.000071
+Candidates: 0.000225
+Neighbors:  0.011472
+Iterations: 0.051201
+Vorticity:  0.005191
+Viscosity:  0.001290
+Update:     0.000173
+
+Forces:     0.000053
+Candidates: 0.000114
+Neighbors:  0.011440
+Iterations: 0.051439
+Vorticity:  0.005222
+Viscosity:  0.001296
+Update:     0.000065
+
+Forces:     0.000051
+Candidates: 0.000114
+Neighbors:  0.011524
+Iterations: 0.051775
+Vorticity:  0.005256
+Viscosity:  0.001301
+Update:     0.000064
+
+Forces:     0.000054
+Candidates: 0.000116
+Neighbors:  0.011509
+Iterations: 0.052090
+Vorticity:  0.005285
+Viscosity:  0.001311
+Update:     0.000066
+
+Forces:     0.000051
+Candidates: 0.000118
+Neighbors:  0.011534
+Iterations: 0.052375
+Vorticity:  0.005327
+Viscosity:  0.001317
+Update:     0.000067
+
+Forces:     0.000068
+Candidates: 0.000233
+Neighbors:  0.011674
+Iterations: 0.052695
+Vorticity:  0.005360
+Viscosity:  0.001330
+Update:     0.000172
+
+Forces:     0.000050
+Candidates: 0.000118
+Neighbors:  0.011674
+Iterations: 0.052966
+Vorticity:  0.005375
+Viscosity:  0.001322
+Update:     0.000070
+
+Forces:     0.000053
+Candidates: 0.000115
+Neighbors:  0.011826
+Iterations: 0.053407
+Vorticity:  0.005445
+Viscosity:  0.001334
+Update:     0.000079
+
+Forces:     0.000054
+Candidates: 0.000118
+Neighbors:  0.011797
+Iterations: 0.055403
+Vorticity:  0.005379
+Viscosity:  0.001340
+Update:     0.000104
+
+Forces:     0.000065
+Candidates: 0.000103
+Neighbors:  0.012147
+Iterations: 0.053655
+Vorticity:  0.005393
+Viscosity:  0.001351
+Update:     0.000083
+
+Forces:     0.000064
+Candidates: 0.000208
+Neighbors:  0.012220
+Iterations: 0.053166
+Vorticity:  0.005406
+Viscosity:  0.001354
+Update:     0.000181
+
+Forces:     0.000052
+Candidates: 0.000108
+Neighbors:  0.012227
+Iterations: 0.053351
+Vorticity:  0.005427
+Viscosity:  0.001354
+Update:     0.000078
+
+Forces:     0.000059
+Candidates: 0.000106
+Neighbors:  0.012298
+Iterations: 0.053534
+Vorticity:  0.005453
+Viscosity:  0.001362
+Update:     0.000072
+
+Forces:     0.000053
+Candidates: 0.000114
+Neighbors:  0.012274
+Iterations: 0.053752
+Vorticity:  0.005471
+Viscosity:  0.001369
+Update:     0.000074
+
+Forces:     0.000059
+Candidates: 0.000106
+Neighbors:  0.012319
+Iterations: 0.053917
+Vorticity:  0.005487
+Viscosity:  0.001371
+Update:     0.000081
+
+Forces:     0.000061
+Candidates: 0.000216
+Neighbors:  0.012337
+Iterations: 0.053978
+Vorticity:  0.005505
+Viscosity:  0.001373
+Update:     0.000178
+
+Forces:     0.000053
+Candidates: 0.000108
+Neighbors:  0.012368
+Iterations: 0.055040
+Vorticity:  0.005522
+Viscosity:  0.001377
+Update:     0.000122
+
+Forces:     0.000077
+Candidates: 0.000105
+Neighbors:  0.012438
+Iterations: 0.054294
+Vorticity:  0.005540
+Viscosity:  0.001385
+Update:     0.000076
+
+Forces:     0.000057
+Candidates: 0.000108
+Neighbors:  0.012439
+Iterations: 0.054501
+Vorticity:  0.005560
+Viscosity:  0.001390
+Update:     0.000076
+
+Forces:     0.000053
+Candidates: 0.000110
+Neighbors:  0.012481
+Iterations: 0.054616
+Vorticity:  0.005575
+Viscosity:  0.001397
+Update:     0.000078
+
+Forces:     0.000064
+Candidates: 0.000209
+Neighbors:  0.012534
+Iterations: 0.054663
+Vorticity:  0.005589
+Viscosity:  0.001393
+Update:     0.000179
+
+Forces:     0.000054
+Candidates: 0.000106
+Neighbors:  0.012523
+Iterations: 0.054826
+Vorticity:  0.005601
+Viscosity:  0.001396
+Update:     0.000080
+
+Forces:     0.000055
+Candidates: 0.000110
+Neighbors:  0.012528
+Iterations: 0.054960
+Vorticity:  0.005615
+Viscosity:  0.001402
+Update:     0.000078
+
+Forces:     0.000055
+Candidates: 0.000092
+Neighbors:  0.012600
+Iterations: 0.055076
+Vorticity:  0.005628
+Viscosity:  0.001411
+Update:     0.000073
+
+Forces:     0.000051
+Candidates: 0.000093
+Neighbors:  0.012585
+Iterations: 0.055246
+Vorticity:  0.005650
+Viscosity:  0.001409
+Update:     0.000076
+
+Forces:     0.000062
+Candidates: 0.000216
+Neighbors:  0.012607
+Iterations: 0.055370
+Vorticity:  0.005670
+Viscosity:  0.001414
+Update:     0.000182
+
+Forces:     0.000062
+Candidates: 0.000105
+Neighbors:  0.012640
+Iterations: 0.055495
+Vorticity:  0.005688
+Viscosity:  0.001419
+Update:     0.000074
+
+Forces:     0.000051
+Candidates: 0.000108
+Neighbors:  0.012640
+Iterations: 0.055677
+Vorticity:  0.005705
+Viscosity:  0.001426
+Update:     0.000079
+
+Forces:     0.000055
+Candidates: 0.000110
+Neighbors:  0.012624
+Iterations: 0.055714
+Vorticity:  0.005725
+Viscosity:  0.001424
+Update:     0.000078
+
+Forces:     0.000055
+Candidates: 0.000122
+Neighbors:  0.012642
+Iterations: 0.056256
+Vorticity:  0.005795
+Viscosity:  0.001473
+Update:     0.000094
+
+Forces:     0.000078
+Candidates: 0.000200
+Neighbors:  0.012949
+Iterations: 0.057919
+Vorticity:  0.005981
+Viscosity:  0.001440
+Update:     0.000169
+
+Forces:     0.000047
+Candidates: 0.000123
+Neighbors:  0.012970
+Iterations: 0.057994
+Vorticity:  0.005997
+Viscosity:  0.001443
+Update:     0.000061
+
+Forces:     0.000050
+Candidates: 0.000122
+Neighbors:  0.012891
+Iterations: 0.058140
+Vorticity:  0.006011
+Viscosity:  0.001448
+Update:     0.000061
+
+Forces:     0.000046
+Candidates: 0.000122
+Neighbors:  0.012978
+Iterations: 0.058274
+Vorticity:  0.006030
+Viscosity:  0.001454
+Update:     0.000063
+
+Forces:     0.000053
+Candidates: 0.000123
+Neighbors:  0.012961
+Iterations: 0.058412
+Vorticity:  0.006041
+Viscosity:  0.001456
+Update:     0.000060
+
+Forces:     0.000071
+Candidates: 0.000237
+Neighbors:  0.013041
+Iterations: 0.058625
+Vorticity:  0.006078
+Viscosity:  0.001474
+Update:     0.000172
+
+Forces:     0.000047
+Candidates: 0.000124
+Neighbors:  0.012975
+Iterations: 0.058853
+Vorticity:  0.006092
+Viscosity:  0.001474
+Update:     0.000061
+
+Forces:     0.000047
+Candidates: 0.000121
+Neighbors:  0.013020
+Iterations: 0.058890
+Vorticity:  0.006101
+Viscosity:  0.001476
+Update:     0.000060
+
+Forces:     0.000049
+Candidates: 0.000122
+Neighbors:  0.013034
+Iterations: 0.058913
+Vorticity:  0.006099
+Viscosity:  0.001475
+Update:     0.000059
+
+Forces:     0.000057
+Candidates: 0.000120
+Neighbors:  0.013046
+Iterations: 0.058884
+Vorticity:  0.006106
+Viscosity:  0.001479
+Update:     0.000061
+
+Forces:     0.000070
+Candidates: 0.000232
+Neighbors:  0.013154
+Iterations: 0.059021
+Vorticity:  0.006115
+Viscosity:  0.001481
+Update:     0.000165
+
+Forces:     0.000048
+Candidates: 0.000121
+Neighbors:  0.013055
+Iterations: 0.058886
+Vorticity:  0.006111
+Viscosity:  0.001482
+Update:     0.000061
+
+Forces:     0.000049
+Candidates: 0.000121
+Neighbors:  0.013084
+Iterations: 0.058811
+Vorticity:  0.006103
+Viscosity:  0.001482
+Update:     0.000059
+
+Forces:     0.000047
+Candidates: 0.000120
+Neighbors:  0.013080
+Iterations: 0.058835
+Vorticity:  0.006109
+Viscosity:  0.001532
+Update:     0.000061
+
+Forces:     0.000047
+Candidates: 0.000125
+Neighbors:  0.013094
+Iterations: 0.059104
+Vorticity:  0.006139
+Viscosity:  0.001497
+Update:     0.000071
+
+Forces:     0.000073
+Candidates: 0.000232
+Neighbors:  0.013182
+Iterations: 0.059192
+Vorticity:  0.006148
+Viscosity:  0.001500
+Update:     0.000170
+
+Forces:     0.000054
+Candidates: 0.000123
+Neighbors:  0.013092
+Iterations: 0.058954
+Vorticity:  0.006134
+Viscosity:  0.001496
+Update:     0.000062
+
+Forces:     0.000052
+Candidates: 0.000110
+Neighbors:  0.013043
+Iterations: 0.058724
+Vorticity:  0.006120
+Viscosity:  0.001495
+Update:     0.000064
+
+Forces:     0.000051
+Candidates: 0.000108
+Neighbors:  0.013040
+Iterations: 0.058578
+Vorticity:  0.006111
+Viscosity:  0.001488
+Update:     0.000065
+
+Forces:     0.000052
+Candidates: 0.000119
+Neighbors:  0.013037
+Iterations: 0.058560
+Vorticity:  0.006096
+Viscosity:  0.001494
+Update:     0.000063
+
+Forces:     0.000072
+Candidates: 0.000237
+Neighbors:  0.013157
+Iterations: 0.060891
+Vorticity:  0.005829
+Viscosity:  0.001427
+Update:     0.000174
+
+Forces:     0.000060
+Candidates: 0.000128
+Neighbors:  0.012847
+Iterations: 0.055905
+Vorticity:  0.005809
+Viscosity:  0.001423
+Update:     0.000080
+
+Forces:     0.000053
+Candidates: 0.000116
+Neighbors:  0.012825
+Iterations: 0.055648
+Vorticity:  0.005795
+Viscosity:  0.001421
+Update:     0.000076
+
+Forces:     0.000053
+Candidates: 0.000114
+Neighbors:  0.012861
+Iterations: 0.055454
+Vorticity:  0.005781
+Viscosity:  0.001421
+Update:     0.000069
+
+Forces:     0.000050
+Candidates: 0.000117
+Neighbors:  0.012820
+Iterations: 0.055334
+Vorticity:  0.005769
+Viscosity:  0.001447
+Update:     0.000086
+
+Forces:     0.000064
+Candidates: 0.000211
+Neighbors:  0.012842
+Iterations: 0.055334
+Vorticity:  0.005760
+Viscosity:  0.001444
+Update:     0.000176
+
+Forces:     0.000063
+Candidates: 0.000115
+Neighbors:  0.012834
+Iterations: 0.055233
+Vorticity:  0.005740
+Viscosity:  0.001441
+Update:     0.000084
+
+Forces:     0.000059
+Candidates: 0.000115
+Neighbors:  0.012825
+Iterations: 0.055052
+Vorticity:  0.005733
+Viscosity:  0.001434
+Update:     0.000088
+
+Forces:     0.000059
+Candidates: 0.000117
+Neighbors:  0.012810
+Iterations: 0.054866
+Vorticity:  0.005713
+Viscosity:  0.001432
+Update:     0.000085
+
+Forces:     0.000060
+Candidates: 0.000125
+Neighbors:  0.012777
+Iterations: 0.054702
+Vorticity:  0.005700
+Viscosity:  0.001427
+Update:     0.000083
+
+Forces:     0.000065
+Candidates: 0.000214
+Neighbors:  0.012805
+Iterations: 0.054461
+Vorticity:  0.005679
+Viscosity:  0.001420
+Update:     0.000177
+
+Forces:     0.000060
+Candidates: 0.000112
+Neighbors:  0.012722
+Iterations: 0.054345
+Vorticity:  0.005662
+Viscosity:  0.001418
+Update:     0.000087
+
+Forces:     0.000064
+Candidates: 0.000116
+Neighbors:  0.012794
+Iterations: 0.054004
+Vorticity:  0.005640
+Viscosity:  0.001413
+Update:     0.000086
+
+Forces:     0.000058
+Candidates: 0.000114
+Neighbors:  0.012712
+Iterations: 0.053821
+Vorticity:  0.005615
+Viscosity:  0.001405
+Update:     0.000085
+
+Forces:     0.000058
+Candidates: 0.000127
+Neighbors:  0.012676
+Iterations: 0.053567
+Vorticity:  0.005588
+Viscosity:  0.001402
+Update:     0.000083
+
+Forces:     0.000070
+Candidates: 0.000206
+Neighbors:  0.012774
+Iterations: 0.055289
+Vorticity:  0.005783
+Viscosity:  0.001398
+Update:     0.000169
+
+Forces:     0.000050
+Candidates: 0.000123
+Neighbors:  0.012646
+Iterations: 0.054883
+Vorticity:  0.005757
+Viscosity:  0.001392
+Update:     0.000058
+
+Forces:     0.000050
+Candidates: 0.000126
+Neighbors:  0.012586
+Iterations: 0.054632
+Vorticity:  0.005735
+Viscosity:  0.001387
+Update:     0.000056
+
+Forces:     0.000047
+Candidates: 0.000123
+Neighbors:  0.012556
+Iterations: 0.054436
+Vorticity:  0.005716
+Viscosity:  0.001381
+Update:     0.000059
+
+Forces:     0.000045
+Candidates: 0.000121
+Neighbors:  0.012546
+Iterations: 0.054243
+Vorticity:  0.005691
+Viscosity:  0.001380
+Update:     0.000057
+
+Forces:     0.000072
+Candidates: 0.000237
+Neighbors:  0.012696
+Iterations: 0.054050
+Vorticity:  0.005682
+Viscosity:  0.001380
+Update:     0.000176
+
+Forces:     0.000044
+Candidates: 0.000110
+Neighbors:  0.012496
+Iterations: 0.053826
+Vorticity:  0.005653
+Viscosity:  0.001368
+Update:     0.000058
+
+Forces:     0.000048
+Candidates: 0.000110
+Neighbors:  0.012423
+Iterations: 0.053746
+Vorticity:  0.005672
+Viscosity:  0.001368
+Update:     0.000059
+
+Forces:     0.000048
+Candidates: 0.000124
+Neighbors:  0.012437
+Iterations: 0.053355
+Vorticity:  0.005770
+Viscosity:  0.002656
+Update:     0.000109
+
+Forces:     0.000083
+Candidates: 0.000121
+Neighbors:  0.012352
+Iterations: 0.051337
+Vorticity:  0.005378
+Viscosity:  0.001322
+Update:     0.000067
+
+Forces:     0.000049
+Candidates: 0.000215
+Neighbors:  0.012252
+Iterations: 0.051061
+Vorticity:  0.005355
+Viscosity:  0.001316
+Update:     0.000177
+
+Forces:     0.000047
+Candidates: 0.000120
+Neighbors:  0.012241
+Iterations: 0.051051
+Vorticity:  0.005328
+Viscosity:  0.001301
+Update:     0.000067
+
+Forces:     0.000045
+Candidates: 0.000109
+Neighbors:  0.012171
+Iterations: 0.050535
+Vorticity:  0.005299
+Viscosity:  0.001296
+Update:     0.000068
+
+Forces:     0.000046
+Candidates: 0.000119
+Neighbors:  0.012126
+Iterations: 0.050314
+Vorticity:  0.005279
+Viscosity:  0.001289
+Update:     0.000064
+
+Forces:     0.000046
+Candidates: 0.000118
+Neighbors:  0.012150
+Iterations: 0.050071
+Vorticity:  0.005258
+Viscosity:  0.001282
+Update:     0.000061
+
+Forces:     0.000046
+Candidates: 0.000217
+Neighbors:  0.012064
+Iterations: 0.049841
+Vorticity:  0.005234
+Viscosity:  0.001274
+Update:     0.000178
+
+Forces:     0.000046
+Candidates: 0.000119
+Neighbors:  0.011998
+Iterations: 0.049618
+Vorticity:  0.005210
+Viscosity:  0.001272
+Update:     0.000066
+
+Forces:     0.000046
+Candidates: 0.000106
+Neighbors:  0.011945
+Iterations: 0.049411
+Vorticity:  0.005188
+Viscosity:  0.001263
+Update:     0.000063
+
+Forces:     0.000044
+Candidates: 0.000129
+Neighbors:  0.011928
+Iterations: 0.049235
+Vorticity:  0.005171
+Viscosity:  0.001258
+Update:     0.000064
+
+Forces:     0.000045
+Candidates: 0.000117
+Neighbors:  0.011957
+Iterations: 0.049008
+Vorticity:  0.005149
+Viscosity:  0.001253
+Update:     0.000060
+
+Forces:     0.000045
+Candidates: 0.000223
+Neighbors:  0.011861
+Iterations: 0.048771
+Vorticity:  0.005127
+Viscosity:  0.001248
+Update:     0.000179
+
+Forces:     0.000045
+Candidates: 0.000110
+Neighbors:  0.011782
+Iterations: 0.048536
+Vorticity:  0.005103
+Viscosity:  0.001240
+Update:     0.000064
+
+Forces:     0.000042
+Candidates: 0.000109
+Neighbors:  0.011771
+Iterations: 0.048357
+Vorticity:  0.005085
+Viscosity:  0.001231
+Update:     0.000059
+
+Forces:     0.000040
+Candidates: 0.000112
+Neighbors:  0.011691
+Iterations: 0.048148
+Vorticity:  0.005067
+Viscosity:  0.001233
+Update:     0.000062
+
+Forces:     0.000042
+Candidates: 0.000110
+Neighbors:  0.011694
+Iterations: 0.047956
+Vorticity:  0.005097
+Viscosity:  0.001225
+Update:     0.000058
+
+Forces:     0.000045
+Candidates: 0.000221
+Neighbors:  0.011608
+Iterations: 0.047745
+Vorticity:  0.005025
+Viscosity:  0.001225
+Update:     0.000177
+
+Forces:     0.000045
+Candidates: 0.000126
+Neighbors:  0.011534
+Iterations: 0.047485
+Vorticity:  0.005002
+Viscosity:  0.001216
+Update:     0.000064
+
+Forces:     0.000043
+Candidates: 0.000122
+Neighbors:  0.011485
+Iterations: 0.047298
+Vorticity:  0.004984
+Viscosity:  0.001213
+Update:     0.000062
+
+Forces:     0.000041
+Candidates: 0.000120
+Neighbors:  0.011443
+Iterations: 0.047114
+Vorticity:  0.004967
+Viscosity:  0.001211
+Update:     0.000062
+
+Forces:     0.000040
+Candidates: 0.000111
+Neighbors:  0.011470
+Iterations: 0.046913
+Vorticity:  0.004949
+Viscosity:  0.001204
+Update:     0.000059
+
+Forces:     0.000041
+Candidates: 0.000220
+Neighbors:  0.011393
+Iterations: 0.046800
+Vorticity:  0.006125
+Viscosity:  0.001247
+Update:     0.000169
+
+Forces:     0.000039
+Candidates: 0.000119
+Neighbors:  0.011650
+Iterations: 0.048093
+Vorticity:  0.005083
+Viscosity:  0.001240
+Update:     0.000059
+
+Forces:     0.000044
+Candidates: 0.000130
+Neighbors:  0.011615
+Iterations: 0.048063
+Vorticity:  0.005065
+Viscosity:  0.001245
+Update:     0.000057
+
+Forces:     0.000043
+Candidates: 0.000114
+Neighbors:  0.011543
+Iterations: 0.049002
+Vorticity:  0.004883
+Viscosity:  0.001194
+Update:     0.000087
+
+Forces:     0.000049
+Candidates: 0.000115
+Neighbors:  0.011246
+Iterations: 0.046093
+Vorticity:  0.004865
+Viscosity:  0.001189
+Update:     0.000058
+
+Forces:     0.000043
+Candidates: 0.000226
+Neighbors:  0.011193
+Iterations: 0.045919
+Vorticity:  0.004845
+Viscosity:  0.001182
+Update:     0.000179
+
+Forces:     0.000044
+Candidates: 0.000123
+Neighbors:  0.011200
+Iterations: 0.045720
+Vorticity:  0.004887
+Viscosity:  0.001204
+Update:     0.000060
+
+Forces:     0.000039
+Candidates: 0.000117
+Neighbors:  0.011224
+Iterations: 0.045578
+Vorticity:  0.004811
+Viscosity:  0.001179
+Update:     0.000061
+
+Forces:     0.000040
+Candidates: 0.000116
+Neighbors:  0.011051
+Iterations: 0.045416
+Vorticity:  0.004796
+Viscosity:  0.001175
+Update:     0.000058
+
+Forces:     0.000038
+Candidates: 0.000114
+Neighbors:  0.011053
+Iterations: 0.045300
+Vorticity:  0.004782
+Viscosity:  0.001172
+Update:     0.000059
+
+Forces:     0.000045
+Candidates: 0.000222
+Neighbors:  0.010987
+Iterations: 0.045145
+Vorticity:  0.004766
+Viscosity:  0.001168
+Update:     0.000177
+
+Forces:     0.000040
+Candidates: 0.000118
+Neighbors:  0.010997
+Iterations: 0.044993
+Vorticity:  0.004750
+Viscosity:  0.001165
+Update:     0.000056
+
+Forces:     0.000036
+Candidates: 0.000120
+Neighbors:  0.010930
+Iterations: 0.044871
+Vorticity:  0.004740
+Viscosity:  0.001164
+Update:     0.000059
+
+Forces:     0.000038
+Candidates: 0.000110
+Neighbors:  0.010891
+Iterations: 0.044694
+Vorticity:  0.004718
+Viscosity:  0.001161
+Update:     0.000059
+
+Forces:     0.000039
+Candidates: 0.000116
+Neighbors:  0.010851
+Iterations: 0.044547
+Vorticity:  0.004703
+Viscosity:  0.001157
+Update:     0.000059
+
+Forces:     0.000038
+Candidates: 0.000226
+Neighbors:  0.010838
+Iterations: 0.044415
+Vorticity:  0.004692
+Viscosity:  0.001154
+Update:     0.000173
+
+Forces:     0.000041
+Candidates: 0.000116
+Neighbors:  0.010772
+Iterations: 0.044257
+Vorticity:  0.004674
+Viscosity:  0.001154
+Update:     0.000061
+
+Forces:     0.000037
+Candidates: 0.000130
+Neighbors:  0.010800
+Iterations: 0.044092
+Vorticity:  0.004655
+Viscosity:  0.001149
+Update:     0.000059
+
+Forces:     0.000036
+Candidates: 0.000120
+Neighbors:  0.010706
+Iterations: 0.043905
+Vorticity:  0.004637
+Viscosity:  0.001146
+Update:     0.000059
+
+Forces:     0.000040
+Candidates: 0.000127
+Neighbors:  0.010658
+Iterations: 0.043722
+Vorticity:  0.004620
+Viscosity:  0.001142
+Update:     0.000057
+
+Forces:     0.000040
+Candidates: 0.000218
+Neighbors:  0.010655
+Iterations: 0.043685
+Vorticity:  0.004604
+Viscosity:  0.001135
+Update:     0.000170
+
+Forces:     0.000042
+Candidates: 0.000130
+Neighbors:  0.010618
+Iterations: 0.043401
+Vorticity:  0.004586
+Viscosity:  0.001135
+Update:     0.000060
+
+Forces:     0.000037
+Candidates: 0.000134
+Neighbors:  0.010609
+Iterations: 0.043292
+Vorticity:  0.004576
+Viscosity:  0.001131
+Update:     0.000056
+
+Forces:     0.000038
+Candidates: 0.000121
+Neighbors:  0.010606
+Iterations: 0.043118
+Vorticity:  0.004558
+Viscosity:  0.001129
+Update:     0.000058
+
+Forces:     0.000036
+Candidates: 0.000117
+Neighbors:  0.010569
+Iterations: 0.042976
+Vorticity:  0.004539
+Viscosity:  0.001125
+Update:     0.000059
+
+Forces:     0.000039
+Candidates: 0.000229
+Neighbors:  0.010665
+Iterations: 0.042814
+Vorticity:  0.004528
+Viscosity:  0.001123
+Update:     0.000173
+
+Forces:     0.000037
+Candidates: 0.000118
+Neighbors:  0.010574
+Iterations: 0.042668
+Vorticity:  0.004511
+Viscosity:  0.001116
+Update:     0.000058
+
+Forces:     0.000036
+Candidates: 0.000118
+Neighbors:  0.010536
+Iterations: 0.042587
+Vorticity:  0.004501
+Viscosity:  0.001116
+Update:     0.000059
+
+Forces:     0.000037
+Candidates: 0.000120
+Neighbors:  0.010583
+Iterations: 0.042413
+Vorticity:  0.004483
+Viscosity:  0.001112
+Update:     0.000058
+
+Forces:     0.000035
+Candidates: 0.000119
+Neighbors:  0.010504
+Iterations: 0.042396
+Vorticity:  0.004464
+Viscosity:  0.001130
+Update:     0.000062
+
+Forces:     0.000046
+Candidates: 0.000231
+Neighbors:  0.010608
+Iterations: 0.042161
+Vorticity:  0.004915
+Viscosity:  0.001108
+Update:     0.000183
+
+Forces:     0.000047
+Candidates: 0.000126
+Neighbors:  0.010515
+Iterations: 0.041989
+Vorticity:  0.004440
+Viscosity:  0.001103
+Update:     0.000066
+
+Forces:     0.000041
+Candidates: 0.000118
+Neighbors:  0.010478
+Iterations: 0.041818
+Vorticity:  0.004421
+Viscosity:  0.001102
+Update:     0.000061
+
+Forces:     0.000042
+Candidates: 0.000117
+Neighbors:  0.010425
+Iterations: 0.041659
+Vorticity:  0.004406
+Viscosity:  0.001097
+Update:     0.000061
+
+Forces:     0.000042
+Candidates: 0.000112
+Neighbors:  0.010456
+Iterations: 0.041529
+Vorticity:  0.004392
+Viscosity:  0.001094
+Update:     0.000063
+
+Forces:     0.000042
+Candidates: 0.000227
+Neighbors:  0.010445
+Iterations: 0.041427
+Vorticity:  0.004381
+Viscosity:  0.001093
+Update:     0.000171
+
+Forces:     0.000041
+Candidates: 0.000128
+Neighbors:  0.010350
+Iterations: 0.041296
+Vorticity:  0.004370
+Viscosity:  0.001090
+Update:     0.000064
+
+Forces:     0.000042
+Candidates: 0.000117
+Neighbors:  0.010308
+Iterations: 0.041149
+Vorticity:  0.004357
+Viscosity:  0.001086
+Update:     0.000062
+
+Forces:     0.000039
+Candidates: 0.000119
+Neighbors:  0.010351
+Iterations: 0.041175
+Vorticity:  0.004346
+Viscosity:  0.001084
+Update:     0.000062
+
+Forces:     0.000042
+Candidates: 0.000116
+Neighbors:  0.010286
+Iterations: 0.040968
+Vorticity:  0.004334
+Viscosity:  0.001083
+Update:     0.000061
+
+Forces:     0.000044
+Candidates: 0.000226
+Neighbors:  0.010349
+Iterations: 0.040895
+Vorticity:  0.004324
+Viscosity:  0.001078
+Update:     0.000175
+
+Forces:     0.000041
+Candidates: 0.000119
+Neighbors:  0.010354
+Iterations: 0.041906
+Vorticity:  0.004323
+Viscosity:  0.001081
+Update:     0.000101
+
+Forces:     0.000065
+Candidates: 0.000115
+Neighbors:  0.010238
+Iterations: 0.040771
+Vorticity:  0.004306
+Viscosity:  0.001078
+Update:     0.000064
+
+Forces:     0.000041
+Candidates: 0.000131
+Neighbors:  0.010202
+Iterations: 0.040776
+Vorticity:  0.004293
+Viscosity:  0.001077
+Update:     0.000060
+
+Forces:     0.000041
+Candidates: 0.000119
+Neighbors:  0.010263
+Iterations: 0.040659
+Vorticity:  0.004289
+Viscosity:  0.001074
+Update:     0.000059
+
+Forces:     0.000042
+Candidates: 0.000228
+Neighbors:  0.010566
+Iterations: 0.041475
+Vorticity:  0.004281
+Viscosity:  0.001074
+Update:     0.000180
+
+Forces:     0.000042
+Candidates: 0.000119
+Neighbors:  0.010153
+Iterations: 0.040549
+Vorticity:  0.004267
+Viscosity:  0.001067
+Update:     0.000060
+
+Forces:     0.000047
+Candidates: 0.000129
+Neighbors:  0.010134
+Iterations: 0.040478
+Vorticity:  0.004261
+Viscosity:  0.001067
+Update:     0.000061
+
+Forces:     0.000042
+Candidates: 0.000112
+Neighbors:  0.010200
+Iterations: 0.040438
+Vorticity:  0.004256
+Viscosity:  0.001066
+Update:     0.000059
+
+Forces:     0.000039
+Candidates: 0.000118
+Neighbors:  0.010205
+Iterations: 0.040333
+Vorticity:  0.004243
+Viscosity:  0.001067
+Update:     0.000062
+
+Forces:     0.000044
+Candidates: 0.000223
+Neighbors:  0.010214
+Iterations: 0.040271
+Vorticity:  0.004230
+Viscosity:  0.001062
+Update:     0.000181
+
+Forces:     0.000039
+Candidates: 0.000133
+Neighbors:  0.010088
+Iterations: 0.040175
+Vorticity:  0.004223
+Viscosity:  0.001062
+Update:     0.000059
+
+Forces:     0.000036
+Candidates: 0.000122
+Neighbors:  0.010090
+Iterations: 0.040133
+Vorticity:  0.004215
+Viscosity:  0.001059
+Update:     0.000062
+
+Forces:     0.000041
+Candidates: 0.000131
+Neighbors:  0.010057
+Iterations: 0.040041
+Vorticity:  0.004206
+Viscosity:  0.001060
+Update:     0.000065
+
+Forces:     0.000041
+Candidates: 0.000124
+Neighbors:  0.010049
+Iterations: 0.039982
+Vorticity:  0.004200
+Viscosity:  0.001059
+Update:     0.000062
+
+Forces:     0.000041
+Candidates: 0.000239
+Neighbors:  0.010088
+Iterations: 0.039938
+Vorticity:  0.004194
+Viscosity:  0.001059
+Update:     0.000181
+
+Forces:     0.000043
+Candidates: 0.000122
+Neighbors:  0.010037
+Iterations: 0.039812
+Vorticity:  0.004185
+Viscosity:  0.001059
+Update:     0.000061
+
+Forces:     0.000040
+Candidates: 0.000125
+Neighbors:  0.010093
+Iterations: 0.039757
+Vorticity:  0.004175
+Viscosity:  0.001056
+Update:     0.000059
+
+Forces:     0.000038
+Candidates: 0.000119
+Neighbors:  0.010056
+Iterations: 0.039734
+Vorticity:  0.005192
+Viscosity:  0.001130
+Update:     0.000063
+
+Forces:     0.000037
+Candidates: 0.000126
+Neighbors:  0.010378
+Iterations: 0.040788
+Vorticity:  0.004275
+Viscosity:  0.001085
+Update:     0.000053
+
+Forces:     0.000056
+Candidates: 0.000248
+Neighbors:  0.010347
+Iterations: 0.040729
+Vorticity:  0.004268
+Viscosity:  0.001085
+Update:     0.000158
+
+Forces:     0.000035
+Candidates: 0.000130
+Neighbors:  0.010209
+Iterations: 0.040574
+Vorticity:  0.004256
+Viscosity:  0.001083
+Update:     0.000052
+
+Forces:     0.000039
+Candidates: 0.000126
+Neighbors:  0.010191
+Iterations: 0.040508
+Vorticity:  0.004244
+Viscosity:  0.001095
+Update:     0.000053
+
+Forces:     0.000033
+Candidates: 0.000123
+Neighbors:  0.010192
+Iterations: 0.040393
+Vorticity:  0.004231
+Viscosity:  0.001077
+Update:     0.000053
+
+Forces:     0.000032
+Candidates: 0.000123
+Neighbors:  0.010281
+Iterations: 0.040321
+Vorticity:  0.004228
+Viscosity:  0.001077
+Update:     0.000054
+
+Forces:     0.000054
+Candidates: 0.000248
+Neighbors:  0.010270
+Iterations: 0.040236
+Vorticity:  0.004216
+Viscosity:  0.001074
+Update:     0.000156
+
+Forces:     0.000033
+Candidates: 0.000125
+Neighbors:  0.010147
+Iterations: 0.040133
+Vorticity:  0.004207
+Viscosity:  0.001069
+Update:     0.000055
+
+Forces:     0.000044
+Candidates: 0.000129
+Neighbors:  0.010125
+Iterations: 0.040046
+Vorticity:  0.004197
+Viscosity:  0.001071
+Update:     0.000054
+
+Forces:     0.000036
+Candidates: 0.000129
+Neighbors:  0.010119
+Iterations: 0.039997
+Vorticity:  0.004196
+Viscosity:  0.001069
+Update:     0.000052
+
+Forces:     0.000031
+Candidates: 0.000124
+Neighbors:  0.010089
+Iterations: 0.039939
+Vorticity:  0.004189
+Viscosity:  0.001069
+Update:     0.000053
+
+Forces:     0.000054
+Candidates: 0.000250
+Neighbors:  0.010256
+Iterations: 0.039919
+Vorticity:  0.004184
+Viscosity:  0.001069
+Update:     0.000158
+
+Forces:     0.000038
+Candidates: 0.000138
+Neighbors:  0.010072
+Iterations: 0.039783
+Vorticity:  0.004171
+Viscosity:  0.001067
+Update:     0.000053
+
+Forces:     0.000035
+Candidates: 0.000129
+Neighbors:  0.010041
+Iterations: 0.039699
+Vorticity:  0.004163
+Viscosity:  0.001064
+Update:     0.000053
+
+Forces:     0.000037
+Candidates: 0.000135
+Neighbors:  0.010120
+Iterations: 0.039625
+Vorticity:  0.004149
+Viscosity:  0.001063
+Update:     0.000054
+
+Forces:     0.000034
+Candidates: 0.000134
+Neighbors:  0.010040
+Iterations: 0.039484
+Vorticity:  0.004138
+Viscosity:  0.001062
+Update:     0.000052
+
+Forces:     0.000049
+Candidates: 0.000241
+Neighbors:  0.010162
+Iterations: 0.039477
+Vorticity:  0.004134
+Viscosity:  0.001060
+Update:     0.000158
+
+Forces:     0.000038
+Candidates: 0.000134
+Neighbors:  0.009985
+Iterations: 0.039341
+Vorticity:  0.004114
+Viscosity:  0.001055
+Update:     0.000053
+
+Forces:     0.000036
+Candidates: 0.000140
+Neighbors:  0.009944
+Iterations: 0.039457
+Vorticity:  0.004115
+Viscosity:  0.001058
+Update:     0.000053
+
+Forces:     0.000035
+Candidates: 0.000135
+Neighbors:  0.009943
+Iterations: 0.039289
+Vorticity:  0.004103
+Viscosity:  0.001054
+Update:     0.000053
+
+Forces:     0.000040
+Candidates: 0.000131
+Neighbors:  0.009919
+Iterations: 0.039163
+Vorticity:  0.004088
+Viscosity:  0.001053
+Update:     0.000053
+
+Forces:     0.000059
+Candidates: 0.000240
+Neighbors:  0.010086
+Iterations: 0.039173
+Vorticity:  0.004083
+Viscosity:  0.001051
+Update:     0.000156
+
+Forces:     0.000042
+Candidates: 0.000128
+Neighbors:  0.009981
+Iterations: 0.038997
+Vorticity:  0.004070
+Viscosity:  0.001048
+Update:     0.000051
+
+Forces:     0.000040
+Candidates: 0.000130
+Neighbors:  0.009917
+Iterations: 0.038906
+Vorticity:  0.004061
+Viscosity:  0.001046
+Update:     0.000052
+
+Forces:     0.000040
+Candidates: 0.000149
+Neighbors:  0.009850
+Iterations: 0.038842
+Vorticity:  0.004049
+Viscosity:  0.001043
+Update:     0.000053
+
+Forces:     0.000038
+Candidates: 0.000143
+Neighbors:  0.009931
+Iterations: 0.038774
+Vorticity:  0.004038
+Viscosity:  0.001042
+Update:     0.000051
+
+Forces:     0.000061
+Candidates: 0.000241
+Neighbors:  0.010005
+Iterations: 0.038727
+Vorticity:  0.004025
+Viscosity:  0.001039
+Update:     0.000156
+
+Forces:     0.000041
+Candidates: 0.000132
+Neighbors:  0.009839
+Iterations: 0.038751
+Vorticity:  0.004014
+Viscosity:  0.001058
+Update:     0.000054
+
+Forces:     0.000042
+Candidates: 0.000133
+Neighbors:  0.009907
+Iterations: 0.038631
+Vorticity:  0.004006
+Viscosity:  0.001035
+Update:     0.000053
+
+Forces:     0.000046
+Candidates: 0.000134
+Neighbors:  0.009818
+Iterations: 0.038446
+Vorticity:  0.003996
+Viscosity:  0.001035
+Update:     0.000052
+
+Forces:     0.000039
+Candidates: 0.000132
+Neighbors:  0.009773
+Iterations: 0.038289
+Vorticity:  0.003980
+Viscosity:  0.001033
+Update:     0.000053
+
+Forces:     0.000054
+Candidates: 0.000244
+Neighbors:  0.009944
+Iterations: 0.038310
+Vorticity:  0.003979
+Viscosity:  0.001030
+Update:     0.000157
+
+Forces:     0.000041
+Candidates: 0.000134
+Neighbors:  0.009782
+Iterations: 0.038195
+Vorticity:  0.003967
+Viscosity:  0.001030
+Update:     0.000055
+
+Forces:     0.000039
+Candidates: 0.000133
+Neighbors:  0.009723
+Iterations: 0.038052
+Vorticity:  0.003950
+Viscosity:  0.001034
+Update:     0.000053
+
+Forces:     0.000040
+Candidates: 0.000129
+Neighbors:  0.009697
+Iterations: 0.037985
+Vorticity:  0.003939
+Viscosity:  0.001032
+Update:     0.000051
+
+Forces:     0.000042
+Candidates: 0.000148
+Neighbors:  0.009705
+Iterations: 0.037896
+Vorticity:  0.003929
+Viscosity:  0.001035
+Update:     0.000053
+
+Forces:     0.000056
+Candidates: 0.000245
+Neighbors:  0.009756
+Iterations: 0.037792
+Vorticity:  0.003914
+Viscosity:  0.001036
+Update:     0.000162
+
+Forces:     0.000038
+Candidates: 0.000125
+Neighbors:  0.009765
+Iterations: 0.038204
+Vorticity:  0.003927
+Viscosity:  0.001058
+Update:     0.000056
+
+Forces:     0.000053
+Candidates: 0.000133
+Neighbors:  0.009753
+Iterations: 0.037945
+Vorticity:  0.003902
+Viscosity:  0.001045
+Update:     0.000054
+
+Forces:     0.000040
+Candidates: 0.000127
+Neighbors:  0.009684
+Iterations: 0.038310
+Vorticity:  0.005562
+Viscosity:  0.001137
+Update:     0.000103
+
+Forces:     0.000052
+Candidates: 0.000124
+Neighbors:  0.009626
+Iterations: 0.037056
+Vorticity:  0.003807
+Viscosity:  0.001009
+Update:     0.000058
+
+Forces:     0.000081
+Candidates: 0.000236
+Neighbors:  0.009832
+Iterations: 0.037508
+Vorticity:  0.003862
+Viscosity:  0.001037
+Update:     0.000158
+
+Forces:     0.000037
+Candidates: 0.000134
+Neighbors:  0.009622
+Iterations: 0.037446
+Vorticity:  0.003848
+Viscosity:  0.001035
+Update:     0.000057
+
+Forces:     0.000040
+Candidates: 0.000133
+Neighbors:  0.009595
+Iterations: 0.037345
+Vorticity:  0.003837
+Viscosity:  0.001034
+Update:     0.000055
+
+Forces:     0.000036
+Candidates: 0.000132
+Neighbors:  0.009581
+Iterations: 0.037315
+Vorticity:  0.003828
+Viscosity:  0.001035
+Update:     0.000056
+
+Forces:     0.000037
+Candidates: 0.000135
+Neighbors:  0.009644
+Iterations: 0.037304
+Vorticity:  0.003819
+Viscosity:  0.001035
+Update:     0.000053
+
+Forces:     0.000056
+Candidates: 0.000253
+Neighbors:  0.009631
+Iterations: 0.037525
+Vorticity:  0.004184
+Viscosity:  0.001071
+Update:     0.000156
+
+Forces:     0.000043
+Candidates: 0.000135
+Neighbors:  0.009945
+Iterations: 0.039797
+Vorticity:  0.003807
+Viscosity:  0.001037
+Update:     0.000063
+
+Forces:     0.000057
+Candidates: 0.000132
+Neighbors:  0.009605
+Iterations: 0.037475
+Vorticity:  0.003798
+Viscosity:  0.001040
+Update:     0.000052
+
+Forces:     0.000040
+Candidates: 0.000134
+Neighbors:  0.009566
+Iterations: 0.037267
+Vorticity:  0.003789
+Viscosity:  0.001040
+Update:     0.000054
+
+Forces:     0.000039
+Candidates: 0.000136
+Neighbors:  0.009542
+Iterations: 0.037229
+Vorticity:  0.003786
+Viscosity:  0.001043
+Update:     0.000053
+
+Forces:     0.000065
+Candidates: 0.000242
+Neighbors:  0.009622
+Iterations: 0.037300
+Vorticity:  0.003786
+Viscosity:  0.001042
+Update:     0.000157
+
+Forces:     0.000039
+Candidates: 0.000139
+Neighbors:  0.009566
+Iterations: 0.037252
+Vorticity:  0.003783
+Viscosity:  0.001045
+Update:     0.000053
+
+Forces:     0.000039
+Candidates: 0.000129
+Neighbors:  0.009640
+Iterations: 0.037208
+Vorticity:  0.003779
+Viscosity:  0.001046
+Update:     0.000056
+
+Forces:     0.000041
+Candidates: 0.000135
+Neighbors:  0.009566
+Iterations: 0.037186
+Vorticity:  0.003784
+Viscosity:  0.001045
+Update:     0.000055
+
+Forces:     0.000034
+Candidates: 0.000133
+Neighbors:  0.009527
+Iterations: 0.037176
+Vorticity:  0.003785
+Viscosity:  0.001044
+Update:     0.000052
+
+Forces:     0.000051
+Candidates: 0.000242
+Neighbors:  0.009607
+Iterations: 0.037197
+Vorticity:  0.003786
+Viscosity:  0.001046
+Update:     0.000157
+
+Forces:     0.000039
+Candidates: 0.000134
+Neighbors:  0.009546
+Iterations: 0.037229
+Vorticity:  0.003830
+Viscosity:  0.001047
+Update:     0.000054
+
+Forces:     0.000042
+Candidates: 0.000130
+Neighbors:  0.009565
+Iterations: 0.037279
+Vorticity:  0.003792
+Viscosity:  0.001047
+Update:     0.000053
+
+Forces:     0.000037
+Candidates: 0.000137
+Neighbors:  0.009538
+Iterations: 0.040226
+Vorticity:  0.003880
+Viscosity:  0.001037
+Update:     0.000085
+
+Forces:     0.000049
+Candidates: 0.000141
+Neighbors:  0.009612
+Iterations: 0.037842
+Vorticity:  0.003797
+Viscosity:  0.001048
+Update:     0.000057
+
+Forces:     0.000055
+Candidates: 0.000249
+Neighbors:  0.009583
+Iterations: 0.037135
+Vorticity:  0.003796
+Viscosity:  0.001049
+Update:     0.000154
+
+Forces:     0.000038
+Candidates: 0.000136
+Neighbors:  0.009506
+Iterations: 0.037085
+Vorticity:  0.003796
+Viscosity:  0.001048
+Update:     0.000054
+
+Forces:     0.000039
+Candidates: 0.000134
+Neighbors:  0.009495
+Iterations: 0.037111
+Vorticity:  0.003799
+Viscosity:  0.001054
+Update:     0.000053
+
+Forces:     0.000041
+Candidates: 0.000135
+Neighbors:  0.009474
+Iterations: 0.037081
+Vorticity:  0.003797
+Viscosity:  0.001052
+Update:     0.000052
+
+Forces:     0.000039
+Candidates: 0.000135
+Neighbors:  0.009474
+Iterations: 0.037095
+Vorticity:  0.003801
+Viscosity:  0.001048
+Update:     0.000051
+
+Forces:     0.000056
+Candidates: 0.000240
+Neighbors:  0.009528
+Iterations: 0.037155
+Vorticity:  0.003802
+Viscosity:  0.001050
+Update:     0.000149
+
+Forces:     0.000040
+Candidates: 0.000137
+Neighbors:  0.009467
+Iterations: 0.037111
+Vorticity:  0.003802
+Viscosity:  0.001048
+Update:     0.000053
+
+Forces:     0.000033
+Candidates: 0.000132
+Neighbors:  0.009472
+Iterations: 0.037125
+Vorticity:  0.003802
+Viscosity:  0.001050
+Update:     0.000052
+
+Forces:     0.000040
+Candidates: 0.000140
+Neighbors:  0.009460
+Iterations: 0.037112
+Vorticity:  0.003802
+Viscosity:  0.001051
+Update:     0.000053
+
+Forces:     0.000035
+Candidates: 0.000131
+Neighbors:  0.009539
+Iterations: 0.037083
+Vorticity:  0.003804
+Viscosity:  0.001051
+Update:     0.000053
+
+Forces:     0.000052
+Candidates: 0.000238
+Neighbors:  0.009554
+Iterations: 0.037131
+Vorticity:  0.003800
+Viscosity:  0.001050
+Update:     0.000157
+
+Forces:     0.000041
+Candidates: 0.000127
+Neighbors:  0.009452
+Iterations: 0.037091
+Vorticity:  0.003799
+Viscosity:  0.001052
+Update:     0.000055
+
+Forces:     0.000040
+Candidates: 0.000143
+Neighbors:  0.009546
+Iterations: 0.037089
+Vorticity:  0.003804
+Viscosity:  0.001053
+Update:     0.000053
+
+Forces:     0.000039
+Candidates: 0.000134
+Neighbors:  0.009480
+Iterations: 0.037137
+Vorticity:  0.003807
+Viscosity:  0.001058
+Update:     0.000053
+
+Forces:     0.000039
+Candidates: 0.000131
+Neighbors:  0.009482
+Iterations: 0.037131
+Vorticity:  0.003804
+Viscosity:  0.001056
+Update:     0.000053
+
+Forces:     0.000049
+Candidates: 0.000236
+Neighbors:  0.009544
+Iterations: 0.037197
+Vorticity:  0.003809
+Viscosity:  0.001055
+Update:     0.000156
+
+Forces:     0.000038
+Candidates: 0.000132
+Neighbors:  0.009579
+Iterations: 0.037153
+Vorticity:  0.003809
+Viscosity:  0.001054
+Update:     0.000053
+
+Forces:     0.000039
+Candidates: 0.000135
+Neighbors:  0.009553
+Iterations: 0.037167
+Vorticity:  0.003808
+Viscosity:  0.001054
+Update:     0.000053
+
+Forces:     0.000040
+Candidates: 0.000133
+Neighbors:  0.009505
+Iterations: 0.037232
+Vorticity:  0.003810
+Viscosity:  0.001054
+Update:     0.000052
+
+Forces:     0.000049
+Candidates: 0.000133
+Neighbors:  0.009498
+Iterations: 0.037181
+Vorticity:  0.003810
+Viscosity:  0.001055
+Update:     0.000053
+
+Forces:     0.000057
+Candidates: 0.000241
+Neighbors:  0.009562
+Iterations: 0.037242
+Vorticity:  0.003814
+Viscosity:  0.001055
+Update:     0.000151
+
+Forces:     0.000040
+Candidates: 0.000134
+Neighbors:  0.009512
+Iterations: 0.037263
+Vorticity:  0.003820
+Viscosity:  0.001059
+Update:     0.000052
+
+Forces:     0.000042
+Candidates: 0.000134
+Neighbors:  0.009512
+Iterations: 0.037264
+Vorticity:  0.003821
+Viscosity:  0.001058
+Update:     0.000052
+
+Forces:     0.000037
+Candidates: 0.000135
+Neighbors:  0.009530
+Iterations: 0.037300
+Vorticity:  0.003824
+Viscosity:  0.001061
+Update:     0.000054
+
+Forces:     0.000041
+Candidates: 0.000132
+Neighbors:  0.009516
+Iterations: 0.037321
+Vorticity:  0.003830
+Viscosity:  0.001058
+Update:     0.000054
+
+Forces:     0.000050
+Candidates: 0.000245
+Neighbors:  0.009577
+Iterations: 0.037388
+Vorticity:  0.003831
+Viscosity:  0.001059
+Update:     0.000157
+
+Forces:     0.000039
+Candidates: 0.000141
+Neighbors:  0.009541
+Iterations: 0.037501
+Vorticity:  0.003831
+Viscosity:  0.001061
+Update:     0.000057
+
+Forces:     0.000037
+Candidates: 0.000133
+Neighbors:  0.009556
+Iterations: 0.037493
+Vorticity:  0.003837
+Viscosity:  0.001063
+Update:     0.000053
+
+Forces:     0.000042
+Candidates: 0.000135
+Neighbors:  0.009545
+Iterations: 0.040519
+Vorticity:  0.003908
+Viscosity:  0.001052
+Update:     0.000086
+
+Forces:     0.000047
+Candidates: 0.000137
+Neighbors:  0.009777
+Iterations: 0.038281
+Vorticity:  0.003840
+Viscosity:  0.001062
+Update:     0.000054
+
+Forces:     0.000052
+Candidates: 0.000245
+Neighbors:  0.009665
+Iterations: 0.037482
+Vorticity:  0.003863
+Viscosity:  0.001065
+Update:     0.000159
+
+Forces:     0.000035
+Candidates: 0.000133
+Neighbors:  0.009575
+Iterations: 0.037459
+Vorticity:  0.003844
+Viscosity:  0.001062
+Update:     0.000053
+
+Forces:     0.000038
+Candidates: 0.000134
+Neighbors:  0.009586
+Iterations: 0.037511
+Vorticity:  0.003849
+Viscosity:  0.001063
+Update:     0.000052
+
+Forces:     0.000040
+Candidates: 0.000146
+Neighbors:  0.009667
+Iterations: 0.037529
+Vorticity:  0.003852
+Viscosity:  0.001069
+Update:     0.000052
+
+Forces:     0.000040
+Candidates: 0.000137
+Neighbors:  0.009605
+Iterations: 0.037533
+Vorticity:  0.003854
+Viscosity:  0.001067
+Update:     0.000053
+
+Forces:     0.000057
+Candidates: 0.000250
+Neighbors:  0.009633
+Iterations: 0.037580
+Vorticity:  0.003858
+Viscosity:  0.001070
+Update:     0.000156
+
+Forces:     0.000038
+Candidates: 0.000135
+Neighbors:  0.009573
+Iterations: 0.037598
+Vorticity:  0.003865
+Viscosity:  0.001071
+Update:     0.000052
+
+Forces:     0.000039
+Candidates: 0.000144
+Neighbors:  0.009585
+Iterations: 0.037632
+Vorticity:  0.003865
+Viscosity:  0.001070
+Update:     0.000052
+
+Forces:     0.000038
+Candidates: 0.000133
+Neighbors:  0.009572
+Iterations: 0.037660
+Vorticity:  0.003871
+Viscosity:  0.001070
+Update:     0.000053
+
+Forces:     0.000035
+Candidates: 0.000136
+Neighbors:  0.009583
+Iterations: 0.037644
+Vorticity:  0.003865
+Viscosity:  0.001072
+Update:     0.000052
+
+Forces:     0.000053
+Candidates: 0.000246
+Neighbors:  0.009663
+Iterations: 0.037655
+Vorticity:  0.003876
+Viscosity:  0.001069
+Update:     0.000151
+
+Forces:     0.000039
+Candidates: 0.000150
+Neighbors:  0.009579
+Iterations: 0.037627
+Vorticity:  0.003873
+Viscosity:  0.001071
+Update:     0.000053
+
+Forces:     0.000034
+Candidates: 0.000135
+Neighbors:  0.009595
+Iterations: 0.037653
+Vorticity:  0.003872
+Viscosity:  0.001075
+Update:     0.000052
+
+Forces:     0.000039
+Candidates: 0.000128
+Neighbors:  0.009605
+Iterations: 0.037644
+Vorticity:  0.003868
+Viscosity:  0.001073
+Update:     0.000052
+
+Forces:     0.000040
+Candidates: 0.000134
+Neighbors:  0.009594
+Iterations: 0.037637
+Vorticity:  0.003873
+Viscosity:  0.001073
+Update:     0.000052
+
+Forces:     0.000051
+Candidates: 0.000255
+Neighbors:  0.009644
+Iterations: 0.037663
+Vorticity:  0.003874
+Viscosity:  0.001075
+Update:     0.000154
+
+Forces:     0.000040
+Candidates: 0.000137
+Neighbors:  0.009605
+Iterations: 0.037594
+Vorticity:  0.003868
+Viscosity:  0.001074
+Update:     0.000053
+
+Forces:     0.000039
+Candidates: 0.000145
+Neighbors:  0.009590
+Iterations: 0.037620
+Vorticity:  0.003866
+Viscosity:  0.001074
+Update:     0.000051
+
+Forces:     0.000038
+Candidates: 0.000133
+Neighbors:  0.009705
+Iterations: 0.037619
+Vorticity:  0.003869
+Viscosity:  0.001077
+Update:     0.000051
+
+Forces:     0.000040
+Candidates: 0.000135
+Neighbors:  0.009629
+Iterations: 0.037596
+Vorticity:  0.003865
+Viscosity:  0.001074
+Update:     0.000052
+
+Forces:     0.000050
+Candidates: 0.000241
+Neighbors:  0.009646
+Iterations: 0.037642
+Vorticity:  0.003868
+Viscosity:  0.001081
+Update:     0.000154
+
+Forces:     0.000038
+Candidates: 0.000135
+Neighbors:  0.009606
+Iterations: 0.037599
+Vorticity:  0.003873
+Viscosity:  0.001076
+Update:     0.000052
+
+Forces:     0.000040
+Candidates: 0.000137
+Neighbors:  0.009601
+Iterations: 0.037579
+Vorticity:  0.003870
+Viscosity:  0.001076
+Update:     0.000053
+
+Forces:     0.000035
+Candidates: 0.000143
+Neighbors:  0.009610
+Iterations: 0.037583
+Vorticity:  0.003868
+Viscosity:  0.001080
+Update:     0.000052
+
+Forces:     0.000040
+Candidates: 0.000137
+Neighbors:  0.009707
+Iterations: 0.037568
+Vorticity:  0.003867
+Viscosity:  0.001078
+Update:     0.000053
+
+Forces:     0.000053
+Candidates: 0.000257
+Neighbors:  0.009683
+Iterations: 0.037615
+Vorticity:  0.003865
+Viscosity:  0.001079
+Update:     0.000155
+
+Forces:     0.000038
+Candidates: 0.000135
+Neighbors:  0.009689
+Iterations: 0.041001
+Vorticity:  0.004708
+Viscosity:  0.001277
+Update:     0.000054
+
+Forces:     0.000043
+Candidates: 0.000139
+Neighbors:  0.011525
+Iterations: 0.043308
+Vorticity:  0.004708
+Viscosity:  0.001279
+Update:     0.000053
+
+Forces:     0.000040
+Candidates: 0.000138
+Neighbors:  0.011455
+Iterations: 0.044638
+Vorticity:  0.004680
+Viscosity:  0.001374
+Update:     0.000090
+
+Forces:     0.000055
+Candidates: 0.000143
+Neighbors:  0.011443
+Iterations: 0.043217
+Vorticity:  0.004710
+Viscosity:  0.001282
+Update:     0.000056
+
+Forces:     0.000057
+Candidates: 0.000247
+Neighbors:  0.011701
+Iterations: 0.043285
+Vorticity:  0.004715
+Viscosity:  0.001283
+Update:     0.000154
+
+Forces:     0.000042
+Candidates: 0.000136
+Neighbors:  0.011480
+Iterations: 0.043315
+Vorticity:  0.004713
+Viscosity:  0.001283
+Update:     0.000053
+
+Forces:     0.000033
+Candidates: 0.000133
+Neighbors:  0.011537
+Iterations: 0.043346
+Vorticity:  0.004716
+Viscosity:  0.001284
+Update:     0.000053
+
+Forces:     0.000043
+Candidates: 0.000142
+Neighbors:  0.011456
+Iterations: 0.043323
+Vorticity:  0.004715
+Viscosity:  0.001282
+Update:     0.000053
+
+Forces:     0.000040
+Candidates: 0.000139
+Neighbors:  0.011450
+Iterations: 0.043315
+Vorticity:  0.004714
+Viscosity:  0.001284
+Update:     0.000053
+
+Forces:     0.000051
+Candidates: 0.000252
+Neighbors:  0.011582
+Iterations: 0.043346
+Vorticity:  0.004718
+Viscosity:  0.001284
+Update:     0.000166
+
+Forces:     0.000039
+Candidates: 0.000139
+Neighbors:  0.011447
+Iterations: 0.043442
+Vorticity:  0.004720
+Viscosity:  0.001291
+Update:     0.000052
+
+Forces:     0.000038
+Candidates: 0.000141
+Neighbors:  0.011551
+Iterations: 0.043412
+Vorticity:  0.004719
+Viscosity:  0.001291
+Update:     0.000051
+
+Forces:     0.000041
+Candidates: 0.000137
+Neighbors:  0.011513
+Iterations: 0.043534
+Vorticity:  0.004728
+Viscosity:  0.001293
+Update:     0.000052
+
+Forces:     0.000041
+Candidates: 0.000138
+Neighbors:  0.011600
+Iterations: 0.042181
+Vorticity:  0.003909
+Viscosity:  0.001094
+Update:     0.000087
+
+Forces:     0.000069
+Candidates: 0.000243
+Neighbors:  0.009929
+Iterations: 0.038116
+Vorticity:  0.003915
+Viscosity:  0.001098
+Update:     0.000166
+
+Forces:     0.000038
+Candidates: 0.000136
+Neighbors:  0.009714
+Iterations: 0.038149
+Vorticity:  0.003919
+Viscosity:  0.001099
+Update:     0.000053
+
+Forces:     0.000039
+Candidates: 0.000131
+Neighbors:  0.009707
+Iterations: 0.038224
+Vorticity:  0.003923
+Viscosity:  0.001099
+Update:     0.000052
+
+Forces:     0.000041
+Candidates: 0.000142
+Neighbors:  0.009711
+Iterations: 0.038297
+Vorticity:  0.003936
+Viscosity:  0.001099
+Update:     0.000052
+
+Forces:     0.000040
+Candidates: 0.000138
+Neighbors:  0.009688
+Iterations: 0.038329
+Vorticity:  0.003940
+Viscosity:  0.001105
+Update:     0.000054
+
+Forces:     0.000054
+Candidates: 0.000250
+Neighbors:  0.009791
+Iterations: 0.038382
+Vorticity:  0.003948
+Viscosity:  0.001103
+Update:     0.000156
+
+Forces:     0.000038
+Candidates: 0.000132
+Neighbors:  0.009756
+Iterations: 0.038433
+Vorticity:  0.003954
+Viscosity:  0.001106
+Update:     0.000056
+
+Forces:     0.000042
+Candidates: 0.000135
+Neighbors:  0.009799
+Iterations: 0.038510
+Vorticity:  0.003966
+Viscosity:  0.001106
+Update:     0.000052
+
+Forces:     0.000042
+Candidates: 0.000140
+Neighbors:  0.009710
+Iterations: 0.038589
+Vorticity:  0.003968
+Viscosity:  0.001112
+Update:     0.000053
+
+Forces:     0.000037
+Candidates: 0.000134
+Neighbors:  0.009690
+Iterations: 0.038680
+Vorticity:  0.003975
+Viscosity:  0.001114
+Update:     0.000053
+
+Forces:     0.000049
+Candidates: 0.000245
+Neighbors:  0.009762
+Iterations: 0.038787
+Vorticity:  0.003988
+Viscosity:  0.001116
+Update:     0.000155
+
+Forces:     0.000040
+Candidates: 0.000136
+Neighbors:  0.009805
+Iterations: 0.038860
+Vorticity:  0.003995
+Viscosity:  0.001118
+Update:     0.000052
+
+Forces:     0.000041
+Candidates: 0.000135
+Neighbors:  0.009732
+Iterations: 0.038946
+Vorticity:  0.003999
+Viscosity:  0.001121
+Update:     0.000052
+
+Forces:     0.000040
+Candidates: 0.000148
+Neighbors:  0.009793
+Iterations: 0.039020
+Vorticity:  0.004011
+Viscosity:  0.001121
+Update:     0.000055
+
+Forces:     0.000040
+Candidates: 0.000137
+Neighbors:  0.009724
+Iterations: 0.039121
+Vorticity:  0.004018
+Viscosity:  0.001124
+Update:     0.000053
+
+Forces:     0.000055
+Candidates: 0.000247
+Neighbors:  0.009814
+Iterations: 0.040813
+Vorticity:  0.006556
+Viscosity:  0.001599
+Update:     0.000208
+
+Forces:     0.000059
+Candidates: 0.000201
+Neighbors:  0.010039
+Iterations: 0.040519
+Vorticity:  0.004126
+Viscosity:  0.001106
+Update:     0.000058
+
+Forces:     0.000032
+Candidates: 0.000165
+Neighbors:  0.009862
+Iterations: 0.040531
+Vorticity:  0.004143
+Viscosity:  0.001122
+Update:     0.000058
+
+Forces:     0.000037
+Candidates: 0.000162
+Neighbors:  0.009833
+Iterations: 0.040620
+Vorticity:  0.004142
+Viscosity:  0.001124
+Update:     0.000056
+
+Forces:     0.000036
+Candidates: 0.000152
+Neighbors:  0.009873
+Iterations: 0.040701
+Vorticity:  0.004160
+Viscosity:  0.001111
+Update:     0.000057
+
+Forces:     0.000037
+Candidates: 0.000274
+Neighbors:  0.009873
+Iterations: 0.040800
+Vorticity:  0.004189
+Viscosity:  0.001139
+Update:     0.000175
+
+Forces:     0.000035
+Candidates: 0.000136
+Neighbors:  0.009936
+Iterations: 0.040925
+Vorticity:  0.004189
+Viscosity:  0.001133
+Update:     0.000055
+
+Forces:     0.000031
+Candidates: 0.000136
+Neighbors:  0.009896
+Iterations: 0.040992
+Vorticity:  0.004219
+Viscosity:  0.001142
+Update:     0.000054
+
+Forces:     0.000032
+Candidates: 0.000136
+Neighbors:  0.009928
+Iterations: 0.041049
+Vorticity:  0.004190
+Viscosity:  0.001136
+Update:     0.000058
+
+Forces:     0.000034
+Candidates: 0.000140
+Neighbors:  0.009912
+Iterations: 0.041086
+Vorticity:  0.004219
+Viscosity:  0.001127
+Update:     0.000056
+
+Forces:     0.000039
+Candidates: 0.000265
+Neighbors:  0.009907
+Iterations: 0.041275
+Vorticity:  0.004220
+Viscosity:  0.001130
+Update:     0.000196
+
+Forces:     0.000037
+Candidates: 0.000134
+Neighbors:  0.009906
+Iterations: 0.041308
+Vorticity:  0.004235
+Viscosity:  0.001144
+Update:     0.000057
+
+Forces:     0.000034
+Candidates: 0.000172
+Neighbors:  0.009930
+Iterations: 0.041360
+Vorticity:  0.004230
+Viscosity:  0.001147
+Update:     0.000056
+
+Forces:     0.000034
+Candidates: 0.000157
+Neighbors:  0.009948
+Iterations: 0.041449
+Vorticity:  0.004238
+Viscosity:  0.001151
+Update:     0.000057
+
+Forces:     0.000035
+Candidates: 0.000142
+Neighbors:  0.010020
+Iterations: 0.041540
+Vorticity:  0.004239
+Viscosity:  0.001163
+Update:     0.000062
+
+Forces:     0.000037
+Candidates: 0.000264
+Neighbors:  0.009976
+Iterations: 0.041582
+Vorticity:  0.004263
+Viscosity:  0.001153
+Update:     0.000182
+
+Forces:     0.000035
+Candidates: 0.000159
+Neighbors:  0.009971
+Iterations: 0.041609
+Vorticity:  0.004254
+Viscosity:  0.001166
+Update:     0.000064
+
+Forces:     0.000037
+Candidates: 0.000130
+Neighbors:  0.009949
+Iterations: 0.041733
+Vorticity:  0.004270
+Viscosity:  0.001141
+Update:     0.000058
+
+Forces:     0.000037
+Candidates: 0.000133
+Neighbors:  0.010001
+Iterations: 0.041814
+Vorticity:  0.004276
+Viscosity:  0.001162
+Update:     0.000058
+
+Forces:     0.000037
+Candidates: 0.000172
+Neighbors:  0.009996
+Iterations: 0.041853
+Vorticity:  0.004329
+Viscosity:  0.001162
+Update:     0.000057
+
+Forces:     0.000036
+Candidates: 0.000268
+Neighbors:  0.010046
+Iterations: 0.042026
+Vorticity:  0.004301
+Viscosity:  0.001167
+Update:     0.000174
+
+Forces:     0.000032
+Candidates: 0.000136
+Neighbors:  0.010040
+Iterations: 0.042082
+Vorticity:  0.004314
+Viscosity:  0.001168
+Update:     0.000057
+
+Forces:     0.000036
+Candidates: 0.000138
+Neighbors:  0.010024
+Iterations: 0.042155
+Vorticity:  0.004303
+Viscosity:  0.001170
+Update:     0.000055
+
+Forces:     0.000034
+Candidates: 0.000140
+Neighbors:  0.010048
+Iterations: 0.042142
+Vorticity:  0.004320
+Viscosity:  0.001172
+Update:     0.000056
+
+Forces:     0.000033
+Candidates: 0.000138
+Neighbors:  0.010120
+Iterations: 0.042289
+Vorticity:  0.004309
+Viscosity:  0.001174
+Update:     0.000055
+
+Forces:     0.000037
+Candidates: 0.000263
+Neighbors:  0.010077
+Iterations: 0.042381
+Vorticity:  0.004333
+Viscosity:  0.001175
+Update:     0.000174
+
+Forces:     0.000039
+Candidates: 0.000147
+Neighbors:  0.010047
+Iterations: 0.042477
+Vorticity:  0.004224
+Viscosity:  0.001183
+Update:     0.000055
+
+Forces:     0.000036
+Candidates: 0.000134
+Neighbors:  0.009942
+Iterations: 0.041382
+Vorticity:  0.004258
+Viscosity:  0.001186
+Update:     0.000054
+
+Forces:     0.000041
+Candidates: 0.000163
+Neighbors:  0.009936
+Iterations: 0.041496
+Vorticity:  0.004245
+Viscosity:  0.001185
+Update:     0.000053
+
+Forces:     0.000039
+Candidates: 0.000139
+Neighbors:  0.010035
+Iterations: 0.045102
+Vorticity:  0.004362
+Viscosity:  0.001187
+Update:     0.000072
+
+Forces:     0.000051
+Candidates: 0.000264
+Neighbors:  0.010170
+Iterations: 0.042792
+Vorticity:  0.004377
+Viscosity:  0.001189
+Update:     0.000172
+
+Forces:     0.000036
+Candidates: 0.000139
+Neighbors:  0.010177
+Iterations: 0.042902
+Vorticity:  0.004385
+Viscosity:  0.001177
+Update:     0.000055
+
+Forces:     0.000031
+Candidates: 0.000142
+Neighbors:  0.010146
+Iterations: 0.042946
+Vorticity:  0.004396
+Viscosity:  0.001194
+Update:     0.000056
+
+Forces:     0.000039
+Candidates: 0.000133
+Neighbors:  0.010157
+Iterations: 0.043090
+Vorticity:  0.004415
+Viscosity:  0.001195
+Update:     0.000058
+
+Forces:     0.000037
+Candidates: 0.000138
+Neighbors:  0.010237
+Iterations: 0.043144
+Vorticity:  0.004412
+Viscosity:  0.001200
+Update:     0.000055
+
+Forces:     0.000040
+Candidates: 0.000263
+Neighbors:  0.010186
+Iterations: 0.043245
+Vorticity:  0.004431
+Viscosity:  0.001201
+Update:     0.000179
+
+Forces:     0.000036
+Candidates: 0.000133
+Neighbors:  0.010202
+Iterations: 0.043303
+Vorticity:  0.004435
+Viscosity:  0.001220
+Update:     0.000058
+
+Forces:     0.000033
+Candidates: 0.000138
+Neighbors:  0.010207
+Iterations: 0.043348
+Vorticity:  0.004417
+Viscosity:  0.001205
+Update:     0.000057
+
+Forces:     0.000034
+Candidates: 0.000139
+Neighbors:  0.010224
+Iterations: 0.043473
+Vorticity:  0.004440
+Viscosity:  0.001210
+Update:     0.000058
+
+Forces:     0.000033
+Candidates: 0.000143
+Neighbors:  0.010304
+Iterations: 0.043526
+Vorticity:  0.004439
+Viscosity:  0.001193
+Update:     0.000056
+
+Forces:     0.000036
+Candidates: 0.000268
+Neighbors:  0.010256
+Iterations: 0.043597
+Vorticity:  0.004454
+Viscosity:  0.001216
+Update:     0.000170
+
+Forces:     0.000035
+Candidates: 0.000139
+Neighbors:  0.010291
+Iterations: 0.043857
+Vorticity:  0.004501
+Viscosity:  0.001222
+Update:     0.000060
+
+Forces:     0.000038
+Candidates: 0.000151
+Neighbors:  0.010323
+Iterations: 0.043925
+Vorticity:  0.004487
+Viscosity:  0.001226
+Update:     0.000066
+
+Forces:     0.000042
+Candidates: 0.000180
+Neighbors:  0.010296
+Iterations: 0.044002
+Vorticity:  0.004501
+Viscosity:  0.001247
+Update:     0.000061
+
+Forces:     0.000041
+Candidates: 0.000140
+Neighbors:  0.010308
+Iterations: 0.044042
+Vorticity:  0.004526
+Viscosity:  0.001225
+Update:     0.000062
+
+Total Forces:     0.022384
+Total Candidates: 0.068847
+Total Neighbors:  4.988792
+Total Iterations: 19.975951
+Total Vorticity:  2.047129
+Total Viscosity:  0.537758
+Total Update:     0.040734
+

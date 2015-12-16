@@ -7,5 +7,5 @@
 
 module load cs5220
 cd $PBS_O_WORKDIR
-./sphc-omp init8k.txt 100 0.01
+./sphc-omp initcube.txt 100 0.01
 
