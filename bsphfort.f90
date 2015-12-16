@@ -4,7 +4,7 @@
 module precision
 
   implicit none
-  integer, parameter :: WP = 4
+  integer, parameter :: WP = 8
 end module
 
 ! ===================================== !
