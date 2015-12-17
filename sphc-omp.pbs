@@ -7,5 +7,20 @@
 
 module load cs5220
 cd $PBS_O_WORKDIR
-./sphc-omp initcube.txt 100 0.01
+export OMP_NUM_THREADS=1
+./sphc-omp init2k.txt 100 0.01
+export OMP_NUM_THREADS=2
+./sphc-omp init4k.txt 100 0.01
+export OMP_NUM_THREADS=4
+./sphc-omp init8k.txt 100 0.01
+export OMP_NUM_THREADS=8
+./sphc-omp init16k.txt 100 0.01
+export OMP_NUM_THREADS=12
+./sphc-omp init24k.txt 100 0.01
+export OMP_NUM_THREADS=16
+./sphc-omp init32k.txt 100 0.01
+export OMP_NUM_THREADS=20
+./sphc-omp init40k.txt 100 0.01
+export OMP_NUM_THREADS=24
+./sphc-omp init48k.txt 100 0.01
 

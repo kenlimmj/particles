@@ -499,6 +499,7 @@ void step(double dt) {
     {
     time_update = omp_get_wtime() - start;
     
+    /*
     printf("Forces:     %lf\n", time_force);
     printf("Candidates: %lf\n", time_candidate);
     printf("Neighbors:  %lf\n", time_neighbor);
@@ -507,6 +508,7 @@ void step(double dt) {
     printf("Viscosity:  %lf\n", time_viscosity);
     printf("Update:     %lf\n", time_update);
     printf("\n");
+    */
     
     total_time_force += time_force;
     total_time_candidate += time_candidate;
@@ -538,6 +540,9 @@ void run(int steps, double dt) {
     printf("Total Vorticity:  %lf\n", total_time_vorticity);
     printf("Total Viscosity:  %lf\n", total_time_viscosity);
     printf("Total Update:     %lf\n", total_time_update);
+    printf("Total Time: %lf\n", total_time_force +
+        total_time_candidate + total_time_neighbor + total_time_solve +
+        total_time_vorticity + total_time_viscosity + total_time_update);
     printf("\n");
 }
 
