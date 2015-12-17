@@ -1,8 +1,8 @@
 CC=icc
-FC=ifort
+FC=mpif90
 
-ANAFLAGS=-qopt-report=5 -qopt-report-phase=vec -parallel-source-info=2
-OPTFLAGS=-fast -xHost -ansi-alias -restrict -mkl
+ANAFLAGS=
+OPTFLAGS=-fast -xHost -mkl
 
 CFLAGS=-std=c99 -g -pedantic -Wall -Werror
 CFLAGS+=#$(OPTFLAGS) $(ANAFLAGS)
@@ -11,7 +11,8 @@ LIBS= -lm
 
 #FFLAGS= -O3 -ftree-vectorize -ffast-math -funroll-loops -fomit-frame-pointer -pipe -finit-real=zero -fopenmp
 #FFLAGS = -g -fbacktrace -Wall -pedantic -Wextra -W -Wno-unused-function -fbounds-check -fopenmp -Wunderflow
-FFLAGS = -O3 -xHost -ip -fast -qopt-report=5 -qopt-report-phase=vec -align -fopenmp
+#FFLAGS = -O3  
+FFLAGS = -fcheck=all -g -fbacktrace -Wall -pedantic -Wextra -W -Wno-unused-function -fbounds-check -fopenmp -Wunderflow
 .PHONY: all
 
 all: sphc sphfort bsphfort bsphfort_omp
@@ -38,3 +39,4 @@ clean:
 	@-rm *.o
 	@-rm output/data/particles*
 	@-rm output/data/frame*
+

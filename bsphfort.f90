@@ -7,14 +7,26 @@ module precision
   integer, parameter :: WP = 8
 end module
 
+module parallel
+  use precision
+  use mpi
+  integer :: irank,ierr,nproc,nprocx,nprocy,nprocz
+  real(WP),dimension(:),allocatable :: sendbuf
+  real(WP),dimension(:,:),allocatable :: recvbuf
+  integer,dimension(:),allocatable :: sendbuf2
+  integer,dimension(:),allocatable :: recvbuf2
+
+end module
 ! ===================================== !
 ! Timing and number of particles        !
 ! ===================================== !
 module state
+    use parallel
   use precision
   implicit none
   real(WP) :: time, dt, tfin
   integer :: n ! Number of particles
+  integer :: n_ ! Number of particles
   integer :: iter, frame
   real(WP) :: frame_freq
   real(WP) :: mass
@@ -28,7 +40,7 @@ module constants
   implicit none
   real(WP), parameter :: GRAVITY = -9.8_WP
   real(WP), parameter :: PI = 3.14159265_WP
-  real(WP), parameter :: BOX_SIZE =1.0_WP
+  real(WP) :: BOX_SIZE
   real(WP), parameter :: PARTICLE_DENSITY = 1000.0_WP
   real(WP) :: h, h2, h3, h4, h5, h9       ! KERNEL_SIZE
   real(WP), parameter :: BULK_MODULUS = 1000.0_WP
@@ -43,10 +55,16 @@ end module constants
 module posvel
   use precision
   implicit none
-  real(WP),dimension(:),allocatable ::  px,  py,  pz  ! Current position
-  real(WP),dimension(:),allocatable ::  vx,  vy,  vz  ! Velocity
-  real(WP),dimension(:),allocatable ::  vlx,  vly,  vlz  ! Velocity half time step behind
+  real(WP),dimension(:),allocatable,target ::  px,  py,  pz  ! Current position
+  real(WP),dimension(:),allocatable,target ::  vx,  vy,  vz  ! Velocity
+  real(WP),dimension(:),allocatable,target ::  vlx,  vly,  vlz  ! Velocity half time step behind
   real(WP),dimension(:),allocatable ::  rho           ! Density
+  integer ,dimension(:),allocatable,target ::  ghost  
+  integer                                  ::  vars=9
+  type ptr
+    real(WP), pointer :: p(:)  
+  end type ptr
+  type(ptr),dimension(9)                ::  dat
   !DIR$ attributes align:64 :: px, py, pz
   !DIR$ attributes align:64 :: vx, vy, vz
   !DIR$ attributes align:64 :: vlx, vly, vlz
@@ -107,7 +125,7 @@ module timers
   use precision
   implicit none
 
-  real(WP) :: neigh_t, dens_t, force_t, ef_t, ps_t, tot_t
+  real(WP) :: neigh_t, dens_t, force_t, ef_t, ps_t,comm_t, tot_t
 
 end module timers
 
@@ -125,6 +143,9 @@ program sph_run
   real(WP) :: deinit_start, deinit_stop
   real(WP) :: total_time
   real(WP) :: twrite
+
+  call MPI_Init(ierr)
+  call MPI_COMM_RANK( MPI_COMM_WORLD, irank, ierr )
 
   init_start = omp_get_wtime()
   time = 0.0_WP
@@ -145,9 +166,9 @@ program sph_run
     if(time .ge. twrite) then
       write_start = omp_get_wtime()
       twrite = twrite + frame_freq
-      print*,"Iteration: ",iter," Time: ",time
-      print*,"Max U: ", maxval(vx(:))," Max V: ",maxval(vy(:))," Max W: ",maxval(vz(:))
-      print*,"  "
+      !print*,"Iteration: ",iter," Time: ",time
+      !print*,"Max U: ", maxval(vx(:))," Max V: ",maxval(vy(:))," Max W: ",maxval(vz(:))
+      !print*,"  "
       call particle_write
       write_stop = omp_get_wtime()
       write_sum = write_sum + (write_stop-write_start)
@@ -162,16 +183,20 @@ program sph_run
 
   total_time = deinit_stop-init_start
 
-  write(*,"(A)")                 "Timing Information:                Total Time              Time Per Step"
-  write(*,"(A)")                 "---------------------             ------------            ---------------"
-  write(*,"(A,ES25.11)")         "Initialization:        ",init_stop-init_start
-  write(*,"(A,ES25.11,ES25.11)") "Neighbor Calculation:  ",neigh_t,neigh_t/iter
-  write(*,"(A,ES25.11,ES25.11)") "Density Calculation:   ",dens_t,dens_t/iter
-  write(*,"(A,ES25.11,ES25.11)") "Force Calculation:     ",force_t,force_t/iter
-  write(*,"(A,ES25.11,ES25.11)") "Ext. Force Calculation:",ef_t,ef_t/iter
-  write(*,"(A,ES25.11,ES25.11)") "Posvel Calculation:    ",ps_t,ps_t/iter
-  write(*,"(A,ES25.11)")         "Deinitialization Time: ",deinit_stop-deinit_start
-  write(*,"(A,ES25.11,ES25.11)") "Total Time:            ",total_time,total_time/iter
+  if (irank.eq.0)then
+    write(*,"(A)")                 "Timing Information:                Total Time              Time Per Step"
+    write(*,"(A)")                 "---------------------             ------------            ---------------"
+    write(*,"(A,ES25.11)")         "Initialization:        ",init_stop-init_start
+    write(*,"(A,ES25.11,ES25.11)") "Neighbor Calculation:  ",neigh_t,neigh_t/iter
+    write(*,"(A,ES25.11,ES25.11)") "Density Calculation:   ",dens_t,dens_t/iter
+    write(*,"(A,ES25.11,ES25.11)") "Force Calculation:     ",force_t,force_t/iter
+    write(*,"(A,ES25.11,ES25.11)") "Ext. Force Calculation:",ef_t,ef_t/iter
+    write(*,"(A,ES25.11,ES25.11)") "Posvel Calculation:    ",ps_t,ps_t/iter
+    write(*,"(A,ES25.11,ES25.11)") "Communcation:          ",comm_t,comm_t/iter
+    write(*,"(A,ES25.11)")         "Deinitialization Time: ",deinit_stop-deinit_start
+    write(*,"(A,ES25.11,ES25.11)") "Total Time:            ",total_time,total_time/iter
+  endif
+  call MPI_FINALIZE(ierr)
 
 end program sph_run
 
@@ -184,29 +209,39 @@ subroutine init
   use posvel
   use neighbors
   use forces
+  use parallel
   implicit none
   character(30) :: init_file
   integer :: i, unit
   real, dimension(:), allocatable :: data
+  character(64) :: buffer
 
   ! Read in command line argument init_file
   call get_command_argument(1,init_file)
   if(len_trim(init_file) .eq. 0) then
-    print*, "Incorrect number of command line arguments"
-    print*, "Correct usage is ./bsphfort (init_file)"
-    print*, "Exiting..."
+    !print*, "Incorrect number of command line arguments"
+    !print*, "Correct usage is ./bsphfort (init_file)"
+    !print*, "Exiting..."
     stop
   end if
 
+
   ! Find length of initial condition file (number of particles)
-  unit = 20
-  open(unit,file=trim(init_file),action="read")
+  unit = 20+irank
+  write(buffer,"(a, i5.5)") trim(init_file),irank
+  open(unit,file=trim(adjustl(buffer)),action="read")
+  read(unit,*) n_            ! First line will be number of particles
   read(unit,*) n            ! First line will be number of particles
   read(unit,*) h            ! First line will be number of particles
-  h2=h*h; h4=h2*h2; h3=h2*h; h5=h3*h2; h9=h5*h3*h
+  h2=h*h; h3=h2*h; h5=h3*h2; h9=h5*h3*h
   read(unit,*) tfin         ! Second line is finish time of simulation
   read(unit,*) dt           ! Third line is time step
   read(unit,*) frame_freq   ! Fourth line is viz frame frequency
+  read(unit,*) nprocx
+  read(unit,*) nprocy
+  read(unit,*) nprocz
+  read(unit,*) BOX_SIZE   ! Fifth line is BOX_SIZE
+  nproc=nprocx*nprocy*nprocz
 
   ! Allocate everything
   allocate(px(n)); px = 0.0_WP
@@ -223,7 +258,7 @@ subroutine init
   allocate(fx(n)); fx = 0.0_WP
   allocate(fy(n)); fy = 0.0_WP
   allocate(fz(n)); fz = 0.0_WP
-
+  allocate(ghost(n)); ghost = 0
 
   ! Neighbor finding size creations, each bin is ~2h
   nbinx = floor(BOX_SIZE/h) - 1
@@ -231,7 +266,7 @@ subroutine init
   nbinz = floor(BOX_SIZE/h) - 1
 
  ! Need to find good way to estimate this so array not needlessly large
-  max_part_guess = 100*n/(nbinx*nbiny*nbinz)
+  max_part_guess = 500*n_/(nbinx*nbiny*nbinz)
   allocate(part_count(nbinx,nbiny,nbinz))
   allocate(binpart(max_part_guess,nbinx,nbiny,nbinz)); binpart = 0
   allocate(nbs(n,max_part_guess)); nbs = 0
@@ -250,6 +285,16 @@ subroutine init
   close(unit)
   deallocate(data)
 
+  dat(1)%p  => px
+  dat(2)%p  => py
+  dat(3)%p  => pz
+  dat(4)%p  => vx
+  dat(5)%p  => vy
+  dat(6)%p  => vz
+  dat(7)%p  => vx
+  dat(8)%p  => vy
+  dat(9)%p  => vz
+
   call mass_change
 
   ! Print out initial particle positions
@@ -263,11 +308,13 @@ subroutine mass_change
   use posvel
   use state
   use constants
+  use parallel
   implicit none
   integer :: i
-  real(WP) :: rho0, rho2s, rhos
+  real(WP) :: rho0, rho2s, rhos, rhos_,rho2s_
 
   mass = 1
+  call communicate
   call neighbor_find
   call compute_density
   rho0 = PARTICLE_DENSITY
@@ -275,11 +322,13 @@ subroutine mass_change
   rhos = 0.0_WP
 
   do i = 1, n
-    rho2s = rho2s + rho(i)*rho(i)
-    rhos = rhos + rho(i)
+    if (ghost(i).eq.0) rho2s = rho2s + rho(i)*rho(i)
+    if (ghost(i).eq.0) rhos = rhos + rho(i)
   end do
-  mass = mass*rho0*rhos/rho2s
 
+  call MPI_ALLREDUCE(rhos,rhos_,1,MPI_REAL8,MPI_SUM,MPI_COMM_WORLD,ierr)
+  call MPI_ALLREDUCE(rho2s,rho2s_,1,MPI_REAL8,MPI_SUM,MPI_COMM_WORLD,ierr)
+  mass = mass*rho0*rhos_/rho2s_
   return
 end subroutine mass_change
 
@@ -312,6 +361,7 @@ subroutine deinit
   deallocate(nbs)
   deallocate(part_count)
   deallocate(binpart)
+  deallocate(ghost)
 
   return
 end subroutine deinit
@@ -322,23 +372,267 @@ subroutine particle_write
   use state
   implicit none
   integer :: i, fid
-  character(64) :: buffer, start,filename
+  character(64) :: buffer, start,filename,catcommand
 
-!  write(buffer,"(ES12.3)") time
-  start = "particles_"
-  write(buffer,"(a, i5.5)") trim(start), frame
+  write(buffer,"(a, i5.5)") 'buf',irank
   filename = trim(adjustl(buffer))
-  fid = 0
+  fid = irank
+
+
   open(fid,file=filename,status="REPLACE",action="WRITE")
-  write(fid,*) n
   do i = 1, n
-    write(fid,FMT="(6(ES22.15,1x))") px(i), py(i), pz(i), vx(i), vy(i), vz(i)
+    if (ghost(i).eq.0) write(fid,FMT="(6(ES22.15,1x))") px(i), py(i), pz(i), vx(i), vy(i), vz(i)
   end do
+  close(fid)
+
+  call MPI_BARRIER(MPI_COMM_WORLD,ierr)
+
+  if (irank .eq. 0)then
+    start = "particles_"
+    write(buffer,"(a, i5.5)") trim(start), frame
+    filename = trim(adjustl(buffer))
+    
+    
+    open(nproc,file=filename,status="REPLACE",action="WRITE")
+    write(nproc,*) n_
+    close(nproc)
+    
+    
+    do i = 0,nproc-1
+      write(buffer,"(a,a, i5.5,a,a,i5.5)") 'cat ','buf',i,' >> ',trim(start),frame
+      catcommand = trim(adjustl(buffer))
+      call system(catcommand)
+    enddo
+  endif
 
   frame = frame + 1
 
   return
 end subroutine
+
+subroutine communicate
+  use parallel
+  use posvel
+  use neighbors
+  use state
+  use forces
+  implicit none
+  integer :: i,j,k,nn,proc,proc_orig,proc_recv,n_new,maxsend,maxsend_,disp,v, total_count,sub_count
+  integer,dimension(0:nproc-1) :: sendcount,recvcount,flag
+  real(WP) :: epsx,epsy,epsz
+  type(ptr),dimension(9) :: dat_new
+  real(WP),dimension(:),allocatable,target :: px_new,py_new,pz_new,vx_new,vy_new,vz_new,vlx_new,vly_new,vlz_new
+  integer,dimension(:),allocatable,target :: ghost_new
+  integer,dimension(0:7) :: balance
+  integer :: missing=0,fac=1
+
+  !print*,irank, 'begmin    ',minval(px),minval(py),minval(pz),minval(vx),minval(vy),minval(vz)
+  !print*,irank, 'begmax    ',maxval(px),maxval(py),maxval(pz),maxval(vx),maxval(vy),maxval(vz)
+
+  balance=0
+  sendcount=0
+  n_new=0
+  do nn = 1,n
+    proc_orig = nprocx*nprocy*floor((pz(nn)/(BOX_SIZE/nprocz)))    &
+              + nprocx*       floor((py(nn)/(BOX_SIZE/nprocy)))    &
+              +               floor((px(nn)/(BOX_SIZE/nprocx)))    
+    flag=0
+    do i = -1,1
+      do j = -1,1
+        do k = -1,1
+          epsx=fac*h*i
+          epsy=fac*h*j
+          epsz=fac*h*k
+
+          
+          proc = nprocx*nprocy*floor(((pz(nn)+epsx)/(BOX_SIZE/nprocz)))    &
+               + nprocx*       floor(((py(nn)+epsy)/(BOX_SIZE/nprocy)))    &
+               +               floor(((px(nn)+epsz)/(BOX_SIZE/nprocx)))    
+          if ((proc>=0).and.(proc<nproc)) then
+            if ((ghost(nn).eq.0).and.(flag(proc).eq.0))then
+              balance(proc) = balance(proc)+1
+              flag(proc)=1
+              sendcount(proc)=sendcount(proc)+1
+            endif
+          endif
+        enddo
+      enddo
+    enddo
+!    if(sum(flag)>0 .and. ghost(nn).eq.0) print*,flag(-2) 
+  enddo
+  !print*,'anac', irank,n,n_,'bal',balance
+
+
+
+
+  n_new=sendcount(irank)
+
+  maxsend=maxval(sendcount)
+
+
+  call MPI_ALLREDUCE(maxsend,maxsend_,1,MPI_INTEGER,MPI_MAX,MPI_COMM_WORLD,ierr)
+  call MPI_ALLTOALL(sendcount(0),1,MPI_INTEGER,recvcount(0),1,MPI_INTEGER,MPI_COMM_WORLD,ierr)
+
+  !if(irank.eq.0) print*,irank,'recv', recvcount
+
+  !print*,irank,'send    ', sendcount
+
+  allocate(sendbuf(nproc*maxsend_))
+  allocate(recvbuf(nproc*maxsend_,1:vars))
+  allocate(sendbuf2(nproc*maxsend_))
+  allocate(recvbuf2(nproc*maxsend_))
+
+  allocate(px_new   (sum(recvcount))); px_new   =0.0_WP
+  allocate(py_new   (sum(recvcount))); py_new   =0.0_WP
+  allocate(pz_new   (sum(recvcount))); pz_new   =0.0_WP
+  allocate(vx_new   (sum(recvcount))); vx_new   =0.0_WP
+  allocate(vy_new   (sum(recvcount))); vy_new   =0.0_WP
+  allocate(vz_new   (sum(recvcount))); vz_new   =0.0_WP
+  allocate(vlx_new   (sum(recvcount))); vx_new   =0.0_WP
+  allocate(vly_new   (sum(recvcount))); vy_new   =0.0_WP
+  allocate(vlz_new   (sum(recvcount))); vz_new   =0.0_WP
+  allocate(ghost_new(sum(recvcount))); ghost_new=0
+  
+  dat_new(1)%p  => px_new
+  dat_new(2)%p  => py_new
+  dat_new(3)%p  => pz_new
+  dat_new(4)%p  => vx_new
+  dat_new(5)%p  => vy_new
+  dat_new(6)%p  => vz_new
+  dat_new(7)%p  => vlx_new
+  dat_new(8)%p  => vly_new
+  dat_new(9)%p  => vlz_new
+
+  do v = 1,vars
+    sendcount=0
+    do nn = 1,n
+      proc_orig = nprocx*nprocy*floor((pz(nn)/(BOX_SIZE/nprocz)))    &
+                + nprocx*       floor((py(nn)/(BOX_SIZE/nprocy)))    &
+                +               floor((px(nn)/(BOX_SIZE/nprocx)))    
+      flag=0
+      do i = -1,1
+        do j = -1,1
+          do k = -1,1
+            epsx=fac*h*i
+            epsy=fac*h*j
+            epsz=fac*h*k
+           
+
+            proc = nprocx*nprocy*floor(((pz(nn)+epsx)/(BOX_SIZE/nprocz)))    &
+                 + nprocx*       floor(((py(nn)+epsy)/(BOX_SIZE/nprocy)))    &
+                 +               floor(((px(nn)+epsz)/(BOX_SIZE/nprocx)))    
+            if ((proc>=0).and.(proc<nproc)) then
+              if ((ghost(nn).eq.0).and.(flag(proc).eq.0))then
+                flag(proc)=1
+                sendcount(proc)=sendcount(proc)+1
+                if(v.eq.1 .and. proc.eq.proc_orig)then
+                    sendbuf2(proc*maxsend_+sendcount(proc)) = 0
+                elseif(v.eq.1 .and. proc.ne.proc_orig)then
+                    sendbuf2(proc*maxsend_+sendcount(proc)) = 1
+                endif
+                sendbuf(proc*maxsend_+sendcount(proc)) = dat(v)%p(nn)
+              endif
+            endif
+          enddo
+        enddo
+      enddo
+    enddo
+    if (size(recvbuf)>0)then
+      call MPI_ALLTOALL(sendbuf,maxsend_,MPI_REAL8,recvbuf(1,v),maxsend_,MPI_REAL8,MPI_COMM_WORLD,ierr)
+      call MPI_ALLTOALL(sendbuf2,maxsend_,MPI_INTEGER,recvbuf2,maxsend_,MPI_INTEGER,MPI_COMM_WORLD,ierr)
+    endif
+    call MPI_BARRIER(MPI_COMM_WORLD,ierr)
+  enddo
+
+  
+
+  n_new=0
+  do i=0,nproc-1
+      do j=1,recvcount(i)
+        disp=(i)*maxsend_+j
+        n_new=n_new+1
+        
+        do v = 1,vars
+          dat_new(v)%p(n_new)=recvbuf(disp,v)
+        enddo
+        ghost_new(n_new)=recvbuf2(disp)
+      enddo
+  enddo
+
+
+  deallocate(px)
+  deallocate(py)
+  deallocate(pz)
+  deallocate(vx)
+  deallocate(vy)
+  deallocate(vz)
+  deallocate(vlx)
+  deallocate(vly)
+  deallocate(vlz)
+  deallocate(fx)
+  deallocate(fy)
+  deallocate(fz)
+  deallocate(rho)
+  deallocate(nc)
+  deallocate(nbs)
+  deallocate(ghost)
+
+  allocate(px   (size(px_new))); px   =px_new
+  allocate(py   (size(px_new))); py   =py_new
+  allocate(pz   (size(px_new))); pz   =pz_new
+  allocate(vx   (size(px_new))); vx   =vx_new
+  allocate(vy   (size(px_new))); vy   =vy_new
+  allocate(vz   (size(px_new))); vz   =vz_new
+  allocate(vlx  (size(px_new))); vlx  =vlx_new
+  allocate(vly  (size(px_new))); vly  =vly_new
+  allocate(vlz  (size(px_new))); vlz  =vlz_new
+  allocate(rho  (size(px_new))); rho  =0.0_WP
+  allocate(nc   (size(px_new))); nc   =0
+  allocate(fx   (size(px_new))); fx   =0.0_WP
+  allocate(fy   (size(px_new))); fy   =0.0_WP
+  allocate(fz   (size(px_new))); fz   =0.0_WP
+  allocate(ghost(size(px_new))); ghost=ghost_new
+
+  allocate(nbs  (size(px_new),max_part_guess)); nbs = 0
+
+  dat(1)%p  => px
+  dat(2)%p  => py
+  dat(3)%p  => pz
+  dat(4)%p  => vx
+  dat(5)%p  => vy
+  dat(6)%p  => vz
+  dat(7)%p  => vlx
+  dat(8)%p  => vly
+  dat(9)%p  => vlz
+
+  deallocate(px_new)
+  deallocate(py_new)
+  deallocate(pz_new)
+  deallocate(vx_new)
+  deallocate(vy_new)
+  deallocate(vz_new)
+  deallocate(ghost_new)
+  deallocate(sendbuf)
+  deallocate(recvbuf)
+  deallocate(sendbuf2)
+  deallocate(recvbuf2)
+
+
+  n=size(px)
+  
+!  sub_count=0
+!  do i=1,n
+!    if (ghost(i).eq.0) sub_count=sub_count+1
+!  enddo
+!  call MPI_ALLREDUCE(sub_count,total_count,1,MPI_INTEGER,MPI_SUM,MPI_COMM_WORLD,ierr)
+!
+!  if (irank.eq.0) print*,sub_count,total_count,'  total',n_
+!!  vx=5.0_WP
+!  print*,sub_count,size(px), irank, 'min    ',minval(px),minval(py),minval(pz),minval(vx),minval(vy),minval(vz)
+!  print*,sub_count,size(px), irank, 'max    ',maxval(px),maxval(py),maxval(pz),maxval(vx),maxval(vy),maxval(vz)
+  return
+end subroutine communicate
+
 
 ! ===================================== !
 ! One step of SPH                       !
@@ -349,10 +643,10 @@ subroutine step
   use timers
   use omp_lib
   implicit none
-  real(WP) :: t1, t2, t3, t4, t5, t6, t7
+  real(WP) :: t1, t2, t3, t4, t5, t6, t7, t8
 
   t1 = omp_get_wtime()
-  call neighbor_find
+  if (n>0) call neighbor_find
   t2 = omp_get_wtime()
   call compute_density
   t3 = omp_get_wtime()
@@ -362,12 +656,15 @@ subroutine step
   t6 = omp_get_wtime()
   call posvel_update
   t7 = omp_get_wtime()
+  call communicate
+  t8 = omp_get_wtime()
 
   neigh_t = neigh_t  + t2-t1
   dens_t  = dens_t   + t3-t2
   force_t = force_t  + t5-t3
   ef_t    = ef_t     + t6-t5
   ps_t    = ps_t     + t7-t6
+  comm_t  = comm_t   + t8-t7
 
 end subroutine step
 
@@ -678,6 +975,8 @@ subroutine compute_density
 
   rho(i) = rho(i) + rhosum
   end do
+  !print*,  'minr   ',minval(rho)
+  !print*,  'maxr   ',maxval(rho)
 
   return
 end subroutine compute_density
@@ -755,6 +1054,7 @@ subroutine ext_forces
   use forces
   use constants
   use posvel
+  use parallel
   implicit none
 
   fx = fx/rho
@@ -764,6 +1064,8 @@ subroutine ext_forces
   ! Only gravity for now
   fy = fy + GRAVITY
 
+!  if (irank.eq.0) print*,  'min    ',minval(fx),minval(fy),minval(fz)
+!  if (irank.eq.0) print*,  'max    ',maxval(fx),maxval(fy),maxval(fz)
   return
 end subroutine ext_forces
 
@@ -773,7 +1075,10 @@ subroutine posvel_update
   use posvel
   use state
   use forces
+  use constants
   implicit none
+  integer :: i
+  real(WP) :: epss=0.000001
 
   if(iter.eq.1) then
     vlx = vx
@@ -811,8 +1116,18 @@ subroutine posvel_update
     pz = pz + dt*vlz
   end if
 
+
   call enforce_BCs
 
+  do i=1,n
+    if (px(i)<0.0_WP) px(i)=0.0_WP+epss
+    if (py(i)<0.0_WP) py(i)=0.0_WP+epss
+    if (pz(i)<0.0_WP) pz(i)=0.0_WP+epss
+    if (px(i)>BOX_SIZE) px(i)=BOX_SIZE-epss
+    if (py(i)>BOX_SIZE) py(i)=BOX_SIZE-epss
+    if (pz(i)>BOX_SIZE) pz(i)=BOX_SIZE-epss
+
+  enddo
   return
 end subroutine posvel_update
 
