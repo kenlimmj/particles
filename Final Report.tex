@@ -39,87 +39,105 @@
         \item Finally we update the positions and velocities with the candidate positions and velocities
     \end{itemize}
     
+        
+     \subsubsection{Performance Model}
+        Each of the sections listed above must be executed serially. However, what can be parallelized are each individual steps.
+        If we have $n$ particles, then the upper bound for our serial time per time step is:
+        \\
+        $$t_{forces} * n + t_{candidates} * n + t_{neighbors} * n^2 + t_{iterations} * n^2 +$$
+        $$t_{vorticity} * n^2 + t_{viscosity} * n^2 + t_{update} * n$$
+        \\
+        This is a very pessimistic bound because the $n^2$ coefficient on most of the terms assume that all particles of neighbors of all other particles, which is never the case. If we let $a$ be the average number of neighbors per particle (which the simulation will eventually stabilize to), then our new model for serial time is:
+        \\
+        $$t_{f} * n + t_{c} * n + t_{nb} * n^2 + t_{iter} * n * a + t_{vo} * n * a + t_{vi} * n * a + t_{u} * n$$
+        \\
+        If we have $p$ processors, then our parallel time per time step is:
+        \\
+        $$(t_{f} * n + t_{c} * n + t_{nb} * n^2 + t_{iter} * n^2 + t_{vo} * n * a + t_{vi} * n * a + t_{u} * n) / p + t_{overhead}$$
+        \\
+        Although there are no major branches in the algorithm, there will still be synchronization overheads and small critical serial sections in a parallel implementation.
+    
     \subsection{Code Bases}
-    \subsubsection{C Code}
     
     \subsubsection{Fortran Code}
     The Fortran code is based off of an SPH code used by Professor Bindel in the spring of 2014 for CS 5220: Applications of Parallel Computers. This code was selected because it directly referenced the solution of the relevant equation (Navier-Stokes) and discussed treatments required to have a working code. SPH can be very unstable without sufficient parameter tuning and having the reference code available allowed easier creation of a serial program that could then be parallelized. Several modifications and additions have been made to this code, as well as it being transferred to Fortran, that will be discussed later. The main contributions taken from the reference code were the leap-frog time integration scheme, handling of walls via damping coefficients, and the recalculation of mass during initialization to have particle densities near the particle reference density. The additions and transfer to Fortran for the serial code led to an order of magnitude speed up for the dam break problem created in the C version using the ``box indicator''. 
     
     The initialization of the Fortran code is handled via an initial text file generated with a python script. This text file contains the number of particles, the time step, the size of the particles, domain side length (with the domain being assumed cubic), frequency of visualization file output, final desired simulation time, and initial position and velocity of all particles. This is a very flexible format for initialization that allows easy rerunning of simulation conditions and the creation of a diverse problem set.
     
+    
+    \subsubsection{C Code}
+    
+    The C code is based off of the Java code from Professor James' assignment for CS 5643. This assignment was oriented towards speed and real-time simulation. The original skeleton code contained a GUI and simple particle system framework. For simplicity in the C implementation, all data structures and functions were kept as native data types in the global namespace. Like the Fortran code, the implementation reads from the same initialization files although with slightly different parameters. In the main program loop, the step size is further split into multiple substeps, although output was only written at the end of the whole step. The C implementation borrows ideas from the Fortran code such as collision damping and reference particle density to improve the stability of the simulation.
+    
     \subsection{Writing of Visualization Files}
     The writing of visualization files is handled the same way in each code. At a specified frequency, by a certain number of time steps in the C version or an amount of simulated time in the Fortran version, a text file is written that contains the number of particles along with their position and velocity. The text files are numbered sequentially with integer tags in order to keep the proper time sequence. A python script we wrote, based loosely off of the visualizer script written for the wave-equation assignment, then plots each particle as a point on a 3D scatter plot and encodes the images together with \texttt{ffmpeg}.
 
     \section{Profiling and Serial Optimization}
-    
-    \subsection{C Code}
-
-  \subsubsection{Profiling}
-  
-  \subsubsection{Optimizations}
-  \subsubsection{Compiler Flags}
   
   \subsection{Fortran Code}
   \subsubsection{Profiling}
   In order to profile the Fortran code, manual timing was implemented using the OpenMP function, \texttt{omp\_get\_wtime}. This was deemed sufficient due to the highly modular nature of the Fortran code, where the majority of subroutines called feature a nested do-loop that computes the effect of particle neighbors on each particle. For this profiling, the known fact about particle simulations was confirmed, neighbor finding is the predominant cost. In the naive version of the code, the neighbor finding routine takes several orders of magnitude longer per iteration. After optimizations, the neighbor finding routine was reduced to only being 10 times more expensive than any other routine per step, meaning in all cases it remains the dominant bottle neck. For this reason, the neighbor finding routine was focused on in both the optimization and parallelization of the Fortran code. 
   
   \subsubsection{Optimizations}
-  The optimizations of the serial program were primarily made through reorganization of the neighbor finding routine and encouraging vectorization by the compiler. Since the neighbor finding routine received the most attention and had the greatest impact on program speed, this will be focused on first and will be addressed with the most detail.
+  The optimizations of the serial program were primarily made through reorganization of the neighbor finding routine and encouraging vectorization by the compiler. Since the neighbor finding routine received the most attention and had the greatest impact on program speed,  this will be focused on first and will be addressed with the most detail.
   
+  Naive neighbor finding is an $n^2$ operation that is known to be the predominant cost of SPH fluid simulations. In order to improve upon this, we used spatial binning to reduce the number of particles each particle checks to determine neighbors. The general algorithm can be written in pseudo-code as:
+      \begin{itemize}
+      	\item For each particle, its bin in the x, y, and z direction is calculated. During this, number of particles in each bin as well as the index of the particle in each bin is tracked.
+      	\item Each bin is then iterated through, consisting of
+	      	\begin{itemize}
+	      		\item A particle in the bin is chosen
+	      		\item The neighboring 26 bins are iterated through, as well as the particle's bin itself
+	      		\item The distance between particles is calculated
+	      		\item If the distance is less than the kernel size, the particle is a neighbor and added to a list of neighbors for that particle. The number of neighbors is also tracked.
+	      	\end{itemize}
+      \end{itemize}
+   This handling of neighbors is much faster than the naive treating of neighbor finding, however it is still very costly. In order to reduce the cost further, the finding of neighbors can be handled in pairs, since it is known that if particle $j$ is a neighbor of particle $i$, then $i$ is a neighbor of $j$. This provides a significant speed up, however becomes complicated in parallel without an excessive amount of synchronization. Inherently this algorithm is hard to optimize for the compiler since it must be checked that the distance between particles is less than the kernel size. Additionally, if all bins are looped through together, if statements are required to ensure that ``bins'' outside of the simulation domain are not checked since this will need to array bound issues. To address this issue, the iteration through bins was split up to first check bins along the domain boundaries, allowing the internal domain, which contains the majority of the bins, to be iterated through without bounds checks on neighboring spatial bins. Along with these algorithmic considerations, other simple computational considerations were incorporated, such as looping through bins using the smallest memory stride in the accessed arrays to take advantage spatial cache locality.
+   
+	SPH fluid programs have an inherent particle symmetry implied which was used to reduce the amount of computational work needed to be performed. For the calculation of forces and density, the calculated force or density can be applied to the neighbor as well, halving the amount of naive work that would be performed when calculating distances and kernel coefficients, which can be quite costly with complex expressions used for many of the kernels. Computing force and density contributions from neighbors in pairs also utilizes the working set better, using the neighbor information that is already loaded into cache. 
+	
+	In all areas of the code, efficient coding was strived for, pre-computing all constants that are used multiple times and allocating each array only once. One issue with this is the need to estimate the maximum number of neighbors a single particle will have in order to allocate the associated arrays only once. This estimation has a significant impact the neighbor finding routine since it greatly effects the offset between non-data-sequential bins and can quickly lead to cache thrashing. For our final, optimized version of the code, we decided to estimate the maximum possible number of neighbors as 100 times a homogeneous distribution of particles, or
+	\begin{equation}
+	\mathrm{max\_part\_guess} = \frac{100 n}{nbinx \times nbiny \times nbinz}
+	\end{equation}
+	This seemed to lead to quick and robust simulation. In the future, if we had more time, we would most likely implement a linked-list method in order to avoid having to preallocate arrays.
+	
+	Memory alignment was also forced to 64-byte boundaries in order to aide the compiler in vectorization, something that Fortran is typically strong in. The compiler's vectorization report was used to ensure vectorization when possible, which once again provided some performance gain due to on-core parallelism.
+	
+	These optimizations discussed here sped the program up by a factor of 13 for a dam break with 2197 particles ran for 10,000 iterations, from 219 seconds to 16.9 seconds. The original program that managed to simulate the dam break in 219 seconds already incorporated the general algorithm discussed for spatial binning neighbor finding, however did not have optimized looping orders or allocations, showing the importance of proper memory management and cache use.
+      
+  \subsubsection{Compiler Flags}
+  In order to have cross-platform portability of the program and ease of testing on Totient as well as locally, it was decided to use GNU's gfortran. Since accuracy in SPH for graphics is not of paramount performance, full optimization and \texttt{ffast-math} were used to allow quicker handling of floating point operations. Loop unrolling was also specifically requested with the \texttt{funroll-loops} compiler flag. As previously seen in past homework assignments, compiler flags provide a significant code speedup with minimal effort.
+ 
+          \subsection{C Code}
+          \subsubsection{Profiling}
+          
+          Serial profiling was done on a problem size of 16000 particles.
+          \[\begin{array}{lc}
+          Forces:     & 0.025267 s \\
+          Candidates: & 0.046138 s \\
+          Neighbors:  & 9.710008 s \\
+          Iterations: & 43.94977 s \\
+          Vorticity:  & 4.347007 s \\
+          Viscosity:  & 1.153325 s \\
+          Update:     & 0.046102 s \\
+          \end{array}\]
+          
+          From here we observe that the majority of time is spent in solver iterations. Since we perform 10 iterations per step, this equates to around 4.4 seconds per iteration. Another large chunk of time is spent finding neighbors. Although binning particles takes O($n$) time, searching through the 27 surrounding bins is potentially an O($n^2$) operation, especially if the majority of particles are clustered around an area.
+          
+          \subsubsection{Compiler Flags}
+          We use the typical compiler flags with the Intel compiler, including O3, fast, ipo, AVX512 and restrict. These flags are taken from past assignments.
+  \subsubsection{Profiling}
+       
+  \subsubsection{Optimizations}
   \subsubsection{Compiler Flags}
   
-    \section{Parallelization}
-    \subsection{C Code}  
-    \subsubsection{OpenMP}
-    \begin{table}
-    	\begin{center}
-        \begin{tabular}{| c | c | c | c |}
-            \hline
-            Case & \# Particles & \# Threads & Time (s) \\ \hline		  		
-            1 & 36,000 &  1 & 182.99 \\ \hline		  		
-            2 & 36,000 &  2 & 79.769 \\ \hline		  		
-            3 & 36,000 &  4 & 42.479 \\ \hline		  		
-            4 & 36,000 &  8 & 24.816 \\ \hline		  		
-            5 & 36,000 & 12 & 17.791 \\ \hline		  		
-            6 & 36,000 & 16 & 22.772 \\ \hline		  		
-            7 & 36,000 & 20 & 18.565 \\ \hline		  		
-            8 & 36,000 & 24 & 28.774 \\ \hline		  		
-        \end{tabular}
-        \caption{Configuration of dam break simulations used for strong scaling study.}
-        \label{tab:ss}
-        \end{center}
-    \end{table}
-  
-    \begin{table}
-    	\begin{center}
-        \begin{tabular}{| c | c | c | c |}
-            \hline
-            Case & \# Particles & \# Threads & Time (s) \\ \hline
-            1 &  2,197 &  1 & 6.3919  \\ \hline		  		
-            2 &  4,000 &  2 & 7.2487 \\ \hline		  		
-            3 &  8,000 &  4 & 10.717 \\ \hline		  		
-            4 & 16,000 &  8 & 11.526 \\ \hline		  		
-            5 & 24,389 & 12 & 14.846 \\ \hline		  		
-            6 & 32,768 & 16 & 24.198 \\ \hline		  		
-            7 & 39,304 & 20 & 24.268 \\ \hline		  		
-            8 & 46,656 & 24 & 24.203 \\ \hline		  		
-        \end{tabular}
-        \caption{Configuration of dam break simulations used for weak scaling study.}
-        \label{tab:ws}
-        \end{center}
-    \end{table}
-  
-    \textbf{Strong Scaling:}
-    
-    \textbf{Weak Scaling:}
-    
-  \subsubsection{Cilk}
-  \textbf{Strong Scaling:}
-  
-  \textbf{Weak Scaling:}
+  \section{Parallelization}
   \subsection{Fortran Code}    
-  
+  The optimized Fortran code was parallelized separately in OpenMP and MPI in order to judge the effectiveness of both parallelization paradigms. For the size of our problems of interest, OpenMP appears to be superior due to its shared memory architecture reducing the number and cost of synchronizations significantly.
   \subsubsection{OpenMP}
+  The parallelization of the Fortran code with OpenMP was primarily handled through the use of !\$OMP DO loops, !\$OMP WORKSHARE and \$!OMP MASTER loops. The !\$OMP DO loops is the Fortran equivalent of C's \#pragma parallel for, and was the workhorse of our parallel implementation.
+  
   \textbf{Strong Scaling:}
   \begin{figure}
   	\begin{center}
@@ -143,6 +161,80 @@
   \textbf{Strong Scaling:}
   
   \textbf{Weak Scaling:}
+  
+    \subsection{C Code}  
+    \subsection{C Code}  
+    \subsubsection{OpenMP}
+    
+    Most sections are easily parallelizable, since they only consist of an iteration through all the particles. However, sometimes the overhead incurred from OpenMP outweighs the parallelization. We profiled the 16000 particle problem size again with our parallelized code on 24 threads.
+    \[\begin{array}{lc}
+    Forces:     & 0.039036 s \\
+    Candidates: & 0.060830 s \\
+    Neighbors:  & 1.318382 s \\
+    Iterations: & 5.685524 s \\
+    Vorticity:  & 0.587024 s \\
+    Viscosity:  & 0.192448 s \\
+    Update:     & 0.030146 s \\
+    \end{array}\]
+    
+    The heavier sections demonstrate a clear increase in performance, but in calculating forces, candidates and updating, there seems to be little or none to gain from parallelization. Though, this might not be the case for even larger problem sizes.
+    
+    \textbf{Strong Scaling:}
+    \begin{table}
+    	\begin{center}
+    		\begin{tabular}{| c | c | c | c |}
+    			\hline
+    			Case & \# Particles & \# Threads & Time (s) \\ \hline		  		
+    			1 & 36,000 &  1 & 182.99 \\ \hline		  		
+    			2 & 36,000 &  2 & 79.769 \\ \hline		  		
+    			3 & 36,000 &  4 & 42.479 \\ \hline		  		
+    			4 & 36,000 &  8 & 24.816 \\ \hline		  		
+    			5 & 36,000 & 12 & 17.791 \\ \hline		  		
+    			6 & 36,000 & 16 & 22.772 \\ \hline		  		
+    			7 & 36,000 & 20 & 18.565 \\ \hline		  		
+    			8 & 36,000 & 24 & 28.774 \\ \hline		  		
+    		\end{tabular}
+    		\caption{Configuration of dam break simulations used for strong scaling study.}
+    		\label{tab:css}
+    	\end{center}
+    \end{table}
+    
+    \begin{figure}
+    	\begin{center}
+    		\includegraphics[width=0.7\columnwidth]{./c_scaling/ss.png}
+    		\caption{Strong scaling for simulations in Table~\ref{tab:css} using the C code parallelized with OpenMP.}
+    		\label{fig:ss_c_omp}
+    	\end{center}
+    \end{figure}
+    
+    \textbf{Weak Scaling:}
+    \begin{table}
+    	\begin{center}
+    		\begin{tabular}{| c | c | c | c |}
+    			\hline
+    			Case & \# Particles & \# Threads & Time (s) \\ \hline
+    			1 &  2,197 &  1 & 6.3919 \\ \hline		  		
+    			2 &  4,000 &  2 & 7.2487 \\ \hline		  		
+    			3 &  8,000 &  4 & 10.717 \\ \hline		  		
+    			4 & 16,000 &  8 & 11.526 \\ \hline		  		
+    			5 & 24,389 & 12 & 14.846 \\ \hline		  		
+    			6 & 32,768 & 16 & 24.198 \\ \hline		  		
+    			7 & 39,304 & 20 & 24.268 \\ \hline		  		
+    			8 & 46,656 & 24 & 24.203 \\ \hline		  		
+    		\end{tabular}
+    		\caption{Configuration of dam break simulations used for weak scaling study.}
+    		\label{tab:cws}
+    	\end{center}
+    \end{table}
+    
+    \begin{figure}
+    	\begin{center}
+    		\includegraphics[width=0.7\columnwidth]{./c_scaling/ws.png}
+    		\caption{Strong scaling for simulations in Table~\ref{tab:cws} using the C code parallelized with OpenMP.}
+    		\label{fig:ws_c_omp}
+    	\end{center}
+    \end{figure}
+    
   
     \section{Summary and Future Work}
 
