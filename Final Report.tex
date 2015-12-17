@@ -77,7 +77,7 @@
   
   \subsection{Fortran Code}
   \subsubsection{Profiling}
-  In order to profile the Fortran code, manual timing was implemented using the OpenMP function, \texttt{omp\_get\_wtime}. This was deemed sufficient due to the highly modular nature of the Fortran code, where the majority of subroutines called feature a nested do-loop that computes the effect of particle neighbors on each particle. For this profiling, the known fact about particle simulations was confirmed, neighbor finding is the predominant cost. In the naive version of the code, the neighbor finding routine takes several orders of magnitude longer per iteration. After optimizations, the neighbor finding routine was reduced to only being 10 times more expensive than any other routine per step, meaning in all cases it remains the dominant bottle neck. For this reason, the neighbor finding routine was focused on in both the optimization and parallelization of the Fortran code. 
+  In order to profile the Fortran code, manual timing was implemented using the OpenMP function, \texttt{omp\_get\_wtime}. This was deemed sufficient due to the highly modular nature of the Fortran code, where the majority of subroutines called feature a nested do-loop that computes the effect of particle neighbors on each particle. For this profiling, the known fact about particle simulations was confirmed; neighbor finding is the predominant cost. In the naive version of the code, the neighbor finding routine takes several orders of magnitude longer per iteration. After optimizations, the neighbor finding routine was reduced to only being 10 times more expensive than any other routine per step, meaning in all cases it still remained the dominant bottle neck. For this reason, the neighbor finding routine was focused on in both the optimization and parallelization of the Fortran code. 
   
   \subsubsection{Optimizations}
   The optimizations of the serial program were primarily made through reorganization of the neighbor finding routine and encouraging vectorization by the compiler. Since the neighbor finding routine received the most attention and had the greatest impact on program speed,  this will be focused on first and will be addressed with the most detail.
@@ -93,39 +93,39 @@
 	      		\item If the distance is less than the kernel size, the particle is a neighbor and added to a list of neighbors for that particle. The number of neighbors is also tracked.
 	      	\end{itemize}
       \end{itemize}
-   This handling of neighbors is much faster than the naive treating of neighbor finding, however it is still very costly. In order to reduce the cost further, the finding of neighbors can be handled in pairs, since it is known that if particle $j$ is a neighbor of particle $i$, then $i$ is a neighbor of $j$. This provides a significant speed up, however becomes complicated in parallel without an excessive amount of synchronization. Inherently this algorithm is hard to optimize for the compiler since it must be checked that the distance between particles is less than the kernel size. Additionally, if all bins are looped through together, if statements are required to ensure that ``bins'' outside of the simulation domain are not checked since this will need to array bound issues. To address this issue, the iteration through bins was split up to first check bins along the domain boundaries, allowing the internal domain, which contains the majority of the bins, to be iterated through without bounds checks on neighboring spatial bins. Along with these algorithmic considerations, other simple computational considerations were incorporated, such as looping through bins using the smallest memory stride in the accessed arrays to take advantage spatial cache locality.
+   This handling of neighbors is much faster than the naive treating of neighbor finding, however it is still very costly. In order to reduce the cost further, the finding of neighbors can be handled in pairs, since it is known that if particle $j$ is a neighbor of particle $i$, then $i$ is a neighbor of $j$. This provides a significant speed up, however becomes complicated in parallel without an excessive amount of synchronization. Inherently this algorithm is hard to optimize for the compiler since it must be checked that the distance between particles is less than the kernel size. Additionally, if all bins are looped through together, if statements are required to ensure that ``bins'' outside of the simulation domain are not checked since this will lead to array bound issues. To address this issue, the iteration through bins was split up to first check bins along the domain boundaries, allowing the internal domain, which contains the majority of the bins, to be iterated through without checking bounds on neighboring spatial bins. Along with these algorithmic considerations, other simple computational considerations were incorporated, such as looping through bins using the smallest memory stride in the accessed arrays to take advantage of spatial cache locality.
    
-	SPH fluid programs have an inherent particle symmetry implied which was used to reduce the amount of computational work needed to be performed. For the calculation of forces and density, the calculated force or density can be applied to the neighbor as well, halving the amount of naive work that would be performed when calculating distances and kernel coefficients, which can be quite costly with complex expressions used for many of the kernels. Computing force and density contributions from neighbors in pairs also utilizes the working set better, using the neighbor information that is already loaded into cache. 
+	SPH fluid programs have an inherent particle symmetry implied which was used to reduce the amount of computational work needed to be performed. For the calculation of forces and density, the calculated force or density can be applied to the neighbor as well, halving the amount of naive work that would be performed when calculating distances and kernel coefficients. This work can be quite costly with complex expressions used for many of the kernels, allowing a significant saving of time relative to the time spent in those routines. Computing force and density contributions from neighbors in pairs also utilizes the working set better, using the neighbor information that is already loaded into cache. 
 	
-	In all areas of the code, efficient coding was strived for, pre-computing all constants that are used multiple times and allocating each array only once. One issue with this is the need to estimate the maximum number of neighbors a single particle will have in order to allocate the associated arrays only once. This estimation has a significant impact the neighbor finding routine since it greatly effects the offset between non-data-sequential bins and can quickly lead to cache thrashing. For our final, optimized version of the code, we decided to estimate the maximum possible number of neighbors as 100 times a homogeneous distribution of particles, or
+	In all areas of the code, efficient coding was strived for, pre-computing all constants that are used multiple times and allocating each array only once. One issue with this is the need to estimate the maximum number of neighbors a single particle will have in order to allocate the associated arrays once. This estimation has a significant impact the neighbor finding routine since it greatly effects the offset between non-data-sequential bins and can quickly lead to cache thrashing. For our final, optimized version of the code, we decided to estimate the maximum possible number of neighbors as 100 times a homogeneous distribution of particles, or
 	\begin{equation}
-	\mathrm{max\_part\_guess} = \frac{100 n}{nbinx \times nbiny \times nbinz}
+	\mathrm{max\_part\_guess} = \frac{100 \; n}{\mathrm{nbinx} \times \mathrm{nbiny} \times \mathrm{nbinz}}
 	\end{equation}
-	This seemed to lead to quick and robust simulation. In the future, if we had more time, we would most likely implement a linked-list method in order to avoid having to preallocate arrays.
+	This seemed to lead to quick and robust simulations. In the future, if we had more time, we would most likely implement a linked-list method in order to avoid having to preallocate arrays for neighbors.
 	
 	Memory alignment was also forced to 64-byte boundaries in order to aide the compiler in vectorization, something that Fortran is typically strong in. The compiler's vectorization report was used to ensure vectorization when possible, which once again provided some performance gain due to on-core parallelism.
 	
-	These optimizations discussed here sped the program up by a factor of 13 for a dam break with 2197 particles ran for 10,000 iterations, from 219 seconds to 16.9 seconds. The original program that managed to simulate the dam break in 219 seconds already incorporated the general algorithm discussed for spatial binning neighbor finding, however did not have optimized looping orders or allocations, showing the importance of proper memory management and cache use.
+	These optimizations discussed here sped the program up by a factor of 13 for a dam break with 2197 particles ran for 10,000 iterations; from 219 seconds to 16.9 seconds. The original program that managed to simulate the dam break in 219 seconds already incorporated the general algorithm discussed for spatial binning neighbor finding, however did not have optimized looping orders or allocations, showing the importance of proper memory management and cache use.
       
   \subsubsection{Compiler Flags}
-  In order to have cross-platform portability of the program and ease of testing on Totient as well as locally, it was decided to use GNU's gfortran. Since accuracy in SPH for graphics is not of paramount performance, full optimization and \texttt{ffast-math} were used to allow quicker handling of floating point operations. Loop unrolling was also specifically requested with the \texttt{funroll-loops} compiler flag. As previously seen in past homework assignments, compiler flags provide a significant code speedup with minimal effort.
+  In order to have cross-platform portability of the program and ease of testing on Totient as well as locally, it was decided to use GNU's gfortran. Since accuracy in SPH for graphics is not of paramount performance, full optimization (\texttt{O3}) and \texttt{ffast-math} were used to allow quicker handling of floating point operations. Loop unrolling was also specifically requested with the \texttt{funroll-loops} compiler flag. As previously seen in past homework assignments, compiler flags provide a significant code speedup with minimal effort.
  
   \subsection{C Code}
   \subsubsection{Profiling}
           
-          Serial profiling was done on a problem size of 16000 particles.
+          Serial profiling was done on a dam break simulation with 16000 particles.
           \[\begin{array}{lc}
-          Forces:     & 0.025267 s \\
-          Candidates: & 0.046138 s \\
-          Neighbors:  & 9.710008 s \\
-          Iterations: & 43.94977 s \\
-          Vorticity:  & 4.347007 s \\
-          Viscosity:  & 1.153325 s \\
-          Update:     & 0.046102 s \\
+          \mathrm{Forces:}     & 0.025267 s \\
+          \mathrm{Candidates:} & 0.046138 s \\
+          \mathrm{Neighbors:}  & 9.710008 s \\
+          \mathrm{Iterations:} & 43.94977 s \\
+          \mathrm{Vorticity:}  & 4.347007 s \\
+          \mathrm{Viscosity:}  & 1.153325 s \\
+          \mathrm{Update:}     & 0.046102 s \\
           \end{array}\]
           
-          From here we observe that the majority of time is spent in solver iterations. Since we perform 10 iterations per step, this equates to around 4.4 seconds per iteration. Another large chunk of time is spent finding neighbors. Although binning particles takes O($n$) time, searching through the 27 surrounding bins is potentially an O($n^2$) operation, especially if the majority of particles are clustered around an area.
-          
+          From here we observe that the majority of time is spent in solver iterations. Since we perform 10 iterations per step, this equates to around 4.4 seconds per iteration. Another large chunk of time is spent finding neighbors. Although binning particles takes O($n$) time, searching through the 27 surrounding bins is potentially an O($n^2$) operation if the majority of particles are clustered around an area.
+          \newpage
               \subsubsection{Optimizations}
 
 With the given compiler flags, we begin by optimizing the data structures in our code. In the initialization phase, we dynamically allocate arrays to the next largest multiple of 64 along with the aligned attribute. We also pass restrict keywords to functions so that the loops within them may be vectorized by the compiler.
@@ -194,7 +194,7 @@ For timing OpenMP code, we used shared timing variables combined with \texttt{\#
       \end{table}
   \begin{figure}
   	\begin{center}
-	  	\includegraphics[width=0.7\columnwidth]{./fort_scaling/ss.png}
+	  	\includegraphics[width=0.6\columnwidth]{./fort_scaling/ss.png}
 	  	\caption{Strong scaling for simulations in Table~\ref{tab:fompss} using the Fortran code parallelized with OpenMP.}
 		\label{fig:ss_fort_omp}
   	\end{center}
@@ -224,35 +224,59 @@ For timing OpenMP code, we used shared timing variables combined with \texttt{\#
   
     \begin{figure}
     	\begin{center}
-    		\includegraphics[width=0.7\columnwidth]{./fort_scaling/ws.png}
+    		\includegraphics[width=0.6\columnwidth]{./fort_scaling/ws.png}
     		\caption{Weak scaling for simulations in Table~\ref{tab:fompws} using the Fortran code parallelized with OpenMP.}
     		\label{fig:ws_fort_omp}
     	\end{center}
     \end{figure}
   
   \subsubsection{MPI}
-  \textbf{Strong Scaling:}
+  We implemented an MPI parallelization of this code using a domain decomposition approach. Each processor was given a subvolume of the entire domain. A communication routine was implemented to send particles between the domains. This subroutine is called before the mass\_change subroutine and after the positions and velocities are updated. 
   
-  \textbf{Weak Scaling:}
+  The communication subroutine functions as follows. Particles in one subvolume that are near enough to the boundary of another processor's subvolume are duplicated and sent to that bordering processor during this communication routine. These "ghost particles" are necessary for computing density and forces for the real particles.
+  
+  Each processor counts the number of particles that must be sent to every other processor. These values are exchanged using an MPI\_Alltoall call. From these values, each processor creates send and receive buffers and copies the particles to be sent into the send buffer. The particles are then sent using another MPI\_Alltoall call.
+  
+  \newpage
+  Below shows the timings for each subroutine from a simulation with 36000 particles and 8 threads:
+  
+  \[\begin{array}{lc}
+  \mathrm{Forces:}     & 0.015391 s \\
+  \mathrm{Neighbors:}  & 0.095844 s \\
+  \mathrm{Density:}    & 0.006172 s \\
+  \mathrm{Force:}      & 0.015391 s \\
+  \mathrm{Ext Force:}  & 0.000565 s \\
+  \mathrm{Pos \& vel:}  & 0.002736 s \\
+  \mathrm{Comm:}       & 0.514518 s \\
+  \end{array}\]
+  
+  
+  The communication subroutine appears to take the longest time. The communication subroutine would take about 5 times longer than the next slowest subroutine, the neighbor finding. The subroutine shows extremely poor performance because:
+  
+  \begin{itemize}
+  	\item Buffers and new arrays for the particle data must be allocated each time
+  	\item The domain decomposition is done evenly in space, but the particles may not be evenly split among the threads. This subroutine shows poor load balancing
+  	\item Due to the heavy use of conditionals, the loops would vectorize poorly.
+  \end{itemize}
+  
+  To improve performance, linked lists can be used instead of arrays so that new arrays would not need to be allocated every time. A load balancing algorithm that more intelligently splits the domain would also improve performance. MPI\_Cart\_Shift could be used instead of MPI\_Alltoall because far away processors would not exchange particles.
   
     \subsection{C Code}  
     \subsubsection{OpenMP}
     
     Most sections are easily parallelizable, since they only consist of an iteration through all the particles. However, sometimes the overhead incurred from OpenMP outweighs the parallelization. We profiled the 16000 particle problem size again with our parallelized code on 24 threads.
     \[\begin{array}{lc}
-    Forces:     & 0.039036 s \\
-    Candidates: & 0.060830 s \\
-    Neighbors:  & 1.318382 s \\
-    Iterations: & 5.685524 s \\
-    Vorticity:  & 0.587024 s \\
-    Viscosity:  & 0.192448 s \\
-    Update:     & 0.030146 s \\
+    \mathrm{Forces:}     & 0.039036 s \\
+    \mathrm{Candidates:} & 0.060830 s \\
+    \mathrm{Neighbors:}  & 1.318382 s \\
+    \mathrm{Iterations:} & 5.685524 s \\
+    \mathrm{Vorticity:}  & 0.587024 s \\
+    \mathrm{Viscosity:}  & 0.192448 s \\
+    \mathrm{Update:}     & 0.030146 s \\
     \end{array}\]
     
     The heavier sections demonstrate a clear increase in performance, but in calculating forces, candidates and updating, there seems to be little or none to gain from parallelization. Though, this might not be the case for even larger problem sizes.
-    
-    \textbf{Strong Scaling:}
-    \begin{table}
+    \begin{table}[h!]
     	\begin{center}
     		\begin{tabular}{| c | c | c | c |}
     			\hline
@@ -271,37 +295,37 @@ For timing OpenMP code, we used shared timing variables combined with \texttt{\#
     	\end{center}
     \end{table}
     
-    \begin{figure}
-    	\begin{center}
-    		\includegraphics[width=0.7\columnwidth]{./c_scaling/ss.png}
-    		\caption{Strong scaling for simulations in Table~\ref{tab:css} using the C code parallelized with OpenMP.}
-    		\label{fig:ss_c_omp}
-    	\end{center}
-    \end{figure}
+
     
-    \textbf{Weak Scaling:}
-    \begin{table}
+        \begin{figure}[h!]
+        	\begin{center}
+        		\includegraphics[width=0.6\columnwidth]{./c_scaling/ss.png}
+        		\caption{Strong scaling for simulations in Table~\ref{tab:css} using the C code parallelized with OpenMP.}
+        		\label{fig:ss_c_omp}
+        	\end{center}
+        \end{figure}
+
+            \begin{table}[h!]
+            	\begin{center}
+            		\begin{tabular}{| c | c | c | c |}
+            			\hline
+            			Case & \# Particles & \# Threads & Time (s) \\ \hline
+            			1 &  2,197 &  1 & 6.3919 \\ \hline		  		
+            			2 &  4,000 &  2 & 7.2487 \\ \hline		  		
+            			3 &  8,000 &  4 & 10.717 \\ \hline		  		
+            			4 & 16,000 &  8 & 11.526 \\ \hline		  		
+            			5 & 24,389 & 12 & 14.846 \\ \hline		  		
+            			6 & 32,768 & 16 & 24.198 \\ \hline		  		
+            			7 & 39,304 & 20 & 24.268 \\ \hline		  		
+            			8 & 46,656 & 24 & 24.203 \\ \hline		  		
+            		\end{tabular}
+            		\caption{Configuration of dam break simulations used for weak scaling study with C OpenMP.}
+            		\label{tab:cws}
+            	\end{center}
+            \end{table}
+    \begin{figure}[h!]
     	\begin{center}
-    		\begin{tabular}{| c | c | c | c |}
-    			\hline
-    			Case & \# Particles & \# Threads & Time (s) \\ \hline
-    			1 &  2,197 &  1 & 6.3919 \\ \hline		  		
-    			2 &  4,000 &  2 & 7.2487 \\ \hline		  		
-    			3 &  8,000 &  4 & 10.717 \\ \hline		  		
-    			4 & 16,000 &  8 & 11.526 \\ \hline		  		
-    			5 & 24,389 & 12 & 14.846 \\ \hline		  		
-    			6 & 32,768 & 16 & 24.198 \\ \hline		  		
-    			7 & 39,304 & 20 & 24.268 \\ \hline		  		
-    			8 & 46,656 & 24 & 24.203 \\ \hline		  		
-    		\end{tabular}
-    		\caption{Configuration of dam break simulations used for weak scaling study with C OpenMP.}
-    		\label{tab:cws}
-    	\end{center}
-    \end{table}
-    
-    \begin{figure}
-    	\begin{center}
-    		\includegraphics[width=0.7\columnwidth]{./c_scaling/ws.png}
+    		\includegraphics[width=0.6\columnwidth]{./c_scaling/ws.png}
     		\caption{Strong scaling for simulations in Table~\ref{tab:cws} using the C code parallelized with OpenMP.}
     		\label{fig:ws_c_omp}
     	\end{center}
