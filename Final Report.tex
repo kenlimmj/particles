@@ -61,8 +61,11 @@
   
   \subsection{Fortran Code}
   \subsubsection{Profiling}
+  In order to profile the Fortran code, manual timing was implemented using the OpenMP function, \texttt{omp\_get\_wtime}. This was deemed sufficient due to the highly modular nature of the Fortran code, where the majority of subroutines called feature a nested do-loop that computes the effect of particle neighbors on each particle. For this profiling, the known fact about particle simulations was confirmed, neighbor finding is the predominant cost. In the naive version of the code, the neighbor finding routine takes several orders of magnitude longer per iteration. After optimizations, the neighbor finding routine was reduced to only being 10 times more expensive than any other routine per step, meaning in all cases it remains the dominant bottle neck. For this reason, the neighbor finding routine was focused on in both the optimization and parallelization of the Fortran code. 
   
   \subsubsection{Optimizations}
+  The optimizations of the serial program were primarily made through reorganization of the neighbor finding routine and encouraging vectorization by the compiler. Since the neighbor finding routine received the most attention and had the greatest impact on program speed, this will be focused on first and will be addressed with the most detail.
+  
   \subsubsection{Compiler Flags}
   
     \section{Parallelization}
@@ -70,38 +73,38 @@
     \subsubsection{OpenMP}
     \begin{table}
     	\begin{center}
-        \begin{tabular}{| c | c | c | c | c | c | }
+        \begin{tabular}{| c | c | c | c |}
             \hline
-            Case & \# Particles & LLC ($x$,$y$,$z$) & URC ($x$,$y$,$z$) & \# Threads & Time (s) \\ \hline		  		
-            1 & 36,000 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) &  1 & 182.99 \\ \hline		  		
-            2 & 36,000 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) &  2 & 79.769 \\ \hline		  		
-            3 & 36,000 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) &  4 & 42.479 \\ \hline		  		
-            4 & 36,000 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) &  8 & 24.816 \\ \hline		  		
-            5 & 36,000 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 12 & 17.791 \\ \hline		  		
-            6 & 36,000 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 16 & 22.772 \\ \hline		  		
-            7 & 36,000 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 20 & 18.565 \\ \hline		  		
-            8 & 36,000 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 24 & 28.774 \\ \hline		  		
+            Case & \# Particles & \# Threads & Time (s) \\ \hline		  		
+            1 & 36,000 &  1 & 182.99 \\ \hline		  		
+            2 & 36,000 &  2 & 79.769 \\ \hline		  		
+            3 & 36,000 &  4 & 42.479 \\ \hline		  		
+            4 & 36,000 &  8 & 24.816 \\ \hline		  		
+            5 & 36,000 & 12 & 17.791 \\ \hline		  		
+            6 & 36,000 & 16 & 22.772 \\ \hline		  		
+            7 & 36,000 & 20 & 18.565 \\ \hline		  		
+            8 & 36,000 & 24 & 28.774 \\ \hline		  		
         \end{tabular}
-        \caption{Configuration of dam break simulations used for strong scaling study. LLC = Lower Left Corner, URC = Upper Right Corner, SS = Strong Scaling, SSE = Strong Scaling Efficiency.}
+        \caption{Configuration of dam break simulations used for strong scaling study.}
         \label{tab:ss}
         \end{center}
     \end{table}
   
     \begin{table}
     	\begin{center}
-        \begin{tabular}{| c | c | c | c | c | c |}
+        \begin{tabular}{| c | c | c | c |}
             \hline
-            Case & \# Particles & LLC ($x$,$y$,$z$) & URC ($x$,$y$,$z$) & \# Threads & Time (s) \\ \hline
-            1 &  2,197 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) &  1 & 6.3919  \\ \hline		  		
-            2 &  4,000 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) &  2 & 7.2487 \\ \hline		  		
-            3 &  8,000 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) &  4 & 10.717 \\ \hline		  		
-            4 & 16,000 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) &  8 & 11.526 \\ \hline		  		
-            5 & 24,389 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 12 & 14.846 \\ \hline		  		
-            6 & 32,768 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 16 & 24.198 \\ \hline		  		
-            7 & 39,304 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 20 & 24.268 \\ \hline		  		
-            8 & 46,656 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 24 & 24.203 \\ \hline		  		
+            Case & \# Particles & \# Threads & Time (s) \\ \hline
+            1 &  2,197 &  1 & 6.3919  \\ \hline		  		
+            2 &  4,000 &  2 & 7.2487 \\ \hline		  		
+            3 &  8,000 &  4 & 10.717 \\ \hline		  		
+            4 & 16,000 &  8 & 11.526 \\ \hline		  		
+            5 & 24,389 & 12 & 14.846 \\ \hline		  		
+            6 & 32,768 & 16 & 24.198 \\ \hline		  		
+            7 & 39,304 & 20 & 24.268 \\ \hline		  		
+            8 & 46,656 & 24 & 24.203 \\ \hline		  		
         \end{tabular}
-        \caption{Configuration of dam break simulations used for weak scaling study. LLC = Lower Left Corner, URC = Upper Right Corner, SS = Strong Scaling, SSE = Strong Scaling Efficiency.}
+        \caption{Configuration of dam break simulations used for weak scaling study.}
         \label{tab:ws}
         \end{center}
     \end{table}
