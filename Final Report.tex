@@ -109,8 +109,8 @@
   \subsubsection{Compiler Flags}
   In order to have cross-platform portability of the program and ease of testing on Totient as well as locally, it was decided to use GNU's gfortran. Since accuracy in SPH for graphics is not of paramount performance, full optimization and \texttt{ffast-math} were used to allow quicker handling of floating point operations. Loop unrolling was also specifically requested with the \texttt{funroll-loops} compiler flag. As previously seen in past homework assignments, compiler flags provide a significant code speedup with minimal effort.
  
-          \subsection{C Code}
-          \subsubsection{Profiling}
+  \subsection{C Code}
+  \subsubsection{Profiling}
           
           Serial profiling was done on a problem size of 16000 particles.
           \[\begin{array}{lc}
@@ -125,34 +125,106 @@
           
           From here we observe that the majority of time is spent in solver iterations. Since we perform 10 iterations per step, this equates to around 4.4 seconds per iteration. Another large chunk of time is spent finding neighbors. Although binning particles takes O($n$) time, searching through the 27 surrounding bins is potentially an O($n^2$) operation, especially if the majority of particles are clustered around an area.
           
+              \subsubsection{Optimizations}
+
+With the given compiler flags, we begin by optimizing the data structures in our code. In the initialization phase, we dynamically allocate arrays to the next largest multiple of 64 along with the aligned attribute. We also pass restrict keywords to functions so that the loops within them may be vectorized by the compiler.
+
+Moving on to parallel optimizations, we focus on using OpenMP. Since only a few data accesses are overlapping (in particular ones relating to using neighbors), we can let all arrays be shared by default. In computing forces, each particle's force is cleared, and then the previous time step's vorticity force and gravitational force is applied. This is a simple parallel for loop, since no particle's forces overlap one another. Computing candidates is very similar in that each particle's candidate position and velocity is independent of other particles, requiring another parallel for.
+
+Finding neighbors starts to cause issues when placing particles into bins. Bin access may be random, so we would like to lock a bin when accessed, but also not prevent other threads from locking on different bins. A critical or atomic pragma would not work, since it would cause all threads to lock. Instead we initialize an array of OpenMP mutexes equal to the number of bins, which is decided at initialization. Upon writing to a bin, we lock and unlock that bin's mutex. This way other threads can continue execution on other bins, while maintaining atomic updates on any single bin. From there, actually finding and assigning neighbors becomes a parallel for loop over the particles since the bins are only read.
+
+Iterations must be computed one after another. Inside them, we can parallelize the solver, pressure and collision calculations. Since pressure depends on the lambda coefficient calculated in the solver, they must be done in different loops. However pressure and collisions are independent, and can be done within the same loop.
+
+Vorticity takes two steps, one to compute the angular velocities, another to compute the correction forces. As mentioned previously, these forces are applied on the next time step. Angular velocity depends on the candidate linear velocities of neighbors. The correction force depends on angular velocity. Both loops may be parallelized over the particles. Viscosity must be performed after vorticity confinement because it modifies the candidate velocities. The final update uses candidate positions and velocities to update the final positions and velocities. Although these last few loops could be combined, we leave them in that order for timing and debugging purposes.
+
+For timing OpenMP code, we used shared timing variables combined with \texttt{\#pragma omp single nowait}. The \texttt{nowait} clause prevents any synchronization barrier when calling \texttt{omp\_get\_wtime()}, since it is not necessary in this case.
+          
           \subsubsection{Compiler Flags}
           We use the typical compiler flags with the Intel compiler, including O3, fast, ipo, AVX512 and restrict. These flags are taken from past assignments.
-  \subsubsection{Profiling}
        
-  \subsubsection{Optimizations}
-  \subsubsection{Compiler Flags}
+
   
   \section{Parallelization}
+  Both the C code and Fortran code were parallelized using OpenMP. Additionally, the Fortran code was parallelized using MPI in order to assess the capabilities of the two methods. In all cases, strong and weak scaling studies were performed to better understand the code's parallel efficiency. Here, we define strong scaling, strong scaling efficiency, and weak scaling by Equations~\ref{ss},~\ref{sse}, and~\ref{ws}, respectively,
+  
+  \begin{equation}
+  \mathrm{Strong\;Scaling} = \frac{t_{\mathrm{serial}}}{t_{\mathrm{parallel}}}
+  \label{ss}
+  \end{equation}
+  
+   \begin{equation}
+  \mathrm{Strong\;Scaling\;Efficiency} = \frac{t_{\mathrm{serial}}}{t_{\mathrm{parallel}}} \frac{1}{p}    
+   \label{sse}
+   \end{equation}
+    
+    \begin{equation}
+      \mathrm{Strong\;Scaling} = \frac{t_{\mathrm{serial}}(n(p))}{t_{\mathrm{parallel}}(n(p),p)}  
+    \label{ws}
+    \end{equation}
+	 where $t_{\mathrm{serial}}$ is the time to solve the problem serially, $t_{\mathrm{parallel}}$ is the required time to solve the problem in parallel, and $p$ is the number of processors. It is important to note that for strong scaling, the problem size remains constant, however for weak scaling the problem size scales linearly with the number of processors.
+  
   \subsection{Fortran Code}    
   The optimized Fortran code was parallelized separately in OpenMP and MPI in order to judge the effectiveness of both parallelization paradigms. For the size of our problems of interest, OpenMP appears to be superior due to its shared memory architecture reducing the number and cost of synchronizations significantly.
   \subsubsection{OpenMP}
-  The parallelization of the Fortran code with OpenMP was primarily handled through the use of !\$OMP DO loops, !\$OMP WORKSHARE and \$!OMP MASTER loops. The !\$OMP DO loops is the Fortran equivalent of C's \#pragma parallel for, and was the workhorse of our parallel implementation.
+  The parallelization of the Fortran code with OpenMP was primarily handled through the use of !\$OMP DO loops, !\$OMP WORKSHARE, and \$!OMP MASTER loops. The !\$OMP DO loops is the Fortran equivalent of C's \#pragma parallel for, and was the workhorse of our parallel implementation. The !\$OMP WORKSHARE command is analogous to !\$OMP DO, however is used to the implicit vectorization operations available in Fortran, such as vectorized copying of arrays. Lastly, \$!OMP MASTER was used to force serial execution of a section by the master thread, which was primarily used for the writing of visualization files.
+  
+  The parallelization of the neighbor finding routine required significant reorganization. The method presented previously in the serial optimization becomes too costly due to the synchronization required to ensure neighboring particles do not get counted twice when finding neighbors in pairs. To avoid this, neighbor finding was reverted to a less efficient, but synchronization-less method where neighbors are not accounted for in pairs.  Additionally, looping through bins in each direction is too small of a range to effectively parallelize. To fix this, the previously 3-nested bin iteration loop (x, y, z) was changed to a single loop of size nbinx $\times$ nbiny $\times$ nbinz where the bin in each direction is found through moduli. This loop then has chunks assigned via OpenMP dynamically, in order to help with the load balancing in the case of many successive empty bins. With neighbors found, the remainder of the code was parallelized using the !\$OMP DO and !\$OMP WORKSHARE commands.
+  
+  In order to assess the effectiveness of the parallelization, strong and weak scaling studies were performed. For clarification, in each study, the one processor case is the serial code without the serial optimizations, not the parallel code ran with one processor.
   
   \textbf{Strong Scaling:}
+  The strong scaling study was performed for six test points, shown in Table~\ref{tab:fompss}, where we ensured to have one test case on more than 12 threads to assess the capability when threads were separated by physical chips. The strong scaling results itself can be seen in Figure~\ref{fig:ss_fort_omp}. Surprisingly decent strong scaling of over 50\% can seen for 2 threads, however this quickly drops off as more threads are added. We believe this scaling behavior is due to an increase in cache thrashing with the addition of more threads. Specifically in the neighbor finding routine, the checking of a neighbor requires the loading of position and spatial bin data, which will more quickly be removed from cache with other processors looking for neighbors who have data associated far away in the array. It may be possible to improve this performance through more intelligent work division and binning.
+  
+      \begin{table}
+      	\begin{center}
+      		\begin{tabular}{| c | c | c | c |}
+      			\hline
+      			Case & \# Particles & \# Threads & Time (s) \\ \hline		  		
+      			1 & 32,768 &  1 & 41.810 \\ \hline		  		
+      			2 & 32,768 &  2 & 36.064 \\ \hline		  		
+      			3 & 32,768 &  4 & 28.515 \\ \hline		  		
+      			4 & 32,768 &  8 & 26.224 \\ \hline		  		
+      			5 & 32,768 & 12 & 25.172 \\ \hline		  		
+      			6 & 32,768 & 16 & 26.911 \\ \hline		  		
+      		\end{tabular}
+      		\caption{Configuration of dam break simulations used for strong scaling study with Fortran OpenMP.}
+      		\label{tab:fompss}
+      	\end{center}
+      \end{table}
   \begin{figure}
   	\begin{center}
 	  	\includegraphics[width=0.7\columnwidth]{./fort_scaling/ss.png}
-	  	\caption{Strong scaling for simulations in Table~\ref{tab:ss} using the Fortran code parallelized with OpenMP.}
+	  	\caption{Strong scaling for simulations in Table~\ref{tab:fompss} using the Fortran code parallelized with OpenMP.}
 		\label{fig:ss_fort_omp}
   	\end{center}
   \end{figure}
   
   
   \textbf{Weak Scaling:}  
+  For the weak scaling study, with the test points shown in Table~\ref{tab:fompws}, an attempt was made to perfectly scale the problem size with the number of processors for the dam break simulation. In order to do this while maintaining a constant kernel size, the domain size and extents of the initial water cube were expanded to accommodate the increased volume from increased number of particles. For this reason, the number of particles do not scale perfectly since side lengths of the initial water cube were calculated by rounding the result of the cube root of the number of particles. We believe the scaling is close enough, however, that the weak scaling, shown in Figure~\ref{fig:ws_fort_omp}, is accurately represented.
+  
+      \begin{table}
+      	\begin{center}
+      		\begin{tabular}{| c | c | c | c |}
+      			\hline
+      			Case & \# Particles & \# Threads & Time (s) \\ \hline
+      			1 &  2,197 &  1 & 2.655 \\ \hline		  		
+      			2 &  4,913 &  2 & 5.375 \\ \hline		  		
+      			3 &  9,261 &  4 & 7.937 \\ \hline		  		
+      			4 &  17,576 &  8 & 14.441 \\ \hline		  		
+      			5 &  27,000& 12 & 21.167 \\ \hline		  		
+      			6 &  35,937 & 16 & 30.479 \\ \hline		  		
+      		\end{tabular}
+      		\caption{Configuration of dam break simulations used for weak scaling study with Fortran OpenMP.}
+      		\label{tab:fompws}
+      	\end{center}
+      \end{table}
+  
+  
     \begin{figure}
     	\begin{center}
     		\includegraphics[width=0.7\columnwidth]{./fort_scaling/ws.png}
-    		\caption{Weak scaling for simulations in Table~\ref{tab:ws} using the Fortran code parallelized with OpenMP.}
+    		\caption{Weak scaling for simulations in Table~\ref{tab:fompws} using the Fortran code parallelized with OpenMP.}
     		\label{fig:ws_fort_omp}
     	\end{center}
     \end{figure}
@@ -162,7 +234,6 @@
   
   \textbf{Weak Scaling:}
   
-    \subsection{C Code}  
     \subsection{C Code}  
     \subsubsection{OpenMP}
     
@@ -194,7 +265,7 @@
     			7 & 36,000 & 20 & 18.565 \\ \hline		  		
     			8 & 36,000 & 24 & 28.774 \\ \hline		  		
     		\end{tabular}
-    		\caption{Configuration of dam break simulations used for strong scaling study.}
+    		\caption{Configuration of dam break simulations used for strong scaling study with C OpenMP.}
     		\label{tab:css}
     	\end{center}
     \end{table}
@@ -222,7 +293,7 @@
     			7 & 39,304 & 20 & 24.268 \\ \hline		  		
     			8 & 46,656 & 24 & 24.203 \\ \hline		  		
     		\end{tabular}
-    		\caption{Configuration of dam break simulations used for weak scaling study.}
+    		\caption{Configuration of dam break simulations used for weak scaling study with C OpenMP.}
     		\label{tab:cws}
     	\end{center}
     \end{table}
