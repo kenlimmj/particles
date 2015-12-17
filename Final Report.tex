@@ -1,5 +1,4 @@
 \documentclass{scrartcl}
-\usepackage{dominatrix}
 \usepackage{tikz}
 \usepackage{pgfplots}
 \pgfplotsset{
@@ -8,95 +7,116 @@
 }
 
 \begin{document}
-  \begin{framed}
-  CS 5220 Introduction to Parallel Programming \hfill Fall 2015 \\
-  Kenneth Lim (\href{mailto:kl545@cornell.edu}{kl545}), Scott Wu (\href{mailto:ssw74@cornell.edu}{ssw74}), Robert Chiodi (\href{mailto:rmc298@cornell.edu}{rmc298}), Ravi Patel (\href{mailto:rgp62@cornell.edu}{rgp62})  \hfill Final Project \hspace{-3ex}
-  \end{framed}
-  
-  
-  \section{Introduction}
-  
-  \subsection{Smooth Particle Hydrodynamics (SPH)}
-  
-  \subsection{Code Bases}
-  \subsubsection{C Code}
-  
-  
-  \subsubsection{Fortran Code}
-    
-    
-    
-  \section{Profiling and Serial Optimization}  
-  \subsection{C Code}
+    \begin{framed}
+    CS 5220 Introduction to Parallel Programming \hfill Fall 2015 \\
+    Kenneth Lim (\href{mailto:kl545@cornell.edu}{kl545}), Scott Wu (\href{mailto:ssw74@cornell.edu}{ssw74}), Robert Chiodi (\href{mailto:rmc298@cornell.edu}{rmc298}), Ravi Patel (\href{mailto:rgp62@cornell.edu}{rgp62})  \hfill Final Project \hspace{-3ex}
+    \end{framed}
 
-  \subsubsection{Profiling}
-  
-  \subsubsection{Optimizations}
-  \subsubsection{Compiler Flags}
-  
-  \subsection{Fortran Code}
-  \subsubsection{Profiling}
-  
-  \subsubsection{Optimizations}
-  \subsubsection{Compiler Flags}
-  
-  
-  \section{Parallelization}
-  \subsection{C Code}  
-  \subsubsection{OpenMP}
-  \begin{table}
-  	\begin{tabular}{| c | c | c | c | c | c | c | c |}
-  		\hline
-  	Case & \# Particles & LLC ($x$,$y$,$z$) & URC ($x$,$y$,$z$) & \# Threads & Time (s) & SS (\%)& SSE (\%) \\ \hline
-	1 & 34,328 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 1 & & & \\ \hline		  		
-	2 & 34,328 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 2 & & & \\ \hline		  		
-	3 & 34,328 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 4 & & & \\ \hline		  		
-	4 & 34,328 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 8 & & & \\ \hline		  		
-	5 & 34,328 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 12 & & & \\ \hline		  		
-	6 & 34,328 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 16 & & & \\ \hline		  		
-	7 & 34,328 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 24 & & & \\ \hline		  		
-	\end{tabular}
-	\caption{Configuration of dam break simulations used for strong scaling study. LLC = Lower Left Corner, URC = Upper Right Corner, SS = Strong Scaling, SSE = Strong Scaling Efficiency.}
-	\label{tab:ss}
-  \end{table}
+
+    \section{Introduction}
+
+    \subsection{Smooth Particle Hydrodynamics (SPH)}
+
+    \subsubsection{Purpose}
+
+    The purpose of this project is implement a Smoothed Particle Hydrodynamics based on \href{http://mmacklin.com/pbf_sig_preprint.pdf}{Position Based Fluids} (Macklin, Muller 2013). Since the goal of the paper is geared towards real time use, some portions of the algorithm will sacrifice accuracy for speed. Finally, we will be analyzing and parallelizing the algorithm to further improve performance.
+
+    \subsubsection{Algorithm Overview}
+
+    In the simulation, our inputs are the initial positions and velocities of particles in a box. Then we take equal time steps, producing the same list of position and velocity outputs at each step.
+
+    \begin{itemize}
+        \item At the beginning of each step, we compute candidate velocities and positions by taking an Eulerian step
+        \item We compute the neighbors particles within a certain radius by placing them on a grid
+        \item Candidate velocities and positions are iteratively corrected
+        \begin{itemize}
+            \item Per iteration, we attempt to solve the incompressibility constraint
+            \item Meanwhile maintain the boundary conditions of the box, and apply velocity dampening if necessary
+            \item Update the candidate positions with those constraints
+        \end{itemize}
+        \item Using the new candidate positions, we update the candidate velocities
+        \item We apply vorticity confinement to maintain energy in the system
+        \item We apply viscosity to blur the velocities into a more coherent motion
+        \item Finally we update the positions and velocities with the candidate positions and velocities
+    \end{itemize}
+    
+    \subsection{Code Bases}
+    \subsubsection{C Code}
+
+    \subsubsection{Fortran Code}
+    
+    
+    \section{Profiling and Serial Optimization}
+    
+    \subsection{C Code}
+
+    \subsubsection{Profiling}
+    \subsubsection{Optimizations}
+    \subsubsection{Compiler Flags}
+
+    \subsection{Fortran Code}
+    
+    \subsubsection{Profiling}
+    \subsubsection{Optimizations}
+    \subsubsection{Compiler Flags}
+
+    \section{Parallelization}
+    \subsection{C Code}  
+    \subsubsection{OpenMP}
+    \begin{table}
+        \begin{tabular}{| c | c | c | c | c | c | c | c |}
+            \hline
+            Case & \# Particles & LLC ($x$,$y$,$z$) & URC ($x$,$y$,$z$) & \# Threads & Time (s) & SS (\%)& SSE (\%) \\ \hline
+            1 & 36,000 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) &  1 & 182.99 & & \\ \hline		  		
+            2 & 36,000 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) &  2 & 79.769 & & \\ \hline		  		
+            3 & 36,000 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) &  4 & 42.479 & & \\ \hline		  		
+            4 & 36,000 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) &  8 & 24.816 & & \\ \hline		  		
+            5 & 36,000 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 12 & 17.791 & & \\ \hline		  		
+            6 & 36,000 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 16 & 22.772 & & \\ \hline		  		
+            7 & 36,000 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 20 & 18.565 & & \\ \hline		  		
+            8 & 36,000 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 24 & 28.774 & & \\ \hline		  		
+        \end{tabular}
+        \caption{Configuration of dam break simulations used for strong scaling study. LLC = Lower Left Corner, URC = Upper Right Corner, SS = Strong Scaling, SSE = Strong Scaling Efficiency.}
+        \label{tab:ss}
+    \end{table}
   
     \begin{table}
-    	\begin{tabular}{| c | c | c | c | c | c | c | c |}
-    		\hline
-    		Case & \# Particles & LLC ($x$,$y$,$z$) & URC ($x$,$y$,$z$) & \# Threads & Time (s) & SS (\%)& SSE (\%) \\ \hline
-    		1 & 2,197 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 1 & & & \\ \hline		  		
-    		2 & 4,394 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 2 & & & \\ \hline		  		
-    		3 & 8,788 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 4 & & & \\ \hline		  		
-    		4 & 17,576 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 8 & & & \\ \hline		  		
-    		5 & 26,364 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 12 & & & \\ \hline		  		
-    		6 & 35,152 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 16 & & & \\ \hline		  		
-    		7 & 52,728 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 24 & & & \\ \hline		  		
-    	\end{tabular}
-    	\caption{Configuration of dam break simulations used for weak scaling study. LLC = Lower Left Corner, URC = Upper Right Corner, SS = Strong Scaling, SSE = Strong Scaling Efficiency.}
-    	\label{tab:ws}
+        \begin{tabular}{| c | c | c | c | c | c | c | c |}
+            \hline
+            Case & \# Particles & LLC ($x$,$y$,$z$) & URC ($x$,$y$,$z$) & \# Threads & Time (s) & SS (\%)& SSE (\%) \\ \hline
+            1 &  2,197 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) &  1 & 6.3919 & & \\ \hline		  		
+            2 &  4,000 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) &  2 & 7.2487 & & \\ \hline		  		
+            3 &  8,000 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) &  4 & 10.717 & & \\ \hline		  		
+            4 & 16,000 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) &  8 & 11.526 & & \\ \hline		  		
+            5 & 24,389 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 12 & 14.846 & & \\ \hline		  		
+            6 & 32,768 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 16 & 24.198 & & \\ \hline		  		
+            7 & 39,304 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 20 & 24.268 & & \\ \hline		  		
+            8 & 46,656 & (0.0, 0.0, 0.0) & (0.5, 0.5, 0.5) & 24 & 24.203 & & \\ \hline		  		
+        \end{tabular}
+        \caption{Configuration of dam break simulations used for weak scaling study. LLC = Lower Left Corner, URC = Upper Right Corner, SS = Strong Scaling, SSE = Strong Scaling Efficiency.}
+        \label{tab:ws}
     \end{table}
   
     \textbf{Strong Scaling:}
     
     \textbf{Weak Scaling:}
     
-  \subsubsection{Cilk}
-  \textbf{Strong Scaling:}
-  
-  \textbf{Weak Scaling:}
-  \subsection{Fortran Code}    
-  
-  \subsubsection{OpenMP}
-  \textbf{Strong Scaling:}
-  
-  \textbf{Weak Scaling:}  
-  
-  \subsubsection{MPI}
-  \textbf{Strong Scaling:}
-  
-  \textbf{Weak Scaling:}
+    \subsubsection{Cilk}
+    \textbf{Strong Scaling:}
 
-	
-  \section{Summary and Future Work}
+    \textbf{Weak Scaling:}
+    \subsection{Fortran Code}    
+
+    \subsubsection{OpenMP}
+    \textbf{Strong Scaling:}
+
+    \textbf{Weak Scaling:}  
+
+    \subsubsection{MPI}
+    \textbf{Strong Scaling:}
+
+    \textbf{Weak Scaling:}
+
+    \section{Summary and Future Work}
 
 \end{document}
