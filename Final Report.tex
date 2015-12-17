@@ -7,10 +7,10 @@
 	compat=newest
 }
 \begin{document}
-    \begin{frame}
+   
     CS 5220 Introduction to Parallel Programming \hfill Fall 2015 \\
     Kenneth Lim (\href{mailto:kl545@cornell.edu}{kl545}), Scott Wu (\href{mailto:ssw74@cornell.edu}{ssw74}), Robert Chiodi (\href{mailto:rmc298@cornell.edu}{rmc298}), Ravi Patel (\href{mailto:rgp62@cornell.edu}{rgp62})  \hfill Final Project \hspace{-3ex}
-    \end{frame}
+
 
 
     \section{Introduction}
@@ -18,45 +18,8 @@
     \subsection{Smooth Particle Hydrodynamics (SPH)}
 
     \subsubsection{Purpose}
-    The purpose of this project is implement a Smoothed Particle Hydrodynamics based on \href{http://mmacklin.com/pbf\_sig\_preprint.pdf}{Position Based Fluids} (Macklin, Muller 2013). Since the goal of the paper is geared towards real time use, some portions of the algorithm will sacrifice accuracy for speed. Finally, we will be analyzing and parallelizing the algorithm to further improve performance.
-
-    \subsubsection{Algorithm Overview}
-
-    In the simulation, our inputs are the initial positions and velocities of particles in a box. Then we take equal time steps, producing the same list of position and velocity outputs at each step.
-
-    \begin{itemize}
-        \item At the beginning of each step, we compute candidate velocities and positions by taking an Eulerian step
-        \item We compute the neighbors particles within a certain radius by placing them on a grid
-        \item Candidate velocities and positions are iteratively corrected
-        \begin{itemize}
-            \item Per iteration, we attempt to solve the incompressibility constraint
-            \item Meanwhile maintain the boundary conditions of the box, and apply velocity dampening if necessary
-            \item Update the candidate positions with those constraints
-        \end{itemize}
-        \item Using the new candidate positions, we update the candidate velocities
-        \item We apply vorticity confinement to maintain energy in the system
-        \item We apply viscosity to blur the velocities into a more coherent motion
-        \item Finally we update the positions and velocities with the candidate positions and velocities
-    \end{itemize}
-    
+    The purpose of this project is to implement a Smoothed Particle Hydrodynamics based on \href{http://mmacklin.com/pbf\_sig\_preprint.pdf}{Position Based Fluids} (Macklin, Muller 2013). Since the goal of the paper is geared towards real time use, some portions of the algorithm will sacrifice accuracy for speed. Finally, we will be analyzing and parallelizing the algorithm to further improve performance.
         
-     \subsubsection{Performance Model}
-        Each of the sections listed above must be executed serially. However, what can be parallelized are each individual steps.
-        If we have $n$ particles, then the upper bound for our serial time per time step is:
-        \\
-        $$t_{forces} * n + t_{candidates} * n + t_{neighbors} * n^2 + t_{iterations} * n^2 +$$
-        $$t_{vorticity} * n^2 + t_{viscosity} * n^2 + t_{update} * n$$
-        \\
-        This is a very pessimistic bound because the $n^2$ coefficient on most of the terms assume that all particles of neighbors of all other particles, which is never the case. If we let $a$ be the average number of neighbors per particle (which the simulation will eventually stabilize to), then our new model for serial time is:
-        \\
-        $$t_{f} * n + t_{c} * n + t_{nb} * n^2 + t_{iter} * n * a + t_{vo} * n * a + t_{vi} * n * a + t_{u} * n$$
-        \\
-        If we have $p$ processors, then our parallel time per time step is:
-        \\
-        $$(t_{f} * n + t_{c} * n + t_{nb} * n^2 + t_{iter} * n^2 + t_{vo} * n * a + t_{vi} * n * a + t_{u} * n) / p + t_{overhead}$$
-        \\
-        Although there are no major branches in the algorithm, there will still be synchronization overheads and small critical serial sections in a parallel implementation.
-    
     \subsection{Code Bases}
     
     \subsubsection{Fortran Code}
@@ -68,6 +31,44 @@
     \subsubsection{C Code}
     
     The C code is based off of the Java code from Professor James' assignment for CS 5643. This assignment was oriented towards speed and real-time simulation. The original skeleton code contained a GUI and simple particle system framework. For simplicity in the C implementation, all data structures and functions were kept as native data types in the global namespace. Like the Fortran code, the implementation reads from the same initialization files although with slightly different parameters. In the main program loop, the step size is further split into multiple substeps, although output was only written at the end of the whole step. The C implementation borrows ideas from the Fortran code such as collision damping and reference particle density to improve the stability of the simulation.
+    
+    \subsubsection{Algorithm Overview}
+        
+        In the simulation, our inputs are the initial positions and velocities of particles in a box. Then we take equal time steps, producing the same list of position and velocity outputs at each step.
+        
+        \begin{itemize}
+        	\item At the beginning of each step, we compute candidate velocities and positions by taking an Eulerian step
+        	\item We compute the neighbor's particles within a certain radius by placing them on a grid
+        	\item Candidate velocities and positions are iteratively corrected
+        	\begin{itemize}
+        		\item Per iteration, we attempt to solve the incompressibility constraint
+        		\item Meanwhile maintain the boundary conditions of the box, and apply velocity dampening if necessary
+        		\item Update the candidate positions with those constraints
+        	\end{itemize}
+        	\item Using the new candidate positions, we update the candidate velocities
+        	\item We apply vorticity confinement to maintain energy in the system
+        	\item We apply viscosity to blur the velocities into a more coherent motion
+        	\item Finally we update the positions and velocities with the candidate positions and velocities
+        \end{itemize}
+    
+        
+        
+        \subsubsection{Performance Model}
+        Each of the sections listed above must be executed sequentially. However, what can be parallelized are each of the individual steps.
+        If we have $n$ particles, then the upper bound for our serial time per time step is:
+        \\
+        $$t_{forces} * n + t_{candidates} * n + t_{neighbors} * n^2 + t_{iterations} * n^2 +$$
+        $$t_{vorticity} * n^2 + t_{viscosity} * n^2 + t_{update} * n$$
+        \\
+        This is a very pessimistic bound because the $n^2$ coefficient on most of the terms assume that all particles are neighbors of all other particles, which is never the case. If we let $a$ be the average number of neighbors per particle (which the simulation will eventually stabilize to), then our new model for serial time is:
+        \\
+        $$t_{f} * n + t_{c} * n + t_{nb} * n^2 + t_{iter} * n * a + t_{vo} * n * a + t_{vi} * n * a + t_{u} * n$$
+        \\
+        If we have $p$ processors, then our parallel time per time step is:
+        \\
+        $$(t_{f} * n + t_{c} * n + t_{nb} * n^2 + t_{iter} * n^2 + t_{vo} * n * a + t_{vi} * n * a + t_{u} * n) / p + t_{overhead}$$
+        \\
+        Although there are no major branches in the algorithm, there will still be synchronization overheads and small critical serial sections in a parallel implementation.
     
     \subsection{Writing of Visualization Files}
     The writing of visualization files is handled the same way in each code. At a specified frequency, by a certain number of time steps in the C version or an amount of simulated time in the Fortran version, a text file is written that contains the number of particles along with their position and velocity. The text files are numbered sequentially with integer tags in order to keep the proper time sequence. A python script we wrote, based loosely off of the visualizer script written for the wave-equation assignment, then plots each particle as a point on a 3D scatter plot and encodes the images together with \texttt{ffmpeg}.
@@ -145,21 +146,21 @@ For timing OpenMP code, we used shared timing variables combined with \texttt{\#
 
   
   \section{Parallelization}
-  Both the C code and Fortran code were parallelized using OpenMP. Additionally, the Fortran code was parallelized using MPI in order to assess the capabilities of the two methods. In all cases, strong and weak scaling studies were performed to better understand the code's parallel efficiency. Here, we define strong scaling, strong scaling efficiency, and weak scaling by Equations~\ref{ss},~\ref{sse}, and~\ref{ws}, respectively,
+  Both the C code and Fortran code were parallelized using OpenMP. Additionally, the Fortran code was parallelized using MPI in order to assess the capabilities of the two methods. In all cases, strong and weak scaling studies were performed to better understand the code's parallel efficiency. Here, we define strong scaling, strong scaling efficiency, and weak scaling by Equations~(3.1),~(3.2), and~(3.3), respectively,
   
   \begin{equation}
   \mathrm{Strong\;Scaling} = \frac{t_{\mathrm{serial}}}{t_{\mathrm{parallel}}}
-  \label{ss}
+  \label{eq:ss}
   \end{equation}
   
    \begin{equation}
   \mathrm{Strong\;Scaling\;Efficiency} = \frac{t_{\mathrm{serial}}}{t_{\mathrm{parallel}}} \frac{1}{p}    
-   \label{sse}
+   \label{eq:sse}
    \end{equation}
     
     \begin{equation}
       \mathrm{Strong\;Scaling} = \frac{t_{\mathrm{serial}}(n(p))}{t_{\mathrm{parallel}}(n(p),p)}  
-    \label{ws}
+    \label{eq:ws}
     \end{equation}
 	 where $t_{\mathrm{serial}}$ is the time to solve the problem serially, $t_{\mathrm{parallel}}$ is the required time to solve the problem in parallel, and $p$ is the number of processors. It is important to note that for strong scaling, the problem size remains constant, however for weak scaling the problem size scales linearly with the number of processors.
   
@@ -307,6 +308,11 @@ For timing OpenMP code, we used shared timing variables combined with \texttt{\#
     \end{figure}
     
   
-    \section{Summary and Future Work}
+\section{Summary and Future Work}
+We implemented two versions of SPH in C and Fortran using both OpenMP and MPI. We improved and parallelized neighbor finding by using grid based bins to hash particles. In our strong and weak scaling studies we found decreasing trends in efficiency as the number of processors increased, as expected.
+
+Originally, this SPH algorithm was oriented towards real-time use. For future work we would further investigate parameters that would make it possible to run the simulation in real time. Currently, real time rates can already be achieved at low resolutions. It might be possible to find other combinations of parameters for iterations per step and step size such that we can raise the number of particles while maintaining stability. Since this code was originally intended for use with computer graphics, we would also implement geometric and shader libraries in order to allow realistic rendering of our simulations. 
+
+
 
 \end{document}
